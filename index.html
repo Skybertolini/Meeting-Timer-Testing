@@ -14,13 +14,11 @@
 :root{
   --bg-top:#f8f7f5; --bg-bot:#f3f2ef; --ink:#2b3432; --muted:#8b827a;
   --card:rgba(255,255,252,.98); --border:rgba(40,30,20,.10);
-  /* Oppdatert: lysere grønn for Play, og vi gjenbruker fasefargene for Pause/Stop */
-  --green:#3fa77a;          /* Play (lys grønn) */
-  --phase-intro:#87b9ff;    /* Blå: introfeltet */
-  --phase-review:#ffb766;   /* Oransje: rep.spørsmål */
-  --phase-outro:#87b9ff;
+  --green:#6ecf9e; /* lysere grønn */
+  --pause:#87b9ff; /* intro-blå */
+  --stop:#ffb766;  /* rep.oransje */
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
-  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
+  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff; --phase-review:#ffb766; --phase-outro:#87b9ff;
   --content-max:640px; --preset-gap:8px; --preset-pad:10px 14px; --preset-size:1.05rem; --dial-width:min(440px,78vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -35,9 +33,6 @@ body{display:flex;flex-direction:column;min-height:100%}
 .brand img{height:160px;width:auto;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 8px 24px rgba(70,50,30,.08));transition:transform .25s,filter .25s}
 @media (min-width:768px){ .brand img{height:200px} }
 
-.brand .burst{position:absolute;inset:0;pointer-events:none;overflow:visible}
-.brand .burst::before,.brand .burst::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;border-radius:999px;opacity:0;background:radial-gradient(circle,rgba(255,255,255,.65) 0%,rgba(255,255,255,0) 60%)}
-
 .segmented{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px;gap:6px;box-shadow:0 8px 24px rgba(70,50,30,.06);flex-shrink:0}
 .segmented button{border:0;background:transparent;padding:10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .segmented button img{width:28px;height:28px;display:block}
@@ -49,11 +44,9 @@ body{display:flex;flex-direction:column;min-height:100%}
 .pill{background:var(--pill);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-weight:600;box-shadow:0 4px 14px rgba(70,50,30,.05);color:#4a5552}
 .select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px}
 
-/* Headings/messages */
 .h1{font-size:1.38rem;font-weight:900;margin:18px 0 10px;text-transform:uppercase}
 .message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:2.4em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin-bottom:20px;color:#4a5552;font-size:1.8rem;line-height:1.4}
 
-/* Timeline */
 .timeline-wrap{margin-top:22px; margin-bottom:40px}
 .timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 12px 36px rgba(70,50,30,.05)}
 .slot{position:absolute;top:0;height:100%;opacity:.22}
@@ -63,9 +56,7 @@ body{display:flex;flex-direction:column;min-height:100%}
 .para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
 .para-slot.alt{background:var(--tl-green-2)}
 .para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
-/* 📖 på les-avsnitt */
 .read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png?v=2') center/contain no-repeat; pointer-events:none; opacity:0.95}
-/* Viktig: la klikk passere gjennom progress-laget slik at man kan klikke bakover */
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 .cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f5f49;left:0%;z-index:3;box-shadow:0 0 0 2px rgba(58,111,82,.10)}
 .big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65)}
@@ -74,10 +65,9 @@ body{display:flex;flex-direction:column;min-height:100%}
 
 .controls{display:flex;gap:12px;margin-top:12px}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08)}
-/* Oppdatert knappestil: */
-.play{background:var(--green)}
-.pause{background:var(--phase-intro); color:#ffffff}
-.stop{background:var(--phase-review); color:#2b2a29}
+.play{background:var(--green);color:#fff}
+.pause{background:var(--pause);color:#fff}
+.stop{background:var(--stop);color:#2b2a29}
 .round:disabled{background:#bfb8af;cursor:not-allowed;box-shadow:none}
 .round.pressed{background:var(--press)!important;color:#2b2a29!important;box-shadow:inset 0 3px 8px rgba(50,40,30,.18);transform:translateY(1px)}
 .round:active{background:var(--press)!important;color:#2b2a29!important;transform:translateY(1px)}
@@ -101,21 +91,20 @@ body{display:flex;flex-direction:column;min-height:100%}
 
 /* Ensartet smal bredde for kort og timeline på begge sider */
 #viewSP .card,#viewSP .timeline-wrap,#viewWT .card,#viewWT .timeline-wrap{max-width:var(--content-max);margin-inline:auto}
-/* I tillegg: elementene som står utenfor kort på WT og tekst/klokke/knapper på SP  */
 #viewWT .h1,#viewWT .message,#viewWT .controls,
 #viewSP .big-clock,#viewSP .message,#viewSP .controls{max-width:var(--content-max);margin-inline:auto}
 
+/* 🔧 FIKS: begrens også #spInputs og .picker for å hindre breddehopp */
+#viewSP #spInputs, #viewSP #spInputs .preset-row, #viewSP .picker{max-width:var(--content-max);margin-inline:auto}
+
 /* Hindre lagring/drag av bilder */
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
-.hiddenSoft{opacity:0;height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden;transform:translateY(-4px);transition:opacity .2s,transform .2s,height .2s,margin .2s}
-.hiddenCard{opacity:0;transform:translateY(-6px);height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="topbar">
     <div class="brand" id="brandBox">
-      <div class="burst"></div>
       <img id="logoImg" src="./img/meeting-timer-logo.png?v=2" alt="Meeting Timer logo">
     </div>
     <div class="segmented" role="tablist" aria-label="Modus">
@@ -264,9 +253,11 @@ function showMilestone(name){ const el=$('#msImg'); if(!name){ el.style.display=
 function setSPMessage(txt,ms=null){ $('#msgSP').textContent=txt||''; if(ms){ const id=setTimeout(()=>{$('#msgSP').textContent='';}, ms); spMsgTimers.push(id) } }
 function updateSP(){ const e=spElapsed(); if(spRunning && !spPaused){ if(!spShownStartMsg){ setSPMessage('Vi er i gang! ☺️',10000); spShownStartMsg=true } if(e>=120 && !spShown2min){ setSPMessage('Wow, du er flink! 😍',20000); spShown2min=true } if(!isCountUp()){ const remain=SP_TOTAL-e; if(remain===60 && !shownOneMin){ setSPMessage('Snart ferdig nå! ⏱️'); shownOneMin=true } if(remain<0 && !shownOver){ setSPMessage('Oj, du har gått over tiden. 😅'); shownOver=true } const crossed=th=>(prevRemain!==null && prevRemain>th && remain<=th); if(crossed(1800)) showMilestone('./img/milestone-30.png?v=2'); if(crossed(900)) showMilestone('./img/milestone-15.png?v=2'); if(crossed(600)) showMilestone('./img/milestone-10.png?v=2'); if(crossed(300)) showMilestone('./img/milestone-5.png?v=2'); prevRemain=remain } }
   if(isCountUp()){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(e) } else { const remain=SP_TOTAL-e; if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) } else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) } } drawTimelineSP() }
-function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; setSPMessage('Vi er i gang! ☺️',10000); resetFlags(); $('#spInputs').classList.add('hiddenSoft'); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png?v=2'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png?v=2'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png?v=2'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png?v=2'); else showMilestone('./img/milestone-other.png?v=2') } else { showMilestone('./img/milestone-other.png?v=2') } updateSP() } }
+function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; setSPMessage('Vi er i gang! ☺️',10000); resetFlags(); // $('#spInputs').classList.add('hiddenSoft'); (la inputs være oppe)
+  spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png?v=2'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png?v=2'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png?v=2'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png?v=2'); else showMilestone('./img/milestone-other.png?v=2') } else { showMilestone('./img/milestone-other.png?v=2') } updateSP() } }
 function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
-function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; setSPMessage('Godt jobbet! 👏'); showMilestone('./img/milestone-stop.png?v=2'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); $('#spInputs').classList.remove('hiddenSoft') }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; setSPMessage('Godt jobbet! 👏'); showMilestone('./img/milestone-stop.png?v=2'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); // $('#spInputs').classList.remove('hiddenSoft'); (inputs forblir oppe)
+}
 $('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
 spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); showMilestone(null); $('#msgSP').textContent=''; drawTimelineSP() }));
 let dialValue=Math.min(60,Math.max(0,isNaN(SP_TOTAL)?0:Math.floor(SP_TOTAL/60))); const dial=document.querySelector('.dial'), ticks=document.getElementById('ticks'), thumb=document.getElementById('thumb');
@@ -274,9 +265,6 @@ function renderTicks(){ ticks.innerHTML=''; const start=Math.max(0,dialValue-3),
 function positionThumb(){ const track=dial.querySelector('.track'); const p=dialValue/60; thumb.style.left=((p*100))+'%' }
 function setDial(val){ if(spRunning) return; dialValue=Math.min(60,Math.max(0,val|0)); SP_TOTAL=dialValue*60; localStorage.setItem(PRESET_KEY,String(SP_TOTAL)); markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); renderTicks(); positionThumb(); applyIdleClock(); updatePlayIcon(); showMilestone(null); $('#msgSP').textContent=''; drawTimelineSP() }
 renderTicks(); positionThumb(); (function(){ const track=dial.querySelector('.track'); let drag=false; function setFromClientX(x){ const r=track.getBoundingClientRect(), p=Math.min(1,Math.max(0,(x-r.left)/r.width)); setDial(Math.round(p*60)) } track.addEventListener('pointerdown',e=>{drag=true; track.setPointerCapture(e.pointerId); setFromClientX(e.clientX)}); track.addEventListener('pointermove',e=>{ if(drag) setFromClientX(e.clientX) }); track.addEventListener('pointerup',()=>{drag=false}) })();
-
-/* ===== Logo click: spin 2s + burst/shake ===== */
-(function(){ const brandBox=document.getElementById('brandBox'); const logoImg=document.getElementById('logoImg'); if(!logoImg) return; logoImg.addEventListener('click',()=>{ if(brandBox){ brandBox.classList.remove('explode'); void brandBox.offsetWidth; brandBox.classList.add('explode') } logoImg.classList.remove('shake'); void logoImg.offsetWidth; logoImg.classList.add('shake'); logoImg.classList.remove('spin'); void logoImg.offsetWidth; logoImg.classList.add('spin'); setTimeout(()=>logoImg.classList.remove('spin'),2000); }); document.addEventListener('contextmenu',e=>{ if(e.target && e.target.tagName==='IMG'){ e.preventDefault() }}); document.addEventListener('dragstart',e=>{ if(e.target && e.target.tagName==='IMG'){ e.preventDefault() } }); })();
 
 /* ===== Init ===== */
 (async function init(){ markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); await hydrateOptions(); })();
