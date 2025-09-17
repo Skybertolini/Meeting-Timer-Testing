@@ -17,26 +17,76 @@
   --green:#3fa77a; --pause:#87b9ff; --stop:#ffb766; --press:#cfc7bd; --pill:#fffefb; --radius:16px;
   --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff;
   --phase-review:#ffb766; --phase-outro:#87b9ff;
-  --content-max:560px;
+  --content-max:560px; --dial-width:min(440px,78vw);
 }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;color:var(--ink);background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bot) 100%);font-family:"Nunito",ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.01em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;height:100%}
+body{display:flex;flex-direction:column;min-height:100%}
+.container{flex:1 0 auto;max-width:980px;margin:0 auto;padding:16px 16px 28px;min-width:320px}
+.footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:.9rem;padding:10px 0 14px}
 
-/* Sørg for at både WT og SP holder seg på samme bredde hele tiden */
-#viewWT .h1, #viewWT .message, #viewWT .controls,
-#viewSP .big-clock, #viewSP .message, #viewSP .controls,
-#viewSP .card, #viewSP .timeline-wrap {
-  max-width: var(--content-max);
-  margin-inline: auto;
-}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 18px;min-height:72px}
+.brand{display:flex;align-items:center;gap:12px;position:relative}
+.brand img{height:160px;width:auto;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 8px 24px rgba(70,50,30,.08));transition:transform .25s,filter .25s}
+@media (min-width:768px){ .brand img{height:200px} }
 
-/* Timeline elapsed-linje skal alltid vokse fra venstre til høyre, også i nedtelling */
-#elapsedSP { transform-origin: left center; }
+.segmented{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px;gap:6px;box-shadow:0 8px 24px rgba(70,50,30,.06);flex-shrink:0}
+.segmented button{border:0;background:transparent;padding:10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.segmented button img{width:28px;height:28px;display:block}
+.segmented button.active{background:#efece6;box-shadow:inset 0 3px 10px rgba(50,40,30,.15),0 2px 8px rgba(70,50,30,.05);transform:translateY(1px)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(70,50,30,.06);padding:14px}
+.infoband{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{background:var(--pill);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-weight:600;box-shadow:0 4px 14px rgba(70,50,30,.05);color:#4a5552}
+.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px}
+
+.h1{font-size:1.38rem;font-weight:900;margin:18px 0 10px;text-transform:uppercase}
+.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:2.4em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin-bottom:20px;color:#4a5552;font-size:1.6rem;line-height:1.35}
+
+.timeline-wrap{margin-top:22px; margin-bottom:40px}
+.timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 12px 36px rgba(70,50,30,.05)}
+.slot{position:absolute;top:0;height:100%;opacity:.22}
+#introSlot{background:var(--phase-intro)}
+#reviewSlot{background:var(--phase-review)}
+#outroSlot{background:var(--phase-outro)}
+.para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
+.para-slot.alt{background:var(--tl-green-2)}
+.para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
+.read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
+.elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
+.cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f5f49;left:0%;z-index:3;box-shadow:0 0 0 2px rgba(58,111,82,.10)}
+.big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+#clockWT{font-size:2.6rem; margin-top:36px}
+.over{color:#b54a46!important;text-shadow:none}
+
+.controls{display:flex;gap:12px;margin-top:12px}
+.round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08)}
+.play{background:var(--green);color:#ffffff}
+.pause{background:var(--pause);color:#ffffff}
+.stop{background:var(--stop);color:#2b2a29}
+.round:active{transform:translateY(1px); box-shadow:inset 0 4px 10px rgba(0,0,0,.18)}
+.round:disabled{background:#bfb8af;cursor:not-allowed;box-shadow:none}
+
+.view{display:none}.view.active{display:block}
+.center{text-align:center}
+.preset-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.preset{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(70,50,30,.06);color:#2f5f49;font-size:1.05rem}
+.preset.active{background:#2f5f49;color:#fff}
+
+/* Ensartet smal bredde for kort og timeline på begge sider */
+#viewSP .card,#viewSP .timeline-wrap,#viewWT .card,#viewWT .timeline-wrap{max-width:var(--content-max);margin-inline:auto}
+/* I tillegg: elementene som står utenfor kort på WT og tekst/klokke/knapper på SP  */
+#viewWT .h1,#viewWT .message,#viewWT .controls,
+#viewSP .big-clock,#viewSP .message,#viewSP .controls{max-width:var(--content-max);margin-inline:auto}
+
+/* Hindre lagring/drag av bilder */
+img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="topbar">
     <div class="brand" id="brandBox">
-      <div class="burst"></div>
       <img id="logoImg" src="./img/meeting-timer-logo.png" alt="Meeting Timer logo">
     </div>
     <div class="segmented" role="tablist" aria-label="Modus">
@@ -70,10 +120,10 @@
       </div>
       <div class="big-clock" id="clockSP">00:00</div>
       <div class="message" id="msgSP">Start stoppeklokken eller velg en tid og start nedtelling.</div>
-      <div class="controls">
-        <button id="playSP" class="round play">▶</button>
-        <button id="pauseSP" class="round pause" disabled>❚❚</button>
-        <button id="stopSP" class="round stop" disabled>■</button>
+      <div class="controls" style="justify-content:center;margin-top:12px">
+        <button id="playSP" class="round play" title="Start/Gjenoppta" aria-label="Start"><span id="playSPIcon">▶</span></button>
+        <button id="pauseSP" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
+        <button id="stopSP" class="round stop" title="Stopp/Nullstill" aria-label="Stopp" disabled>■</button>
       </div>
     </div>
   </div>
@@ -93,44 +143,97 @@
     <div class="message" id="message">Velg artikkel for å laste timer.</div>
     <div class="timeline-wrap">
       <div id="timeline" class="timeline">
-        <div id="introSlot" class="slot"></div>
-        <div id="reviewSlot" class="slot"></div>
-        <div id="outroSlot" class="slot"></div>
+        <div id="introSlot" class="slot" style="left:0%;width:0"></div>
+        <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
+        <div id="outroSlot" class="slot" style="right:0;width:0"></div>
         <div id="elapsed" class="elapsed"></div>
         <div id="cursor" class="cursor"></div>
       </div>
       <div class="clock" id="clockWT">00:00</div>
     </div>
     <div class="controls">
-      <button id="playWT" class="round play">▶</button>
-      <button id="pauseWT" class="round pause" disabled>❚❚</button>
-      <button id="stopWT" class="round stop" disabled>■</button>
+      <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
+      <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
+      <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
     </div>
-    <div class="card" style="margin-top:14px">
-      <textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea>
-    </div>
+    <div class="card" style="margin-top:14px"><textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea></div>
   </div>
 
   <div class="footer">Meeting Timer © 2025</div>
 </div>
 
 <script>
-// Juster slik at SP-tidslinjen alltid fylles fra venstre til høyre, også ved nedtelling
-function updateSPProgress(elapsed,total){
-  const e=elapsed, T=total;
-  let p;
-  if(T>0){
-    // beregn fremdrift som brukt tid / total tid
-    p=Math.min(e/T,1);
-  } else {
-    // hvis opp-telling
-    p=Math.min(e/1800,1);
-  }
-  document.getElementById('elapsedSP').style.width=(p*100)+'%';
-}
+/* ===== helpers ===== */
+const TOTAL=3600, INTRO=90, REVIEW=120, OUTRO=90, CONTENT=TOTAL-INTRO-REVIEW-OUTRO;
+const $=s=>document.querySelector(s), pct=s=>s/TOTAL*100;
+const fmt=s=>{s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
 
+/* ===== TALER (SP) ===== */
+const PRESET_KEY='meetingTimer.annetSeconds';
+const spPresets=Array.from(document.querySelectorAll('.preset-row .preset'));
+let spRunning=false, spPaused=false, spStart=null, spAccum=0, spTick=null;
+let SP_TOTAL=parseInt(localStorage.getItem(PRESET_KEY),10); if(isNaN(SP_TOTAL)) SP_TOTAL=0;
+function isCountUp(){ return SP_TOTAL===0 }
+function spFmt(s){s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function spElapsed(){ if(!spRunning) return spAccum; if(spPaused) return spAccum; return spAccum+Math.floor((Date.now()-spStart)/1000) }
+function markPreset(s){ spPresets.forEach(b=>b.classList.toggle('active',parseInt(b.dataset.sec,10)===s)) }
+function updatePlayIcon(){ const iconEl=document.getElementById('playSPIcon'); iconEl.textContent=isCountUp()?'⏱️':'▶' }
+function applyIdleClock(){ $('#clockSP').classList.remove('over'); if(isCountUp()) $('#clockSP').textContent='00:00'; else $('#clockSP').textContent=spFmt(SP_TOTAL) }
+function drawTimelineSP(){
+  const totalScale=isCountUp()?1800:SP_TOTAL;
+  const e=spElapsed();
+  // Fyll ALLTID fra venstre -> høyre. Ved nedtelling bruker vi brukt tid / totaltid.
+  const progress=Math.min(1, (isCountUp()? e/totalScale : e/totalScale));
+  $('#elapsedSP').style.width=(progress*100)+'%';
+  $('#cursorSP').style.left=`calc(${progress*100}% - 1px)`;
+}
+function updateSP(){
+  const e=spElapsed();
+  if(isCountUp()){
+    $('#clockSP').classList.remove('over');
+    $('#clockSP').textContent=spFmt(e);
+  } else {
+    const remain=SP_TOTAL-e;
+    if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) }
+    else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) }
+  }
+  drawTimelineSP();
+}
+function spStartFn(){
+  if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return }
+  if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; updateSP(); }
+}
+function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); updateSP() }
+$('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
+spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP() }));
+let dialValue=Math.min(60,Math.max(0,isNaN(SP_TOTAL)?0:Math.floor(SP_TOTAL/60)));
+
+/* ===== VAKTTÅRN (WT) – minimal kode her (timer/visning lastes fra data) ===== */
+let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
+function resetClockUI(){ if(tickHandle)clearInterval(tickHandle); $('#clockWT').textContent='00:00'; $('#clockWT').classList.remove('over')}
+function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setInterval(tickWT,250) }
+function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
+function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
+function tickWT(){ const e=nowElapsed(); $('#clockWT').textContent=fmt(e); const p=Math.min(e/TOTAL*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`; }
+$('#playWT').addEventListener('click',()=>{ if(started && paused){ paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; return } if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; }});
+$('#pauseWT').addEventListener('click',()=>{ if(!started||paused) return; accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false });
+$('#stopWT').addEventListener('click',()=>{ if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000); started=false; paused=false; stopClock(); accum=0; resetClockUI(); $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; });
+
+/* ===== Tabs ===== */
+const views={WT:$('#viewWT'), SP:$('#viewSP')}, tabs={WT:$('#tabWT'), SP:$('#tabSP')};
+function activateView(k){ Object.entries(views).forEach(([x,el])=>el.classList.toggle('active',x===k)); Object.entries(tabs).forEach(([x,b])=>{b.classList.toggle('active',x===k); b.setAttribute('aria-selected',x===k?'true':'false')}); }
+$('#tabWT').addEventListener('click',()=>activateView('WT'));
+$('#tabSP').addEventListener('click',()=>activateView('SP'));
+
+/* ===== Bilde-fallback og anti-lagre ===== */
 const otherIcon=document.getElementById('otherIcon');
-otherIcon.addEventListener('error',()=>{ otherIcon.src='./img/other-icon.ng' });
+otherIcon.addEventListener('error',()=>{ if(!otherIcon.dataset.triedNg){ otherIcon.src='./img/other-icon.ng'; otherIcon.dataset.triedNg='1' } });
+document.addEventListener('contextmenu',e=>{ if(e.target && e.target.tagName==='IMG'){ e.preventDefault() }});
+document.addEventListener('dragstart',e=>{ if(e.target && e.target.tagName==='IMG'){ e.preventDefault() }});
+
+/* ===== Init ===== */
+(function init(){ markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); })();
 </script>
 </body>
 </html>
