@@ -14,7 +14,7 @@
 :root{
   --bg-top:#f8f7f5; --bg-bot:#f3f2ef; --ink:#2b3432; --muted:#8b827a;
   --card:rgba(255,255,252,.98); --border:rgba(40,30,20,.10);
-  --green:#3fa77a; --pause:#87b9ff; --stop:#ffb766; --press:#cfc7bd; --pill:#fffefb; --radius:16px;
+  --green:#3fa77a; --pause:#87b9ff; --stop:#ffb766; --pill:#fffefb; --radius:16px;
   --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff;
   --phase-review:#ffb766; --phase-outro:#87b9ff;
   --content-max:560px; --dial-width:min(440px,78vw);
@@ -26,8 +26,7 @@ body{display:flex;flex-direction:column;min-height:100%}
 .footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:.9rem;padding:10px 0 14px}
 
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 18px;min-height:72px}
-.brand{display:flex;align-items:center;gap:12px;position:relative}
-.brand img{height:160px;width:auto;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 8px 24px rgba(70,50,30,.08));transition:transform .25s,filter .25s}
+.brand img{height:160px;width:auto;cursor:pointer;-webkit-user-drag:none;user-select:none}
 @media (min-width:768px){ .brand img{height:200px} }
 
 .segmented{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px;gap:6px;box-shadow:0 8px 24px rgba(70,50,30,.06);flex-shrink:0}
@@ -52,9 +51,13 @@ body{display:flex;flex-direction:column;min-height:100%}
 .para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
 .para-slot.alt{background:var(--tl-green-2)}
 .para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
+/* 📖 på les-avsnitt */
 .read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
+
+/* progress/cursor */
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 .cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f5f49;left:0%;z-index:3;box-shadow:0 0 0 2px rgba(58,111,82,.10)}
+
 .big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65)}
 #clockWT{font-size:2.6rem; margin-top:36px}
 .over{color:#b54a46!important;text-shadow:none}
@@ -111,14 +114,16 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
           <button class="preset" data-sec="900">15</button>
           <button class="preset" data-sec="1800">30</button>
         </div>
-      </div>
-      <div class="timeline-wrap">
-        <div id="timelineSP" class="timeline">
-          <div id="elapsedSP" class="elapsed"></div>
-          <div id="cursorSP" class="cursor"></div>
+        <div class="picker" id="minuteSlider">
+          <div class="dial">
+            <div class="ticks" id="ticks"></div>
+            <div class="track"><div class="thumb" id="thumb"></div></div>
+          </div>
         </div>
       </div>
-      <div class="big-clock" id="clockSP">00:00</div>
+      <div class="timeline-wrap"><div id="timelineSP" class="timeline"><div id="elapsedSP" class="elapsed"></div><div id="cursorSP" class="cursor"></div></div></div>
+      <div class="big-clock" id="clockSP" style="margin-top:12px">00:00</div>
+      <img id="msImg" class="milestone-img" alt="" style="display:none"/>
       <div class="message" id="msgSP">Start stoppeklokken eller velg en tid og start nedtelling.</div>
       <div class="controls" style="justify-content:center;margin-top:12px">
         <button id="playSP" class="round play" title="Start/Gjenoppta" aria-label="Start"><span id="playSPIcon">▶</span></button>
@@ -165,66 +170,139 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 <script>
 /* ===== helpers ===== */
 const TOTAL=3600, INTRO=90, REVIEW=120, OUTRO=90, CONTENT=TOTAL-INTRO-REVIEW-OUTRO;
+const WPM=150, SEC_PER_Q=10, SEC_PER_READ=30, AB_BONUS=30;
 const $=s=>document.querySelector(s), pct=s=>s/TOTAL*100;
 const fmt=s=>{s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function isoMonday(d=new Date()){ const x=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const w=(x.getUTCDay()+6)%7; x.setUTCDate(x.getUTCDate()-w); return x.toISOString().slice(0,10); }
+function addDaysISO(iso,days){ const d=new Date(iso); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 
-/* ===== TALER (SP) ===== */
-const PRESET_KEY='meetingTimer.annetSeconds';
-const spPresets=Array.from(document.querySelectorAll('.preset-row .preset'));
-let spRunning=false, spPaused=false, spStart=null, spAccum=0, spTick=null;
-let SP_TOTAL=parseInt(localStorage.getItem(PRESET_KEY),10); if(isNaN(SP_TOTAL)) SP_TOTAL=0;
-function isCountUp(){ return SP_TOTAL===0 }
-function spFmt(s){s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
-function spElapsed(){ if(!spRunning) return spAccum; if(spPaused) return spAccum; return spAccum+Math.floor((Date.now()-spStart)/1000) }
-function markPreset(s){ spPresets.forEach(b=>b.classList.toggle('active',parseInt(b.dataset.sec,10)===s)) }
-function updatePlayIcon(){ const iconEl=document.getElementById('playSPIcon'); iconEl.textContent=isCountUp()?'⏱️':'▶' }
-function applyIdleClock(){ $('#clockSP').classList.remove('over'); if(isCountUp()) $('#clockSP').textContent='00:00'; else $('#clockSP').textContent=spFmt(SP_TOTAL) }
-function drawTimelineSP(){
-  const totalScale=isCountUp()?1800:SP_TOTAL;
-  const e=spElapsed();
-  // Fyll ALLTID fra venstre -> høyre. Ved nedtelling bruker vi brukt tid / totaltid.
-  const progress=Math.min(1, (isCountUp()? e/totalScale : e/totalScale));
-  $('#elapsedSP').style.width=(progress*100)+'%';
-  $('#cursorSP').style.left=`calc(${progress*100}% - 1px)`;
-}
-function updateSP(){
-  const e=spElapsed();
-  if(isCountUp()){
-    $('#clockSP').classList.remove('over');
-    $('#clockSP').textContent=spFmt(e);
-  } else {
-    const remain=SP_TOTAL-e;
-    if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) }
-    else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) }
-  }
-  drawTimelineSP();
-}
-function spStartFn(){
-  if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return }
-  if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; updateSP(); }
-}
-function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
-function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); updateSP() }
-$('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
-spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP() }));
-let dialValue=Math.min(60,Math.max(0,isNaN(SP_TOTAL)?0:Math.floor(SP_TOTAL/60)));
-
-/* ===== VAKTTÅRN (WT) – minimal kode her (timer/visning lastes fra data) ===== */
+/* ===== WT state ===== */
+let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
+let reads=0, readSet=new Set();
 let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
+
+/* ===== data load ===== */
+async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
+async function loadYear(y){ for(const p of [`data/no-${y}.json`,`Data/no-${y}.json`,`data/no-${y}`,`Data/no-${y}`]){ try{ return await fetchJSON(p+`?v=${Date.now().toString().slice(7)}`);}catch{} } throw 0; }
+async function hydrateOptions(){ const today=new Date(); const year=today.getFullYear(); let items=[]; try{ const list=[]; for(const yy of [year,year+1]){ try{ list.push(await loadYear(yy)); }catch{} } items=list.flatMap(p=>Array.isArray(p)?p:(p?.items||[])); }catch{}
+  const sel=$('#weekSel'); sel.innerHTML=''; const cur=isoMonday(today), prev=addDaysISO(cur,-7), nexts=[7,14,21].map(d=>addDaysISO(cur,d)); const want=[prev,cur,...nexts]; const picked=(items||[]).filter(it=>want.includes(it.week_start)).sort((a,b)=>a.week_start.localeCompare(b.week_start)); if(!picked.length){ const o=document.createElement('option'); o.textContent='Ingen artikler funnet (sjekk /data)'; o.disabled=true;o.selected=true; sel.appendChild(o); $('#message').textContent='Ingen data lastet.'; return; } picked.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); }); const idx=picked.findIndex(x=>x.week_start===cur); sel.selectedIndex = idx>-1 ? idx : 0; useItem(JSON.parse(sel.value)); }
+function useItem(it){
+  $('#articleTitle').textContent=it.title||'—';
+  totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
+  reads = it.reads|0;
+  const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
+  readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : []));
+  paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false}));
+  if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
+  $('#pillParas').textContent=`Avsnitt: ${totalParagraphs}`;
+  $('#pillReads').textContent=`📖 Les-skriftsteder: ${readSet.size}`;
+  computeAllocation();
+  drawTimeline();
+  resetClockUI();
+  $('#message').textContent='Klar til start. Trykk ▶ når du er klar.';
+  $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true;
+}
+
+/* ===== allocation ===== */
+function computeAllocation(){
+  if(totalParagraphs<=0){perParagraph=[];cumulative=[];return;}
+  const wps=WPM/60;
+  const raw=Array.from({length:totalParagraphs},(_,i)=>{
+    const p=paras[i]||{words:0,q:1,les:0,hasAB:false};
+    let s=(p.words||0)/wps + (p.q||0)*SEC_PER_Q + (p.les||0)*SEC_PER_READ + (p.hasAB?AB_BONUS:0);
+    s=Math.max(5,s);
+    const firstN=Math.min(5,totalParagraphs), lastN=Math.min(5,totalParagraphs);
+    if(i<firstN) s*=0.8; if(i>=totalParagraphs-lastN) s*=1.2;
+    return s;
+  });
+  const scale=CONTENT/((raw.reduce((a,b)=>a+b,0))||1);
+  perParagraph=raw.map(x=>x*scale);
+  cumulative=[];
+  let acc=INTRO; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
+}
+
+/* ===== timeline (WT) ===== */
+function drawTimeline(){
+  const t=$('#timeline'); if(!t) return;
+  Array.from(t.querySelectorAll('.para-slot')).forEach(n=>n.remove());
+  $('#introSlot').style.left='0%'; $('#introSlot').style.width=pct(INTRO).toFixed(4)+'%';
+  $('#outroSlot').style.right='0%'; $('#outroSlot').style.width=pct(OUTRO).toFixed(4)+'%';
+  $('#reviewSlot').style.right=pct(OUTRO).toFixed(4)+'%'; $('#reviewSlot').style.width=pct(REVIEW).toFixed(4)+'%';
+  if(totalParagraphs<=0){$('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; return;}
+  const tlWidth=t.clientWidth||t.getBoundingClientRect().width||1;
+  const pxPerSec=tlWidth/TOTAL;
+  for(let i=1;i<=totalParagraphs;i++){
+    const leftP=pct(cumulative[i-1]), widthP=pct(perParagraph[i-1]);
+    const slot=document.createElement('div');
+    slot.className='para-slot'+(i%2===0?' alt':'');
+    slot.style.left=leftP+'%'; slot.style.width=widthP+'%';
+    const slotPx=perParagraph[i-1]*pxPerSec;
+    const lbl=document.createElement('div'); lbl.textContent=String(i);
+    const fs=Math.max(9,Math.min(14,Math.floor(slotPx*0.33))); lbl.style.fontSize=fs+'px';
+    slot.appendChild(lbl);
+    if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
+    slot.addEventListener('click',()=>{
+      if(started && !paused) return;
+      const target=cumulative[i-1];
+      accum=Math.min(Math.round(target), TOTAL-OUTRO-REVIEW);
+      const pNow=Math.min(accum/TOTAL*100,100);
+      $('#elapsed').style.width=pNow+'%';
+      $('#cursor').style.left=`calc(${pNow}% - 1px)`;
+      $('#clockWT').textContent=fmt(accum);
+      $('#clockWT').classList.toggle('over',accum>=TOTAL);
+      $('#message').textContent=`Avsnitt ${i}${readSet.has(i)?' + Les-skriftsted':''}`;
+    });
+    t.insertBefore(slot,$('#elapsed'));
+  }
+  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+}
+
+/* ===== WT klokke ===== */
 function resetClockUI(){ if(tickHandle)clearInterval(tickHandle); $('#clockWT').textContent='00:00'; $('#clockWT').classList.remove('over')}
 function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setInterval(tickWT,250) }
 function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
 function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
-function tickWT(){ const e=nowElapsed(); $('#clockWT').textContent=fmt(e); const p=Math.min(e/TOTAL*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`; }
-$('#playWT').addEventListener('click',()=>{ if(started && paused){ paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; return } if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; }});
+function tickWT(){
+  const e=nowElapsed();
+  $('#clockWT').textContent=fmt(e);
+  const p=Math.min(e/TOTAL*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`;
+}
+$('#playWT').addEventListener('click',()=>{
+  if(started && paused){ paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; return }
+  if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; }
+});
 $('#pauseWT').addEventListener('click',()=>{ if(!started||paused) return; accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false });
 $('#stopWT').addEventListener('click',()=>{ if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000); started=false; paused=false; stopClock(); accum=0; resetClockUI(); $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; });
 
 /* ===== Tabs ===== */
 const views={WT:$('#viewWT'), SP:$('#viewSP')}, tabs={WT:$('#tabWT'), SP:$('#tabSP')};
-function activateView(k){ Object.entries(views).forEach(([x,el])=>el.classList.toggle('active',x===k)); Object.entries(tabs).forEach(([x,b])=>{b.classList.toggle('active',x===k); b.setAttribute('aria-selected',x===k?'true':'false')}); }
+function activateView(k){ Object.entries(views).forEach(([x,el])=>el.classList.toggle('active',x===k)); Object.entries(tabs).forEach(([x,b])=>{b.classList.toggle('active',x===k); b.setAttribute('aria-selected',x===k?'true':'false')}); if(k==='WT') requestAnimationFrame(drawTimeline) }
 $('#tabWT').addEventListener('click',()=>activateView('WT'));
 $('#tabSP').addEventListener('click',()=>activateView('SP'));
+
+/* ===== TALER (SP) – logikk + milestones ===== */
+const PRESET_KEY='meetingTimer.annetSeconds'; const spPresets=Array.from(document.querySelectorAll('.preset-row .preset'));
+let spRunning=false, spPaused=false, spStart=null, spAccum=0, spTick=null;
+let SP_TOTAL=parseInt(localStorage.getItem(PRESET_KEY),10); if(isNaN(SP_TOTAL)) SP_TOTAL=0;
+let shownOneMin=false, shownOver=false, prevRemain=null; let spMsgTimers=[]; let spShownStartMsg=false, spShown2min=false;
+function isCountUp(){ return SP_TOTAL===0 }
+function spFmt(s){s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function spElapsed(){ if(!spRunning) return spAccum; if(spPaused) return spAccum; return spAccum+Math.floor((Date.now()-spStart)/1000) }
+function markPreset(s){ spPresets.forEach(b=>b.classList.toggle('active',parseInt(b.dataset.sec,10)===s)) }
+function updatePlayIcon(){ const iconEl=document.getElementById('playSPIcon'); if(iconEl) iconEl.textContent=isCountUp()?'⏱️':'▶' }
+function applyIdleClock(){ $('#clockSP').classList.remove('over'); if(isCountUp()) $('#clockSP').textContent='00:00'; else $('#clockSP').textContent=spFmt(SP_TOTAL) }
+function drawTimelineSP(){ const totalScale=isCountUp()?1800:SP_TOTAL; const e=spElapsed(); const progress=Math.min(1, e/totalScale); $('#elapsedSP').style.width=(progress*100)+'%'; $('#cursorSP').style.left=`calc(${progress*100}% - 1px)` }
+function showMilestone(name){ const el=$('#msImg'); if(!el) return; if(!name){ el.style.display='none'; el.classList.remove('show'); el.removeAttribute('src'); return } const onerr=()=>{ el.style.display='none'; el.classList.remove('show'); el.onerror=null }; el.onerror=onerr; el.onload=()=>{ el.style.display='block'; requestAnimationFrame(()=>el.classList.add('show')) }; el.src=name }
+function setSPMessage(txt,ms=null){ $('#msgSP').textContent=txt||''; if(ms){ const id=setTimeout(()=>{$('#msgSP').textContent='';}, ms); spMsgTimers.push(id) } }
+function updateSP(){ const e=spElapsed(); if(spRunning && !spPaused){ if(!spShownStartMsg){ setSPMessage('Vi er i gang! ☺️',10000); spShownStartMsg=true } if(e>=120 && !spShown2min){ setSPMessage('Wow, du er flink! 😍',20000); spShown2min=true } if(!isCountUp()){ const remain=SP_TOTAL-e; if(remain===60 && !shownOneMin){ setSPMessage('Snart ferdig nå! ⏱️'); shownOneMin=true } if(remain<0 && !shownOver){ setSPMessage('Oj, du har gått over tiden. 😅'); shownOver=true } const crossed=th=>(prevRemain!==null && prevRemain>th && remain<=th); if(crossed(1800)) showMilestone('./img/milestone-30.png'); if(crossed(900)) showMilestone('./img/milestone-15.png'); if(crossed(600)) showMilestone('./img/milestone-10.png'); if(crossed(300)) showMilestone('./img/milestone-5.png'); prevRemain=remain } }
+  if(isCountUp()){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(e) } else { const remain=SP_TOTAL-e; if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) } else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) } }
+  drawTimelineSP() }
+function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; setSPMessage('Vi er i gang! ☺️',10000); spMsgTimers.forEach(t=>clearTimeout(t)); spMsgTimers=[]; spShownStartMsg=false; spShown2min=false; shownOneMin=false; shownOver=false; prevRemain=null; spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png'); else showMilestone('./img/milestone-other.png') } else { showMilestone('./img/milestone-other.png') } updateSP() } }
+function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; setSPMessage('Godt jobbet! 👏'); showMilestone('./img/milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); }
+$('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
+spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); showMilestone(null); drawTimelineSP() }));
+let dialValue=Math.min(60,Math.max(0,isNaN(SP_TOTAL)?0:Math.floor(SP_TOTAL/60)));
 
 /* ===== Bilde-fallback og anti-lagre ===== */
 const otherIcon=document.getElementById('otherIcon');
@@ -233,7 +311,11 @@ document.addEventListener('contextmenu',e=>{ if(e.target && e.target.tagName==='
 document.addEventListener('dragstart',e=>{ if(e.target && e.target.tagName==='IMG'){ e.preventDefault() }});
 
 /* ===== Init ===== */
-(function init(){ markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); })();
+(async function init(){
+  markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1);
+  applyIdleClock(); updatePlayIcon(); drawTimelineSP();
+  await hydrateOptions();
+})();
 </script>
 </body>
 </html>
