@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>Meeting Timer</title>
+<title>Meeting Timer (Én side)</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f8f7f5">
 <link rel="icon" href="./img/favicon.png?v=2">
@@ -14,12 +14,13 @@
 :root{
   --bg-top:#f8f7f5; --bg-bot:#f3f2ef; --ink:#2b3432; --muted:#8b827a;
   --card:rgba(255,255,252,.98); --border:rgba(40,30,20,.10);
-  --green:#6ecf9e; /* lysere grønn */
-  --pause:#87b9ff; /* intro-blå */
-  --stop:#ffb766;  /* rep.oransje */
+  --green:#6ecf9e; /* Play (lysere grønn) */
+  --phase-intro:#87b9ff; /* Blå (intro & Pause) */
+  --phase-review:#ffb766; /* Oransje (rep.spm & Stop) */
+  --phase-outro:#87b9ff;
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
-  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff; --phase-review:#ffb766; --phase-outro:#87b9ff;
-  --content-max:640px; --preset-gap:8px; --preset-pad:10px 14px; --preset-size:1.05rem; --dial-width:min(440px,78vw);
+  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
+  --content-max:640px; --dial-width:min(440px,78vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;color:var(--ink);background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bot) 100%);font-family:"Nunito",ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.01em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;height:100%}
@@ -39,21 +40,23 @@ body{display:flex;flex-direction:column;min-height:100%}
 .logo-spin{animation:spin2s 2s linear}
 .logo-shake{animation:shake .4s ease-in-out}
 
-.segmented{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px;gap:6px;box-shadow:0 8px 24px rgba(70,50,30,.06);flex-shrink:0}
-.segmented button{border:0;background:transparent;padding:10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.segmented button img{width:28px;height:28px;display:block}
-.segmented button.active{background:#efece6;box-shadow:inset 0 3px 10px rgba(50,40,30,.15),0 2px 8px rgba(70,50,30,.05);transform:translateY(1px)}
+/* Enkel knapp til Timer */
+.timer-btn{border:1px solid var(--border);background:var(--card);border-radius:999px;padding:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(70,50,30,.06)}
+.timer-btn img{width:28px;height:28px;display:block}
+.timer-btn:active{transform:translateY(1px)}
 
 /* Cards/pills/select */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(70,50,30,.06);padding:14px}
-.infoband{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.infoband{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:var(--content-max);margin-inline:auto}
 .pill{background:var(--pill);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-weight:600;box-shadow:0 4px 14px rgba(70,50,30,.05);color:#4a5552}
 .select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px}
 
-.h1{font-size:1.38rem;font-weight:900;margin:18px 0 10px;text-transform:uppercase}
-.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:2.4em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin-bottom:20px;color:#4a5552;font-size:1.8rem;line-height:1.4}
+/* Headings/messages */
+.h1{font-size:1.38rem;font-weight:900;margin:18px auto 10px;max-width:var(--content-max);text-transform:uppercase}
+.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:2.4em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin:0 auto 20px;max-width:var(--content-max);color:#4a5552;font-size:1.8rem;line-height:1.4}
 
-.timeline-wrap{margin-top:22px; margin-bottom:40px}
+/* Timeline (WT & SP) */
+.timeline-wrap{margin-top:22px; margin-bottom:40px; max-width:var(--content-max); margin-inline:auto}
 .timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 12px 36px rgba(70,50,30,.05)}
 .slot{position:absolute;top:0;height:100%;opacity:.22}
 #introSlot{background:var(--phase-intro)}
@@ -65,23 +68,23 @@ body{display:flex;flex-direction:column;min-height:100%}
 .read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png?v=2') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 .cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f5f49;left:0%;z-index:3;box-shadow:0 0 0 2px rgba(58,111,82,.10)}
-.big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65);max-width:var(--content-max);margin-inline:auto}
 #clockWT{font-size:2.75rem; margin-top:40px}
 .over{color:#b54a46!important;text-shadow:none}
 
-.controls{display:flex;gap:12px;margin-top:12px}
+.controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08)}
-.play{background:var(--green);color:#fff}
-.pause{background:var(--pause);color:#fff}
-.stop{background:var(--stop);color:#2b2a29}
+.play{background:var(--green)}
+.pause{background:var(--phase-intro); color:#ffffff}
+.stop{background:var(--phase-review); color:#2b2a29}
 .round:disabled{background:#bfb8af;cursor:not-allowed;box-shadow:none}
 .round.pressed{background:var(--press)!important;color:#2b2a29!important;box-shadow:inset 0 3px 8px rgba(50,40,30,.18);transform:translateY(1px)}
 .round:active{background:var(--press)!important;color:#2b2a29!important;transform:translateY(1px)}
 
-.view{display:none}.view.active{display:block}
-.center{text-align:center}
-.preset-row{display:flex;gap:var(--preset-gap);justify-content:center;flex-wrap:wrap}
-.preset{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:var(--preset-pad);font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(70,50,30,.06);color:#2f5f49;font-size:var(--preset-size)}
+/* Presets & slider */
+#spInputs{max-width:var(--content-max);margin:0 auto 6px}
+.preset-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.preset{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(70,50,30,.06);color:#2f5f49;font-size:1.05rem}
 .preset.active{background:#2f5f49;color:#fff}
 .picker{margin-top:12px;display:flex;gap:14px;justify-content:center;align-items:center}
 .dial{position:relative;width:var(--dial-width);height:64px}
@@ -95,16 +98,11 @@ body{display:flex;flex-direction:column;min-height:100%}
 .milestone-img{max-width:40%;height:auto;margin:12px auto;display:block;background:none;padding:0;border:none;box-shadow:none;opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s}
 .milestone-img.show{opacity:1;transform:translateY(0)}
 
-/* Ensartet smal bredde for kort og timeline på begge sider */
-#viewSP .card,#viewSP .timeline-wrap,#viewWT .card,#viewWT .timeline-wrap{max-width:var(--content-max);margin-inline:auto}
-#viewWT .h1,#viewWT .message,#viewWT .controls,
-#viewSP .big-clock,#viewSP .message,#viewSP .controls{max-width:var(--content-max);margin-inline:auto}
-/* Stabiliser hele SP-layouten: begrens alle direkte barn */
-#viewSP{display:block}
-#viewSP > *{max-width:var(--content-max);margin-inline:auto}
-
 /* Hindre lagring/drag av bilder */
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
+
+/* Ankermargin pga. sticky topbars på noen enheter */
+#timerSection{scroll-margin-top:20px}
 </style>
 </head>
 <body>
@@ -113,20 +111,46 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
     <div class="brand" id="brandBox">
       <img id="logoImg" src="./img/meeting-timer-logo.png?v=2" alt="Meeting Timer logo">
     </div>
-    <div class="segmented" role="tablist" aria-label="Modus">
-      <button id="tabWT" class="active" role="tab" aria-selected="true" title="Vakttårn">
-        <img src="./img/watchtower-icon.png?v=2" alt="">
-      </button>
-      <button id="tabSP" role="tab" aria-selected="false" title="Taler">
-        <img id="otherIcon" src="./img/other-icon.png?v=2" alt="">
-      </button>
-    </div>
+    <button id="goTimer" class="timer-btn" title="Gå til Timer" aria-label="Gå til Timer">
+      <img src="./img/other-icon.png?v=2" alt="Timer">
+    </button>
   </div>
 
-  <!-- TALER -->
-  <div id="viewSP" class="view">
-    <div class="card" id="spCard">
-      <div style="font-weight:1000;color:#4a5552;margin:2px 0 8px">TIMER FOR MIDTUKEMØTET</div>
+  <!-- VAKTTÅRN (øverst) -->
+  <div id="wtControlsCard" class="card infoband">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="weekSel" class="select" aria-label="Artikkel"><option>Laster …</option></select>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="pill" id="pillParas">Avsnitt: 0</div>
+      <div class="pill" id="pillReads">📖 Les-skriftsteder: 0</div>
+    </div>
+  </div>
+  <div class="h1" id="articleTitle">—</div>
+  <div class="message" id="message">Velg artikkel for å laste timer.</div>
+  <div class="timeline-wrap">
+    <div id="timeline" class="timeline">
+      <div id="introSlot" class="slot" style="left:0%;width:0"></div>
+      <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
+      <div id="outroSlot" class="slot" style="right:0;width:0"></div>
+      <div id="elapsed" class="elapsed"></div>
+      <div id="cursor" class="cursor"></div>
+    </div>
+    <div class="clock" id="clockWT">00:00</div>
+  </div>
+  <div class="controls">
+    <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
+    <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
+    <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
+  </div>
+  <div class="card" style="margin-top:14px;max-width:var(--content-max);margin-inline:auto">
+    <textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea>
+  </div>
+
+  <!-- TIMER (Talerdel) under notatfeltet -->
+  <section id="timerSection" aria-label="Timer" style="margin-top:24px">
+    <div class="h1" style="text-transform:none">Timer for taler</div>
+    <div class="card" id="spCard" style="max-width:var(--content-max);margin-inline:auto">
       <div id="spInputs" style="margin-bottom:6px">
         <div class="preset-row">
           <button class="preset" data-sec="0">0</button>
@@ -152,38 +176,7 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
         <button id="stopSP" class="round stop" title="Stopp/Nullstill" aria-label="Stopp" disabled>■</button>
       </div>
     </div>
-  </div>
-
-  <!-- VAKTTÅRN -->
-  <div id="viewWT" class="view active">
-    <div id="wtControlsCard" class="card infoband" style="justify-content:space-between;gap:12px">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <select id="weekSel" class="select" aria-label="Artikkel"><option>Laster …</option></select>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <div class="pill" id="pillParas">Avsnitt: 0</div>
-        <div class="pill" id="pillReads">📖 Les-skriftsteder: 0</div>
-      </div>
-    </div>
-    <div class="h1" id="articleTitle">—</div>
-    <div class="message" id="message">Velg artikkel for å laste timer.</div>
-    <div class="timeline-wrap">
-      <div id="timeline" class="timeline">
-        <div id="introSlot" class="slot" style="left:0%;width:0"></div>
-        <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
-        <div id="outroSlot" class="slot" style="right:0;width:0"></div>
-        <div id="elapsed" class="elapsed"></div>
-        <div id="cursor" class="cursor"></div>
-      </div>
-      <div class="clock" id="clockWT">00:00</div>
-    </div>
-    <div class="controls">
-      <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
-      <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
-      <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
-    </div>
-    <div class="card" style="margin-top:14px"><textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea></div>
-  </div>
+  </section>
 
   <div class="footer">Meeting Timer © 2025</div>
 </div>
@@ -233,15 +226,7 @@ $('#playWT').addEventListener('click',()=>{ if(started && paused){ paused=false;
 $('#pauseWT').addEventListener('click',()=>{ if(!started||paused) return; accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); setWTMessage('Pause'); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false });
 $('#stopWT').addEventListener('click',()=>{ if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000); started=false; paused=false; stopClock(); const e=accum; if(e>=3300 && e<3600) setWTMessage('Godt jobbet, du klarte det på under en time! 🥳'); else if(e>=3600 && e<3720) setWTMessage('Nesten helt perfekt! 🤩'); else if(e>=3720 && e<3900) setWTMessage('Litt over, neste gang klarer du enda bedre. 👍'); else if(e>=3900 && e<4200) setWTMessage('Aj aj, her har du litt å jobbe med. 😅'); else setWTMessage(`Ferdig – totalt ${fmt(e)}`); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; accum=0; resetClockUI(); $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; });
 
-/* ===== Tabs ===== */
-const views={WT:$('#viewWT'), SP:$('#viewSP')}, tabs={WT:$('#tabWT'), SP:$('#tabSP')};
-function activateView(k){ Object.entries(views).forEach(([x,el])=>el.classList.toggle('active',x===k)); Object.entries(tabs).forEach(([x,b])=>{b.classList.toggle('active',x===k); b.setAttribute('aria-selected',x===k?'true':'false')}); if(k==='WT') requestAnimationFrame(drawTimeline) }
-$('#tabWT').addEventListener('click',()=>activateView('WT'));
-$('#tabSP').addEventListener('click',()=>activateView('SP'));
-const otherIcon=document.getElementById('otherIcon'); otherIcon.addEventListener('error',()=>{ if(!otherIcon.dataset.triedNg){ otherIcon.src='./img/other-icon.ng?v=2'; otherIcon.dataset.triedNg='1' } });
-$('#weekSel').addEventListener('change',()=>{ const v=$('#weekSel').value; if(!v) return; useItem(JSON.parse(v)) });
-
-/* ===== TALER ===== */
+/* ===== TIMER (tidl. SP) ===== */
 const PRESET_KEY='meetingTimer.annetSeconds'; const spPresets=Array.from(document.querySelectorAll('.preset-row .preset'));
 let spRunning=false, spPaused=false, spStart=null, spAccum=0, spTick=null;
 let SP_TOTAL=parseInt(localStorage.getItem(PRESET_KEY),10); if(isNaN(SP_TOTAL)) SP_TOTAL=0;
@@ -253,7 +238,6 @@ function markPreset(s){ spPresets.forEach(b=>b.classList.toggle('active',parseIn
 function updatePlayIcon(){ const iconEl=document.getElementById('playSPIcon'); iconEl.textContent=isCountUp()?'⏱️':'▶' }
 function applyIdleClock(){ $('#clockSP').classList.remove('over'); if(isCountUp()) $('#clockSP').textContent='00:00'; else $('#clockSP').textContent=spFmt(SP_TOTAL) }
 function resetFlags(){ shownOneMin=false; shownOver=false; prevRemain=null; spMsgTimers.forEach(t=>clearTimeout(t)); spMsgTimers=[]; spShownStartMsg=false; spShown2min=false }
-/* progress alltid fra venstre -> høyre */
 function drawTimelineSP(){ const totalScale=isCountUp()?1800:SP_TOTAL; const e=spElapsed(); const progress=Math.min(1, e/totalScale); $('#elapsedSP').style.width=(progress*100)+'%'; $('#cursorSP').style.left=`calc(${progress*100}% - 1px)` }
 function showMilestone(name){ const el=$('#msImg'); if(!name){ el.style.display='none'; el.classList.remove('show'); el.removeAttribute('src'); return } const onerr=()=>{ el.style.display='none'; el.classList.remove('show'); el.onerror=null }; el.onerror=onerr; el.onload=()=>{ el.style.display='block'; requestAnimationFrame(()=>el.classList.add('show')) }; el.src=name }
 function setSPMessage(txt,ms=null){ $('#msgSP').textContent=txt||''; if(ms){ const id=setTimeout(()=>{$('#msgSP').textContent='';}, ms); spMsgTimers.push(id) } }
@@ -273,6 +257,9 @@ renderTicks(); positionThumb(); (function(){ const track=dial.querySelector('.tr
 /* ===== Logo: spin 2s + shake ===== */
 (function(){ const logo=document.getElementById('logoImg'); if(!logo) return; logo.addEventListener('click',()=>{ logo.classList.remove('logo-spin'); logo.classList.remove('logo-shake'); void logo.offsetWidth; // restart animations
   logo.classList.add('logo-spin'); setTimeout(()=>{ logo.classList.remove('logo-spin'); logo.classList.add('logo-shake'); setTimeout(()=>logo.classList.remove('logo-shake'),450); },2000); });})();
+
+/* ===== Go to Timer button ===== */
+$('#goTimer').addEventListener('click',()=>{ document.getElementById('timerSection').scrollIntoView({behavior:'smooth'}) });
 
 /* ===== Init ===== */
 (async function init(){ markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); await hydrateOptions(); })();
