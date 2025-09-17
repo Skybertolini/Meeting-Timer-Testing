@@ -20,7 +20,7 @@
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
   --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff;
   --phase-review:#ffb766; --phase-outro:#87b9ff;
-  --content-max:640px; --preset-gap:8px; --preset-pad:10px 14px; --preset-size:1.05rem; --dial-width:min(440px,78vw);
+  --content-max:560px; --preset-gap:8px; --preset-pad:10px 14px; --preset-size:1.05rem; --dial-width:min(440px,78vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;color:var(--ink);background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bot) 100%);font-family:"Nunito",ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.01em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;height:100%}
@@ -117,6 +117,9 @@ body{display:flex;flex-direction:column;min-height:100%}
 #viewSP .card,#viewSP .timeline-wrap,#viewWT .card,#viewWT .timeline-wrap{max-width:var(--content-max);margin-inline:auto}
 #viewWT .select{min-width:180px}
 @media (max-width:420px){#viewWT .select{min-width:140px}}
+/* === Alternativ A: smal layout også for løse elementer === */
+#viewWT .h1, #viewWT .message, #viewWT .controls { max-width: var(--content-max); margin-inline: auto; }
+#viewSP .big-clock, #viewSP .message, #viewSP .controls { max-width: var(--content-max); margin-inline: auto; }
 /* Hindre lagring/drag av bilder */
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 </style>
@@ -180,25 +183,22 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
         <div class="pill" id="pillReads">📖 Les-skriftsteder: 0</div>
       </div>
     </div>
-    <!-- ALT. B: all WT-innhold i én card (wtShell) -->
-    <div id="wtShell" class="card">
-      <div class="h1" id="articleTitle">—</div>
-      <div class="message" id="message">Velg artikkel for å laste timer.</div>
-      <div class="timeline-wrap">
-        <div id="timeline" class="timeline">
-          <div id="introSlot" class="slot" style="left:0%;width:0"></div>
-          <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
-          <div id="outroSlot" class="slot" style="right:0;width:0"></div>
-          <div id="elapsed" class="elapsed"></div>
-          <div id="cursor" class="cursor"></div>
-        </div>
-        <div class="clock" id="clockWT">00:00</div>
+    <div class="h1" id="articleTitle">—</div>
+    <div class="message" id="message">Velg artikkel for å laste timer.</div>
+    <div class="timeline-wrap">
+      <div id="timeline" class="timeline">
+        <div id="introSlot" class="slot" style="left:0%;width:0"></div>
+        <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
+        <div id="outroSlot" class="slot" style="right:0;width:0"></div>
+        <div id="elapsed" class="elapsed"></div>
+        <div id="cursor" class="cursor"></div>
       </div>
-      <div class="controls">
-        <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
-        <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
-        <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
-      </div>
+      <div class="clock" id="clockWT">00:00</div>
+    </div>
+    <div class="controls">
+      <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
+      <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
+      <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
     </div>
     <div class="card" style="margin-top:14px"><textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea></div>
   </div>
