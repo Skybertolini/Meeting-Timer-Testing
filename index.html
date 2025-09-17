@@ -6,6 +6,7 @@
 <title>Meeting Timer</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f8f7f5">
+<link rel="icon" href="./img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -13,8 +14,12 @@
 :root{
   --bg-top:#f8f7f5; --bg-bot:#f3f2ef; --ink:#2b3432; --muted:#8b827a;
   --card:rgba(255,255,252,.98); --border:rgba(40,30,20,.10);
-  --green:#2f5f49; --pause:#e7dfd2; --stop:#7b6b5e; --press:#cfc7bd; --pill:#fffefb; --radius:16px;
-  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#8fb8ff; --phase-review:#ffb457; --phase-outro:#8fb8ff;
+  --green:#3fa77a; /* lysere grønn for Play */
+  --pause:#87b9ff; /* samme blå som intro/outro */
+  --stop:#ffb766;  /* samme oransje som rep.spørsmål */
+  --press:#cfc7bd; --pill:#fffefb; --radius:16px;
+  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4; --phase-intro:#87b9ff;
+  --phase-review:#ffb766; --phase-outro:#87b9ff;
   --content-max:640px; --preset-gap:8px; --preset-pad:10px 14px; --preset-size:1.05rem; --dial-width:min(440px,78vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -53,10 +58,10 @@ body{display:flex;flex-direction:column;min-height:100%}
 
 /* Headings/messages */
 .h1{font-size:1.38rem;font-weight:900;margin:18px 0 10px;text-transform:uppercase}
-.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:18px 20px;min-height:1.2em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin-bottom:12px;color:#4a5552;font-size:2rem;line-height:1.25}
+.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:2.4em;box-shadow:0 8px 24px rgba(70,50,30,.05);margin-bottom:20px;color:#4a5552;font-size:1.8rem;line-height:1.4}
 
 /* Timeline */
-.timeline-wrap{margin-top:22px; margin-bottom:48px}
+.timeline-wrap{margin-top:22px; margin-bottom:40px}
 .timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 12px 36px rgba(70,50,30,.05)}
 .slot{position:absolute;top:0;height:100%;opacity:.22}
 #introSlot{background:var(--phase-intro)}
@@ -65,19 +70,22 @@ body{display:flex;flex-direction:column;min-height:100%}
 .para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
 .para-slot.alt{background:var(--tl-green-2)}
 .para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
-.read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
-.elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2}
+/* 📖 på les-avsnitt */
+.read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
+/* Viktig: la klikk passere gjennom progress-laget slik at man kan klikke bakover */
+.elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 .cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f5f49;left:0%;z-index:3;box-shadow:0 0 0 2px rgba(58,111,82,.10)}
 .big-clock,.clock{margin-top:16px;font-size:2.2rem;font-weight:900;color:#2f5f49;text-shadow:0 1px 0 rgba(255,255,255,.65)}
-#clockWT{font-size:2.75rem}
+#clockWT{font-size:2.75rem; margin-top:40px}
 .over{color:#b54a46!important;text-shadow:none}
 
 .controls{display:flex;gap:12px;margin-top:12px}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08)}
-.play{background:var(--green)}.pause{background:var(--pause);color:#2b2a29}.stop{background:var(--stop)}
+.play{background:var(--green);color:#ffffff}
+.pause{background:var(--pause);color:#ffffff}
+.stop{background:var(--stop);color:#2b2a29}
+.round:active{transform:translateY(1px); box-shadow:inset 0 4px 10px rgba(0,0,0,.18)}
 .round:disabled{background:#bfb8af;cursor:not-allowed;box-shadow:none}
-.round.pressed{background:var(--press)!important;color:#2b2a29!important;box-shadow:inset 0 3px 8px rgba(50,40,30,.18);transform:translateY(1px)}
-.round:active{background:var(--press)!important;color:#2b2a29!important;transform:translateY(1px)}
 
 .view{display:none}.view.active{display:block}
 .center{text-align:center}
@@ -94,7 +102,16 @@ body{display:flex;flex-direction:column;min-height:100%}
 .ticks span.active{opacity:1}.ticks span.near{opacity:.5}
 .milestone-img{max-width:40%;height:auto;margin:12px auto;display:block;background:none;padding:0;border:none;box-shadow:none;opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s}
 .milestone-img.show{opacity:1;transform:translateY(0)}
-@media (max-width:420px){.brand img{height:150px}.timeline{height:52px}.cursor{height:72px}}
+@media (max-width:420px){
+  .brand img{height:120px}
+  .timeline{height:50px}
+  .cursor{height:70px}
+  .h1{font-size:1.1rem}
+  #articleTitle{font-size:1.2rem}
+  .message{font-size:1.4rem; padding:16px 18px}
+  #clockWT{font-size:2.2rem; margin-top:36px}
+  .round{width:52px; height:52px; font-size:1.3rem}
+}
 .hiddenCard{opacity:0;transform:translateY(-6px);height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden}
 .hiddenSoft{opacity:0;height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden;transform:translateY(-4px);transition:opacity .2s,transform .2s,height .2s,margin .2s}
 #viewSP .card,#viewSP .timeline-wrap,#viewWT .card,#viewWT .timeline-wrap{max-width:var(--content-max);margin-inline:auto}
@@ -109,14 +126,14 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
   <div class="topbar">
     <div class="brand" id="brandBox">
       <div class="burst"></div>
-      <img id="logoImg" src="meeting-timer-logo.png" alt="Meeting Timer logo">
+      <img id="logoImg" src="./img/meeting-timer-logo.png" alt="Meeting Timer logo">
     </div>
     <div class="segmented" role="tablist" aria-label="Modus">
       <button id="tabWT" class="active" role="tab" aria-selected="true" title="Vakttårn">
-        <img src="watchtower-icon.png" alt="">
+        <img src="./img/watchtower-icon.png" alt="">
       </button>
       <button id="tabSP" role="tab" aria-selected="false" title="Taler">
-        <img id="otherIcon" src="other-icon.png" alt="">
+        <img id="otherIcon" src="./img/other-icon.png" alt="">
       </button>
     </div>
   </div>
@@ -163,22 +180,25 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
         <div class="pill" id="pillReads">📖 Les-skriftsteder: 0</div>
       </div>
     </div>
-    <div class="h1" id="articleTitle">—</div>
-    <div class="message" id="message">Velg artikkel for å laste timer.</div>
-    <div class="timeline-wrap">
-      <div id="timeline" class="timeline">
-        <div id="introSlot" class="slot" style="left:0%;width:0"></div>
-        <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
-        <div id="outroSlot" class="slot" style="right:0;width:0"></div>
-        <div id="elapsed" class="elapsed"></div>
-        <div id="cursor" class="cursor"></div>
+    <!-- ALT. B: all WT-innhold i én card (wtShell) -->
+    <div id="wtShell" class="card">
+      <div class="h1" id="articleTitle">—</div>
+      <div class="message" id="message">Velg artikkel for å laste timer.</div>
+      <div class="timeline-wrap">
+        <div id="timeline" class="timeline">
+          <div id="introSlot" class="slot" style="left:0%;width:0"></div>
+          <div id="reviewSlot" class="slot" style="right:0;width:0"></div>
+          <div id="outroSlot" class="slot" style="right:0;width:0"></div>
+          <div id="elapsed" class="elapsed"></div>
+          <div id="cursor" class="cursor"></div>
+        </div>
+        <div class="clock" id="clockWT">00:00</div>
       </div>
-      <div class="clock" id="clockWT">00:00</div>
-    </div>
-    <div class="controls">
-      <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
-      <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
-      <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
+      <div class="controls">
+        <button id="playWT" class="round play" title="Start/Gjenoppta" aria-label="Start">▶</button>
+        <button id="pauseWT" class="round pause" title="Pause" aria-label="Pause" disabled>❚❚</button>
+        <button id="stopWT" class="round stop" title="Stopp" aria-label="Stopp" disabled>■</button>
+      </div>
     </div>
     <div class="card" style="margin-top:14px"><textarea id="wtNotes" rows="5" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:var(--ink);background:var(--pill)" placeholder="Her kan du notere."></textarea></div>
   </div>
@@ -208,7 +228,7 @@ async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok
 async function loadYear(y){ for(const p of [`data/no-${y}.json`,`Data/no-${y}.json`,`data/no-${y}`,`Data/no-${y}`]){ try{ return await fetchJSON(p+`?v=${Date.now().toString().slice(7)}`);}catch{} } throw 0; }
 async function hydrateOptions(){ const today=new Date(); const year=today.getFullYear(); let items=[]; try{ const list=[]; for(const yy of [year,year+1]){ try{ list.push(await loadYear(yy)); }catch{} } items=list.flatMap(p=>Array.isArray(p)?p:(p?.items||[])); }catch{}
   const sel=$('#weekSel'); sel.innerHTML=''; const cur=isoMonday(today), prev=addDaysISO(cur,-7), nexts=[7,14,21].map(d=>addDaysISO(cur,d)); const want=[prev,cur,...nexts]; const picked=(items||[]).filter(it=>want.includes(it.week_start)).sort((a,b)=>a.week_start.localeCompare(b.week_start)); if(!picked.length){ const o=document.createElement('option'); o.textContent='Ingen artikler funnet (sjekk /data)'; o.disabled=true;o.selected=true; sel.appendChild(o); $('#message').textContent='Ingen data lastet.'; return; } picked.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); }); const idx=picked.findIndex(x=>x.week_start===cur); sel.selectedIndex = idx>-1 ? idx : 0; useItem(JSON.parse(sel.value)); }
-function useItem(it){ $('#articleTitle').textContent=it.title||'—'; totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0; reads=it.reads|0; const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null); readSet=new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : [])); paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false})); if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
+function useItem(it){ $('#articleTitle').textContent=it.title||'—'; totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0; reads = it.reads|0; const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null); readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : [])); paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false})); if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
   $('#pillParas').textContent=`Avsnitt: ${totalParagraphs}`; $('#pillReads').textContent=`📖 Les-skriftsteder: ${readSet.size}`; computeAllocation(); drawTimeline(); resetClockUI(); $('#message').textContent='Klar til start. Trykk ▶ når du er klar.'; $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; wtShown10=false; if(wtMsgHoldTimer){ clearTimeout(wtMsgHoldTimer); wtMsgHoldTimer=null; } wtMsgHoldUntil=0; wtLastE=0; wtSmileSeen.clear(); wtCheerSeen.clear(); }
 
 /* ===== allocation ===== */
@@ -236,7 +256,7 @@ const views={WT:$('#viewWT'), SP:$('#viewSP')}, tabs={WT:$('#tabWT'), SP:$('#tab
 function activateView(k){ Object.entries(views).forEach(([x,el])=>el.classList.toggle('active',x===k)); Object.entries(tabs).forEach(([x,b])=>{b.classList.toggle('active',x===k); b.setAttribute('aria-selected',x===k?'true':'false')}); if(k==='WT') requestAnimationFrame(drawTimeline) }
 $('#tabWT').addEventListener('click',()=>activateView('WT'));
 $('#tabSP').addEventListener('click',()=>activateView('SP'));
-const otherIcon=document.getElementById('otherIcon'); otherIcon.addEventListener('error',()=>{ if(!otherIcon.dataset.triedNg){ otherIcon.src='other-icon.ng'; otherIcon.dataset.triedNg='1' } });
+const otherIcon=document.getElementById('otherIcon'); otherIcon.addEventListener('error',()=>{ if(!otherIcon.dataset.triedNg){ otherIcon.src='./img/other-icon.ng'; otherIcon.dataset.triedNg='1' } });
 $('#weekSel').addEventListener('change',()=>{ const v=$('#weekSel').value; if(!v) return; useItem(JSON.parse(v)) });
 
 /* ===== TALER ===== */
@@ -254,11 +274,11 @@ function resetFlags(){ shownOneMin=false; shownOver=false; prevRemain=null; spMs
 function drawTimelineSP(){ const totalScale=isCountUp()?1800:SP_TOTAL; const e=spElapsed(); let progress; if(isCountUp()) progress=Math.min(1,e/totalScale); else { const remain=SP_TOTAL-e; progress=Math.max(0,Math.min(1,remain/totalScale)) } $('#elapsedSP').style.width=(progress*100)+'%'; $('#cursorSP').style.left=`calc(${progress*100}% - 1px)` }
 function showMilestone(name){ const el=$('#msImg'); if(!name){ el.style.display='none'; el.classList.remove('show'); el.removeAttribute('src'); return } const onerr=()=>{ el.style.display='none'; el.classList.remove('show'); el.onerror=null }; el.onerror=onerr; el.onload=()=>{ el.style.display='block'; requestAnimationFrame(()=>el.classList.add('show')) }; el.src=name }
 function setSPMessage(txt,ms=null){ $('#msgSP').textContent=txt||''; if(ms){ const id=setTimeout(()=>{$('#msgSP').textContent='';}, ms); spMsgTimers.push(id) } }
-function updateSP(){ const e=spElapsed(); if(spRunning && !spPaused){ if(!spShownStartMsg){ setSPMessage('Vi er i gang! ☺️',10000); spShownStartMsg=true } if(e>=120 && !spShown2min){ setSPMessage('Wow, du er flink! 😍',20000); spShown2min=true } if(!isCountUp()){ const remain=SP_TOTAL-e; if(remain===60 && !shownOneMin){ setSPMessage('Snart ferdig nå! ⏱️'); shownOneMin=true } if(remain<0 && !shownOver){ setSPMessage('Oj, du har gått over tiden. 😅'); shownOver=true } const crossed=th=>(prevRemain!==null && prevRemain>th && remain<=th); if(crossed(1800)) showMilestone('milestone-30.png'); if(crossed(900)) showMilestone('milestone-15.png'); if(crossed(600)) showMilestone('milestone-10.png'); if(crossed(300)) showMilestone('milestone-5.png'); prevRemain=remain } }
+function updateSP(){ const e=spElapsed(); if(spRunning && !spPaused){ if(!spShownStartMsg){ setSPMessage('Vi er i gang! ☺️',10000); spShownStartMsg=true } if(e>=120 && !spShown2min){ setSPMessage('Wow, du er flink! 😍',20000); spShown2min=true } if(!isCountUp()){ const remain=SP_TOTAL-e; if(remain===60 && !shownOneMin){ setSPMessage('Snart ferdig nå! ⏱️'); shownOneMin=true } if(remain<0 && !shownOver){ setSPMessage('Oj, du har gått over tiden. 😅'); shownOver=true } const crossed=th=>(prevRemain!==null && prevRemain>th && remain<=th); if(crossed(1800)) showMilestone('./img/milestone-30.png'); if(crossed(900)) showMilestone('./img/milestone-15.png'); if(crossed(600)) showMilestone('./img/milestone-10.png'); if(crossed(300)) showMilestone('./img/milestone-5.png'); prevRemain=remain } }
   if(isCountUp()){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(e) } else { const remain=SP_TOTAL-e; if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) } else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) } } drawTimelineSP() }
-function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; setSPMessage('Vi er i gang! ☺️',10000); resetFlags(); $('#spInputs').classList.add('hiddenSoft'); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('milestone-30.png'); else if(SP_TOTAL===900) showMilestone('milestone-15.png'); else if(SP_TOTAL===600) showMilestone('milestone-10.png'); else if(SP_TOTAL===300) showMilestone('milestone-5.png'); else showMilestone('milestone-other.png') } else { showMilestone('milestone-other.png') } updateSP() } }
+function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; setSPMessage('Vi er i gang! ☺️',10000); resetFlags(); $('#spInputs').classList.add('hiddenSoft'); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png'); else showMilestone('./img/milestone-other.png') } else { showMilestone('./img/milestone-other.png') } updateSP() } }
 function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
-function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; setSPMessage('Godt jobbet! 👏'); showMilestone('milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); $('#spInputs').classList.remove('hiddenSoft') }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; setSPMessage('Godt jobbet! 👏'); showMilestone('./img/milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); $('#spInputs').classList.remove('hiddenSoft') }
 $('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
 spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); showMilestone(null); drawTimelineSP() }));
 let dialValue=Math.min(60,Math.max(0,isNaN(SP_TOTAL)?0:Math.floor(SP_TOTAL/60))); const dial=document.querySelector('.dial'), ticks=document.getElementById('ticks'), thumb=document.getElementById('thumb');
