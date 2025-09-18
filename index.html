@@ -209,37 +209,64 @@ stopSP.addEventListener('click',()=>{
   msImg.src='./img/milestone-stop.png';
   setTimeout(()=>{ msImg.src='./img/pick-milestone.png'; },10000);
 });
-// Preset & milestone behavior (simple)
+// Preset & milestone behavior (robust)
 (function(){
-  const presetButtons=[...document.querySelectorAll('#spInputs .preset')];
-  let selected=600; // default 10 min
-  const msImg=document.getElementById('msImg');
-  const mapImage=(sec)=>{
-    if(sec===0) return './img/milestone-countup.png';
-    if(sec===1800) return './img/milestone-30.png';
-    if(sec===900) return './img/milestone-15.png';
-    if(sec===600) return './img/milestone-10.png';
-    if(sec===300) return './img/milestone-5.png';
-    return './img/milestone-other.png';
-  };
-  // init: ensure only 10 is active
-  presetButtons.forEach(btn=>{ if(parseInt(btn.dataset.sec,10)===600) btn.classList.add('active'); else btn.classList.remove('active'); });
-  presetButtons.forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      presetButtons.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      selected=parseInt(btn.dataset.sec,10)||0;
-      // keep pick visual until Play is pressed
-      if(msImg) msImg.src='./img/pick-milestone.png';
+  try{
+    const msImg=document.getElementById('msImg');
+    const play=document.getElementById('playSP');
+    const pause=document.getElementById('pauseSP');
+    const stop=document.getElementById('stopSP');
+    const presetButtons=[...document.querySelectorAll('#spInputs .preset')];
+
+    // Reflect current app state if available
+    let selected=(typeof SP_TOTAL!=='undefined' && Number.isFinite(SP_TOTAL)) ? SP_TOTAL : 600;
+
+    // Helper resolves milestone image by seconds
+    const mt_resolve=function(sec){
+      if(sec===0) return './img/milestone-countup.png';
+      if(sec===1800) return './img/milestone-30.png';
+      if(sec===900) return './img/milestone-15.png';
+      if(sec===600) return './img/milestone-10.png';
+      if(sec===300) return './img/milestone-5.png';
+      return './img/milestone-other.png';
+    };
+
+    // Ensure only the 10-min button is active by default (if none active)
+    if(presetButtons.length){
+      const anyActive=presetButtons.some(b=>b.classList.contains('active'));
+      if(!anyActive){
+        const ten=presetButtons.find(b=>parseInt(b.dataset.sec,10)===600);
+        if(ten) ten.classList.add('active');
+        selected=600;
+      }
+    }
+
+    // Bind once
+    presetButtons.forEach(btn=>{
+      if(btn.dataset.listenerBound) return;
+      btn.dataset.listenerBound='1';
+      btn.addEventListener('click',()=>{
+        presetButtons.forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        selected=parseInt(btn.dataset.sec,10)||0;
+        // show pick image until Play
+        if(msImg) msImg.src='./img/pick-milestone.png';
+      });
     });
-  });
-  // Controls
-  const play=document.getElementById('playSP');
-  const pause=document.getElementById('pauseSP');
-  const stop=document.getElementById('stopSP');
-  if(play){ play.addEventListener('click',()=>{ if(msImg) msImg.src = mapImage(selected); }); }); }
-  if(pause){ pause.addEventListener('click',()=>{ /* image unchanged on pause */ }); }
-  if(stop){ stop.addEventListener('click',()=>{ if(!msImg) return; const back='./img/pick-milestone.png'; const done='./img/milestone-stop.png'; msImg.src=done; setTimeout(()=>{ msImg.src=back; }, 10000); }); }
+
+    if(play && !play.dataset.listenerBound){
+      play.dataset.listenerBound='1';
+      play.addEventListener('click',()=>{ if(msImg) msImg.src = mt_resolve(selected); });
+    }
+    if(pause && !pause.dataset.listenerBound){
+      pause.dataset.listenerBound='1';
+      pause.addEventListener('click',()=>{}); // image unchanged
+    }
+    if(stop && !stop.dataset.listenerBound){
+      stop.dataset.listenerBound='1';
+      stop.addEventListener('click',()=>{ if(!msImg) return; const back='./img/pick-milestone.png'; const done='./img/milestone-stop.png'; msImg.src=done; setTimeout(()=>{ msImg.src=back; }, 10000); });
+    }
+  }catch(err){ console.error('Milestone/preset init error:', err); }
 })();
 </script>
 </body>
