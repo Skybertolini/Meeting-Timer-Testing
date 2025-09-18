@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>Meeting Timer (Én side)</title>
+<title>Meeting Timer</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f8f7f5">
 <link rel="icon" href="./img/favicon.png">
@@ -240,6 +240,8 @@ spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; 
 
 /* ===== Init ===== */
 (async function init(){ markPreset([0,300,600,900,1200,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); await hydrateOptions(); updateTargetLabel(); })();
+// Deaktiver høyreklikk på alle bilder
+  document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
 </script>
 </body>
 </html>
