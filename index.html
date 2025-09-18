@@ -17,6 +17,7 @@
   --green:#6ecf9e; /* Play */
   --phase-intro:#87b9ff; /* Pause */
   --phase-review:#ffb766; /* Stop */
+  --phase-outro: var(--phase-intro); /* Avslutning samme blå som intro */
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
   --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
   --content-max:min(640px, 94vw);
@@ -70,6 +71,8 @@ body{
 
 .controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08)}
+/* Aktiv/trykket-inn knapp-effekt */
+.round.pressed{filter:brightness(.82) saturate(1.05); box-shadow:inset 0 4px 10px rgba(0,0,0,.18),0 6px 18px rgba(70,50,30,.06)}
 .play{background:var(--green)}
 .pause{background:var(--phase-intro); color:#ffffff}
 .stop{background:var(--phase-review); color:#2b2a29}
@@ -84,7 +87,7 @@ body{
 #timerSection .timeline-wrap{margin-top:22px}
 #timerSection .controls{margin-top:32px}
 
-/* Milestone-bilde – 30% mindre enn før (fra ~40% til 28%) */
+/* Milestone-bilde – 56% bredde */
 .milestone-img{max-width:56%;height:auto;margin:10px auto 0;display:block;opacity:1}
 
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
@@ -134,7 +137,7 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
   <!-- TIMER -->
   <section id="timerSection">
     <div class="card" style="max-width:var(--content-max);margin-inline:auto">
-      <div class="h1">TIMER FOR MIDTUKEMØTET</div>
+      <div class="h1">Stoppeklokke og nedtelling for midtukemøtet</div>
       <div id="spInputs">
         <div class="preset-row">
           <button class="preset" data-sec="0">0</button>
@@ -208,10 +211,10 @@ function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
 function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
 function setWTMessage(txt){ $('#message').textContent=txt }
 function wtFlash(msg,ms=10000){ setWTMessage(msg); wtMsgHoldUntil=Date.now()+ms; if(wtMsgHoldTimer) clearTimeout(wtMsgHoldTimer); wtMsgHoldTimer=setTimeout(()=>{ wtMsgHoldTimer=null },ms) }
-function tickWT(){ const e=nowElapsed(), remaining=TOTAL-e; $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=TOTAL); const p=Math.min(e/TOTAL*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`; if(!wtShown10 && remaining<=600 && remaining>0){ wtShown10=true; wtFlash('10 min igjen, dette klarer du! 😎',20000) } if(wtMsgHoldTimer && Date.now()<wtMsgHoldUntil){ wtLastE=e; return } const crossed=(arr,seen,msg)=>{ for(const m of arr){ const s=m*60; if(!seen.has(m) && wtLastE < s && e >= s){ seen.add(m); wtFlash(msg,10000); break } } }; crossed(WT_SMILE_MIN,wtSmileSeen,'Husk å smile! 😁'); crossed(WT_CHEER_MIN,wtCheerSeen,'Jeg heier på deg! 🤩'); if(e<INTRO) setWTMessage('Introduksjon'); else if(e>=TOTAL) setWTMessage('Tiden er brukt – teller over'); else if(e>=TOTAL-OUTRO) setWTMessage('Avslutning'); else if(e>=TOTAL-OUTRO-REVIEW) setWTMessage('Repetisjonsspørsmål'); else{ let idx=0; for(let i=0;i<totalParagraphs;i++){const s=cumulative[i], end=(i===totalParagraphs-1)?(TOTAL-OUTRO-REVIEW):cumulative[i+1]; if(e>=s&&e<end){idx=i;break}} let msg=`Avsnitt ${idx+1}${readSet.has(idx+1)?' + Les-skriftsted':''}`; if(e>=1800&&e<1860) msg+=' – du er halvveis'; setWTMessage(msg) } wtLastE=e }
-$('#playWT').addEventListener('click',()=>{ if(started && paused){ paused=false; startTs=Date.now(); startClock(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; return } if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); setWTMessage('Introduksjon'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; } });
-$('#pauseWT').addEventListener('click',()=>{ if(!started||paused) return; accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); setWTMessage('Pause'); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false });
-$('#stopWT').addEventListener('click',()=>{ if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000); started=false; paused=false; stopClock(); const e=accum; if(e>=3300 && e<3600) setWTMessage('Godt jobbet, du klarte det på under en time! 🥳'); else if(e>=3600 && e<3720) setWTMessage('Nesten helt perfekt! 🤩'); else if(e>=3720 && e<3900) setWTMessage('Litt over, neste gang klarer du enda bedre. 👍'); else if(e>=3900 && e<4200) setWTMessage('Aj aj, her har du litt å jobbe med. 😅'); else setWTMessage(`Ferdig – totalt ${fmt(e)}`); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; accum=0; resetClockUI(); $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; });
+function tickWT(){ const e=nowElapsed(), remaining=TOTAL-e; $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=TOTAL); const p=Math.min(e/TOTAL*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`; if(!wtShown10 && remaining<=600 && remaining>0){ wtShown10=true; wtFlash('10 min igjen, dette klarer du! 😎',20000) } if(wtMsgHoldTimer && Date.now()<wtMsgHoldUntil){ wtLastE=e; return } const crossed=(arr,seen,msg)=>{ for(const m of arr){ const s=m*60; if(!seen	has(m) && wtLastE < s && e >= s){ seen.add(m); wtFlash(msg,10000); break } } }; crossed(WT_SMILE_MIN,wtSmileSeen,'Husk å smile! 😁'); crossed(WT_CHEER_MIN,wtCheerSeen,'Jeg heier på deg! 🤩'); if(e<INTRO) setWTMessage('Introduksjon'); else if(e>=TOTAL) setWTMessage('Tiden er brukt – teller over'); else if(e>=TOTAL-OUTRO) setWTMessage('Avslutning'); else if(e>=TOTAL-OUTRO-REVIEW) setWTMessage('Repetisjonsspørsmål'); else{ let idx=0; for(let i=0;i<totalParagraphs;i++){const s=cumulative	i], end=(i===totalParagraphs-1)?(TOTAL-OUTRO-REVIEW):cumulative[i+1]; if(e>=s&&e<end){idx=i;break}} let msg=`Avsnitt ${idx+1}${readSet.has(idx+1)?' + Les-skriftsted':''}`; if(e>=1800&&e<1860) msg+=' – du er halvveis'; setWTMessage(msg) } wtLastE=e }
+$('#playWT').addEventListener('click',()=>{ if(started && paused){ paused=false; startTs=Date.now(); startClock(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); return } if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); setWTMessage('Introduksjon'); $('#playWT').disabled	true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); } });
+$('#pauseWT').addEventListener('click',()=>{ if(!started||paused) return; accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); setWTMessage('Pause'); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false; setPressedWT('pauseWT'); });
+$('#stopWT').addEventListener('click',()=>{ if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000); started=false; paused=false; stopClock(); const e=accum; if(e>=3300 && e<3600) setWTMessage('Godt jobbet, du klarte det på under en time! 🥳'); else if(e>=3600 && e<3720) setWTMessage('Nesten helt perfekt! 🤩'); else if(e>=3720 && e<3900) setWTMessage('Litt over, neste gang klarer du enda bedre. 👍'); else if(e>=3900 && e<4200) setWTMessage('Aj aj, her har du litt å jobbe med. 😅'); else setWTMessage(`Ferdig – totalt ${fmt(e)}`); $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true; accum=0; resetClockUI(); $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; setPressedWT('stopWT'); });
 
 /* ===== TIMER (SP) ===== */
 const PRESET_KEY='meetingTimer.annetSeconds';
@@ -232,9 +235,9 @@ function updateTargetLabel(){ const label=$('#targetLabelSP'); if(!label) return
 function updateSP(){ const e=spElapsed(); if(spRunning && !spPaused){ if(!isCountUp()){ const remain=SP_TOTAL-e; const crossed=th=>(prevRemain!==null && prevRemain>th && remain<=th); if(crossed(1800)) showMilestone('./img/milestone-30.png'); if(crossed(900)) showMilestone('./img/milestone-15.png'); if(crossed(600)) showMilestone('./img/milestone-10.png'); if(crossed(300)) showMilestone('./img/milestone-5.png'); prevRemain=remain } }
   if(isCountUp()){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(e) } else { const remain=SP_TOTAL-e; if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) } else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) } }
   drawTimelineSP(); if(!spRunning) updateTargetLabel(); }
-function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; $('#targetLabelSP').style.display='none'; return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; resetFlags(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; $('#targetLabelSP').style.display='none'; if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png'); else showMilestone('./img/milestone-other.png') } else { showMilestone('./img/milestone-other.png') } updateSP() } }
-function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; updateSP() }
-function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; showMilestone('./img/milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); updateTargetLabel(); }
+function spStartFn(){ if(spRunning && spPaused){ spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; $('#targetLabelSP').style.display='none'; setPressedSP('playSP'); return } if(!spRunning){ spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0; resetFlags(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250); $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; $('#targetLabelSP').style.display='none'; setPressedSP('playSP'); if(!isCountUp()){ if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png'); else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png'); else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png'); else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png'); else showMilestone('./img/milestone-other.png') } else { showMilestone('./img/milestone-other.png') } updateSP() } }
+function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; setPressedSP('pauseSP'); updateSP() }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; prevRemain=null; spTick&&clearInterval(spTick); spTick=null; showMilestone('./img/milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); updateTargetLabel(); setPressedSP('stopSP'); }
 $('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
 spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; const s=parseInt(btn.dataset.sec,10)||0; localStorage.setItem(PRESET_KEY,String(s)); SP_TOTAL=s; markPreset([0,300,600,900,1200,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); showMilestone('./img/pick-milestone.png'); drawTimelineSP(); updateTargetLabel(); }));
 
@@ -242,6 +245,10 @@ spPresets.forEach(btn=>btn.addEventListener('click',()=>{ if(spRunning) return; 
 (async function init(){ markPreset([0,300,600,900,1200,1800].includes(SP_TOTAL)?SP_TOTAL:-1); applyIdleClock(); updatePlayIcon(); drawTimelineSP(); await hydrateOptions(); updateTargetLabel(); })();
 // Deaktiver høyreklikk på alle bilder
   document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
+
+// Aktiv-knapp-hjelpere (WT og SP)
+function setPressedWT(id){ ['playWT','pauseWT','stopWT'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
+function setPressedSP(id){ ['playSP','pauseSP','stopSP'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
 </script>
 </body>
 </html>
