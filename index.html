@@ -20,7 +20,7 @@
   --phase-outro: var(--phase-intro); /* Avslutning samme blå som intro */
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
   --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
-  --content-max:min(640px, 94vw);
+  --content-max:min(640px, 92vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -33,7 +33,7 @@ body{
   background-image: linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)), url('./img/paper-texture.png');
   background-size: auto, 300px 300px; background-repeat: repeat, repeat; background-attachment: fixed, fixed;
 }
-.container{flex:1 0 auto;max-width:980px;margin:0 auto;padding:16px 16px 28px;min-width:320px}
+.container{flex:1 0 auto;max-width:var(--content-max);margin:0 auto;padding:16px 16px 28px;min-width:320px}
 .footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:.9rem;padding:10px 0 14px}
 
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 18px;min-height:72px}
@@ -90,9 +90,16 @@ body{
 /* Milestone-bilde – 56% bredde */
 .milestone-img{max-width:56%;height:auto;margin:10px auto 0;display:block;opacity:1}
 
-img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
+img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;max-width:100%;height:auto}
 #wtControlsCard{max-width:var(--content-max);margin-inline:auto}
 .select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
+@media (max-width: 480px){
+  .brand img{height:120px}
+  .round{width:52px;height:52px;font-size:1.3rem}
+  .preset{padding:8px 12px;font-size:1rem}
+  .timeline{height:48px}
+  .cursor{height:68px}
+}
 </style>
 </head>
 <body>
