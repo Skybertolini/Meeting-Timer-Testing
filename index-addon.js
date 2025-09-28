@@ -1,50 +1,40 @@
-// index-addon.js — v1.68
-// Fix: Timeline is only locked WHILE playing. When paused/stopped, you can click/seek freely.
+// index-addon.js — v1.69
+// Safe overlay: no global click swallowing, no pointer-events: none.
+// Keeps full message persistent, two-tone w/ groups-as-block, centered pins, and ignores
+// paragraph clicks only while playing. Optional external hook: window.__VT_SET_PLAYING(boolean)
+
 (function(){
-  // --- CSS (icons; lock class only disables input, not visuals) ---
+  /* ========== Minimal CSS (scoped) ========== */
   (function ensureCSS(){
-    const id='data-index-addon';
-    if (document.querySelector(`style[${id}]`)) return;
-    const style=document.createElement('style');
-    style.setAttribute(id,'');
+    if (document.querySelector('style[data-index-addon]')) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-index-addon','');
     style.textContent = `
-      #timeline .para-slot i.frame-pin{position:absolute;left:50%;transform:translateX(-50%);top:-14px;bottom:auto;width:12px;height:12px;background:url('./img/box-icon.png') center/contain no-repeat;pointer-events:none}
-      #timeline .para-slot i.read-pin{position:absolute;left:50%;transform:translateX(-50%);bottom:-14px;top:auto;width:16px;height:16px;background:url('./img/read-icon.png') center/contain no-repeat;pointer-events:none}
-      #timeline.timeline-locked{ pointer-events:none; opacity:1; }
+      #timeline .para-slot i.frame-pin{
+        position:absolute; left:50%; transform:translateX(-50%);
+        top:-14px; bottom:auto; width:12px; height:12px;
+        background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none;
+      }
+      #timeline .para-slot i.read-pin{
+        position:absolute; left:50%; transform:translateX(-50%);
+        bottom:-14px; top:auto; width:16px; height:16px;
+        background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
+      }
+      /* hvis du vil ha ekstra luft til beskjed-feltet, kan du avkommentere:
+      #message{ margin-top:22px; }
+      */
     `;
     document.head.appendChild(style);
   })();
 
-  // ---- Playing state (robust heuristics) ----
-  let isPlaying = false;
-  let inactivityTimer = null;
-  let recentChangeTs = 0;
-  const CHANGE_BURST_MS = 500;  // two updates within this = playing
-  const INACTIVITY_MS = 1200;   // no updates for this long = not playing
-
-  function setPlaying(on){
-    isPlaying = !!on;
-    const tl = document.getElementById('timeline');
-    if (tl) tl.classList.toggle('timeline-locked', isPlaying);
-  }
-  function noteMessageUpdate(){
-    const now = performance.now ? performance.now() : Date.now();
-    if (now - recentChangeTs < CHANGE_BURST_MS) {
-      setPlaying(true);
-    }
-    recentChangeTs = now;
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(()=> setPlaying(false), INACTIVITY_MS);
-  }
-
-  // ---- Helpers ----
+  /* ========== Utils ========== */
   function parseGroupsString(str){
     if (!str || typeof str !== 'string') return [];
-    return str.split(',').map(s=>s.trim()).flatMap(token=>{
-      const m = token.match(/^(\d+)(?:-(\d+))?$/);
+    return str.split(',').map(s=>s.trim()).flatMap(tok=>{
+      const m = tok.match(/^(\d+)(?:-(\d+))?$/);
       if (!m) return [];
-      const a = Number(m[1]), b = m[2] ? Number(m[2]) : a;
-      const arr=[]; for (let x=a; x<=b; x++) arr.push(x);
+      const a = +m[1], b = m[2] ? +m[2] : a;
+      const arr=[]; for(let i=a;i<=b;i++) arr.push(i);
       return [arr];
     });
   }
@@ -61,37 +51,59 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  // ---- Two-tone (groups as one block) ----
-  function applyGroupAwareTwoToneStrict(){
-    const tl=document.getElementById('timeline'); if(!tl) return;
-    const slots=Array.from(tl.querySelectorAll('.para-slot')); if(!slots.length) return;
-    slots.forEach(el=>{ el.classList.remove('alt-alt','group-alt','grp','group','galt','alt'); el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor=''; });
-    const groups=getGroups(); const starts=new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
-    let tone=false; let i=1;
+  /* ========== Two-tone med grupper som én blokk ========== */
+  function applyGroupAwareTwoTone(){
+    const tl = document.getElementById('timeline'); if(!tl) return;
+    const slots = [...tl.querySelectorAll('.para-slot')]; if(!slots.length) return;
+    // fjern stray-klasser / inline-farger
+    slots.forEach(el=>{
+      el.classList.remove('alt-alt','group-alt','grp','group','galt','alt');
+      el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor='';
+    });
+    const groups=getGroups(); const starts=new Map();
+    groups.forEach(g=>{ if(g&&g.length) starts.set(g[0], g); });
+
+    let tone=false; // false=lys (ingen 'alt'), true=mørk ('alt')
+    let i=1;
     while(i<=slots.length){
-      if(starts.has(i)){
-        const g=starts.get(i);
-        g.forEach(p=>{ const el=slots[p-1]; if (el && tone) el.classList.add('alt'); });
-        tone=!tone; i=g[g.length-1]+1;
-      }else{
+      if (starts.has(i)){
+        const g = starts.get(i);
+        g.forEach(p=>{ const el=slots[p-1]; if(el && tone) el.classList.add('alt'); });
+        tone = !tone;          // flip én gang for hele gruppa
+        i = g[g.length-1] + 1; // hopp til etter gruppa
+      } else {
         const el=slots[i-1]; if (el && tone) el.classList.add('alt');
-        tone=!tone; i++;
+        tone = !tone;
+        i++;
       }
     }
   }
 
-  // ---- Pins + click messages (respects lock) ----
-  function layoutPinsAndBindMessages(){
-    const tl=document.getElementById('timeline'); if(!tl) return;
-    const slots=Array.from(tl.querySelectorAll('.para-slot')); if(!slots.length) return;
+  /* ========== Pins + meldinger (klikk) ========== */
+  // Spesifikke datastrukturer forventes definert av basiskoden:
+  // window.__VT_ORD: Map(para => {frame: 1|2, read: 1|2})
+  // window.__VT_FRAME_SET: Set(para)  for rammer
+  // window.__VT_READ_SET2 eller window.readSet: Set(para) for les-skriftsteder
+
+  let isPlaying = false;               // lokal til add-on
+  let lastMsgText = '';
+
+  // Valgfri ekstern hook fra din app:
+  window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
+
+  function layoutPinsAndBind(){
+    const tl = document.getElementById('timeline'); if(!tl) return;
+    const slots = [...tl.querySelectorAll('.para-slot')]; if(!slots.length) return;
 
     const ord = window.__VT_ORD || new Map();
     const frameSet = window.__VT_FRAME_SET || new Set();
     const readSet  = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
 
-    const groups=getGroups(); const starts=new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
-    function findGroupFor(p){ for(const g of groups){ if (g.includes(p)) return g.slice(); } return [p]; }
-    function buildSingleMsg(p){
+    const groups=getGroups(); const starts=new Map();
+    groups.forEach(g=>{ if(g&&g.length) starts.set(g[0], g); });
+    const findGroupFor = (p)=>{ for(const g of groups){ if(g.includes(p)) return g.slice(); } return [p]; };
+
+    const buildSingleMsg = (p)=>{
       const o = ord.get(p) || {};
       const hasF = frameSet.has(p);
       const hasR = readSet.has(p);
@@ -103,17 +115,19 @@
           : `${rangeLabel([p])} + Les-skriftsted og Ramme`;
       }
       return hasF ? `${rangeLabel([p])} + Ramme` : `${rangeLabel([p])} + Les-skriftsted`;
-    }
-    function buildMsgFor(p){
+    };
+    const buildMsgFor = (p)=>{
       const g = starts.get(p) || findGroupFor(p);
-      if (g.length>1) return rangeLabel(g);
+      if (g.length > 1) return rangeLabel(g);
       return buildSingleMsg(p);
-    }
+    };
+    // eksponer for normalisering
     window.__VT_BUILD_MSG_FOR = buildMsgFor;
 
     slots.forEach((slot, idx)=>{
-      const p=idx+1;
-      const hasF=frameSet.has(p), hasR=readSet.has(p);
+      const p = idx + 1;
+      const hasF = frameSet.has(p), hasR = readSet.has(p);
+
       // pins
       slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
       if (hasF || hasR){
@@ -129,27 +143,42 @@
           slot.appendChild(el);
         });
       }
-      // click -> message (skip if playing)
-      slot.removeEventListener('click', slot.__addonClick || (()=>{}), true);
-      const handler=(ev)=>{
-        if (isPlaying){ ev.stopPropagation(); ev.preventDefault(); return; }
-        const msg = document.getElementById('message'); if(!msg) return;
+
+      // klikk — men hopp over hvis vi spiller av (ikke stopp eventet globalt)
+      slot.removeEventListener('click', slot.__addonClick || (()=>{}));
+      const handler = ()=>{
+        if (isPlaying) return; // gjør ingenting mens det spiller
+        const msg = document.getElementById('message'); if (!msg) return;
         msg.textContent = buildMsgFor(p);
       };
       slot.__addonClick = handler;
-      slot.addEventListener('click', handler, true);
+      slot.addEventListener('click', handler);
     });
   }
 
-  // ---- Persistent message + playback detection ----
+  /* ========== Hold meldingen stabil & detekter “spilling” uten å fange knapper ========== */
   function observeMessageAndNormalize(){
     const msg = document.getElementById('message'); if(!msg) return;
     const buildMsgFor = window.__VT_BUILD_MSG_FOR || (p => `Avsnitt ${p}`);
 
-    let lastText = msg.textContent || '';
-    const normalize = () => {
+    let lastChange = 0;
+    const BURST_MS = 450;   // oppdateringer tettere enn dette → sannsynligvis avspilling
+    const IDLE_MS  = 1200;  // ingen oppdateringer så lenge → sannsynligvis ikke avspilling
+    let idleTimer = null;
+
+    const normalize = ()=>{
       const text = (msg.textContent || '').trim();
-      if (text !== lastText) { lastText = text; noteMessageUpdate(); }
+      if (text !== lastMsgText){
+        const now = Date.now();
+        // enkel “burst”-deteksjon
+        if (now - lastChange < BURST_MS) isPlaying = true;
+        lastChange = now;
+        if (idleTimer) clearTimeout(idleTimer);
+        idleTimer = setTimeout(()=>{ isPlaying = false; }, IDLE_MS);
+        lastMsgText = text;
+      }
+
+      // Bytt «Avsnitt N …» til vår full-format tekst
       const m = text.match(/^Avsnitt\s+(\d+)(?:\b|$)/);
       if (m){
         const p = Number(m[1]);
@@ -157,41 +186,14 @@
         if (desired && text !== desired) msg.textContent = desired;
       }
     };
-    const obs = new MutationObserver(()=> normalize());
-    obs.observe(msg, {childList:true, characterData:true, subtree:true});
+
+    const mo = new MutationObserver(()=> normalize());
+    mo.observe(msg, {childList:true, characterData:true, subtree:true});
     normalize();
   }
 
-  // ---- Recognize Play/Pause/Stop controls (best-effort) ----
-  function bindPlayPauseButtons(){
-    const click = (on)=> (e)=>{ setPlaying(on); };
-    document.addEventListener('click', (e)=>{
-      const t = e.target;
-      if (!t) return;
-      const s = (txt)=> (txt||'').toLowerCase();
-      const text=s(t.textContent), title=s(t.getAttribute?.('title')), aria=s(t.getAttribute?.('aria-label')), cls=s(t.className);
-      const isPlay = /play|▶|⏵|start|spill av|avspill/.test(text+title+aria+cls);
-      const isPauseStop = /pause|⏸|stop|⏹|stopp/.test(text+title+aria+cls);
-      if (isPlay) setPlaying(true);
-      if (isPauseStop) setPlaying(false);
-    }, true);
-  }
-
-  // ---- Unlock safeguards ----
-  function addUnlockGuards(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    tl.addEventListener('mouseenter', ()=>{ if (!isPlaying) setPlaying(false); }, true);
-    tl.addEventListener('mouseleave', ()=>{ if (!isPlaying) setPlaying(false); }, true);
-    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='hidden') setPlaying(false); });
-  }
-
-  function applyAll(){
-    applyGroupAwareTwoToneStrict();
-    layoutPinsAndBindMessages();
-    observeMessageAndNormalize();
-    bindPlayPauseButtons();
-    addUnlockGuards();
-  }
+  /* ========== Kjør ========== */
+  function applyAll(){ applyGroupAwareTwoTone(); layoutPinsAndBind(); observeMessageAndNormalize(); }
 
   const orig = window.drawTimeline;
   if (typeof orig === 'function'){
@@ -201,8 +203,14 @@
       return r;
     };
   }
-  const obs=new MutationObserver(()=>requestAnimationFrame(applyAll));
-  function startObs(){ const tl=document.getElementById('timeline'); if(tl) obs.observe(tl,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']}); }
-  if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObs(); }); }
-  else { applyAll(); startObs(); }
+  const obs = new MutationObserver(()=> requestAnimationFrame(applyAll));
+  function startObs(){
+    const tl = document.getElementById('timeline');
+    if (tl) obs.observe(tl, {childList:true, subtree:true, attributes:true, attributeFilter:['class','style']});
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObs(); });
+  } else {
+    applyAll(); startObs();
+  }
 })();
