@@ -1,8 +1,8 @@
-// index-addon.js — v1.75 + group labels
+// index-addon.js — v1.75 + group labels (refined)
 // Two tones only; groups share first tone and we flip after whole group.
 // Re-applies on any timeline DOM change (fix for timing where groups wasn't ready).
-// NEW: One shared overlay label per group (e.g., "4&5" or "10–12"), centered over the group's width,
-// and numbers inside the group's individual slots are hidden to make it look like one block.
+// NEW: One shared overlay label per group ("4&5" / "10–12"), centered across the group's total width,
+// with the same typography as the slot numbers. Numbers inside grouped slots are hidden.
 
 (function(){
   /* ========== CSS (base + overlays) ========== */
@@ -25,7 +25,8 @@
         --vt-tone-light: #EAF4EE;
         --vt-tone-dark:  #CFE7D6;
       }
-      /* For overlay posisjonering */
+
+      /* Ensure overlay positioning works */
       #timeline{ position:relative; }
 
       #timeline .para-slot{
@@ -57,17 +58,21 @@
       .vt-stats b{ font-weight:600 }
       .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
 
-      /* === NEW: overlay labels for groups === */
+      /* === NEW: group overlay labels matching slot number styling === */
       #timeline .vt-group-overlays{
         position:absolute; left:0; top:0; right:0; bottom:0;
-        pointer-events:none; /* ikke stjel klikk */
+        pointer-events:none;
       }
       #timeline .vt-group-overlay{
         position:absolute; top:0; height:100%;
         display:flex; align-items:center; justify-content:center;
-        font-weight:600; opacity:.9;
+        font-weight: 400;           /* same as slot numbers */
+        font-size: 12px;            /* same as slot numbers */
+        line-height: 1.2;
+        color: inherit;
+        opacity: .95;
       }
-      /* Skjul tall i slots som inngår i en gruppe (overlays viser felles label) */
+      /* Hide numbers inside grouped slots (overlay shows the shared label) */
       #timeline .para-slot.vt-in-group{ color: transparent !important; }
       #timeline .para-slot.vt-in-group *{ color: transparent !important; }
     `;
@@ -295,48 +300,53 @@
     mo.observe(msg, {childList:true, characterData:true, subtree:true});
   }
 
-  /* ========== NEW: group overlays (labels) ========== */
-  // Create one overlay per group (centered across that group's width)
+  /* ========== NEW: group overlays (labels, precise centering) ========== */
+  // Create one overlay per group (centered across that group's width using px relative to the slot container),
   // and hide numbers inside the grouped slots.
   function placeGroupOverlays(){
     const tl = document.getElementById('timeline'); if (!tl) return;
+
     const slots = Array.from(tl.querySelectorAll('.para-slot')); if (!slots.length) return;
 
-    // Remove old overlays and clear markers
-    const oldWrap = tl.querySelector('.vt-group-overlays'); if (oldWrap) oldWrap.remove();
+    // Use same parent as the slots to avoid padding/offset issues from #timeline
+    const container = slots[0].parentElement || tl;
+
+    // Remove previous overlays and clear markers
+    const oldWrap = container.querySelector('.vt-group-overlays'); if (oldWrap) oldWrap.remove();
     slots.forEach(s => s.classList.remove('vt-in-group'));
 
-    const groups = getGroups(); if (!groups.length) return;
+    const groups = (typeof getGroups === 'function' ? getGroups() : []); if (!groups.length) return;
 
-    // Use % widths from inline style (timeline sets width:% per slot)
-    const widths = slots.map(el => parseFloat(el.style.width || '0') || 0);
-    if (!widths.length) return;
-
-    // Prefix sums in % to compute left offsets
-    const leftPct = [0];
-    for (let i=0; i<widths.length; i++) leftPct[i+1] = leftPct[i] + widths[i];
+    // Ensure container is positioned for absolute children
+    const cs = getComputedStyle(container);
+    if (cs.position === 'static') container.style.position = 'relative';
 
     const wrap = document.createElement('div');
     wrap.className = 'vt-group-overlays';
-    tl.appendChild(wrap);
+    container.appendChild(wrap);
 
+    const cref = container.getBoundingClientRect();
     const labelText = g => (g.length===2 ? `${g[0]}&${g[1]}` : `${g[0]}–${g[g.length-1]}`);
 
     groups.forEach(g=>{
       if (!g || !g.length) return;
-      const first = g[0], last = g[g.length-1];
-      if (!slots[first-1] || !slots[last-1]) return;
+      const firstIdx = g[0]-1, lastIdx = g[g.length-1]-1;
+      const first = slots[firstIdx], last = slots[lastIdx];
+      if (!first || !last) return;
 
-      // Hide per-slot numbers within the group
+      // Hide slot numbers inside the group
       g.forEach(p => { const el = slots[p-1]; if (el) el.classList.add('vt-in-group'); });
 
-      const left = leftPct[first-1];
-      const width = leftPct[last] - leftPct[first-1];
+      // Exact px positioning relative to the slot container
+      const r1 = first.getBoundingClientRect();
+      const r2 = last.getBoundingClientRect();
+      const leftPx  = r1.left  - cref.left;
+      const widthPx = r2.right - r1.left;
 
       const ov = document.createElement('div');
       ov.className = 'vt-group-overlay';
-      ov.style.left = left + '%';
-      ov.style.width = width + '%';
+      ov.style.left  = leftPx  + 'px';
+      ov.style.width = widthPx + 'px';
       ov.textContent = labelText(g);
 
       wrap.appendChild(ov);
@@ -347,7 +357,7 @@
   function applyAll(){
     applyTwoToneWithGroups();
     layoutPins();
-    placeGroupOverlays();   // <— NEW
+    placeGroupOverlays();   // NEW
     bindSlotClicks();
     keepMessageStable();
     updateStats();
