@@ -1,17 +1,14 @@
-// index-addon.js — v1.74
-// Two-tone timeline (light/dark), groups share first tone and flip after whole group.
-// Messages include +Ramme/+Les in a/b order (single), and add group-wide hints for ranges.
-// Pins: frame above, read below, centered with spacing. Counts shown in info panel.
-// Timeline clicks allowed before Play, ignored during Play. Play state read from page's own lock/gray.
+// index-addon.js — v1.75
+// Two tones only; groups share first tone and we flip after whole group.
+// Re-applies on any timeline DOM change (fix for timing where groups wasn't ready).
 
 (function(){
-  /* ========== CSS ========== */
+  /* ========== CSS (same as before) ========== */
   (function ensureCSS(){
     if (document.querySelector('style[data-index-addon]')) return;
     const style = document.createElement('style');
     style.setAttribute('data-index-addon','');
     style.textContent = `
-      /* Pins */
       #timeline .para-slot i.frame-pin{
         position:absolute; left:50%; transform:translateX(-50%);
         top:-14px; bottom:auto; width:12px; height:12px;
@@ -22,16 +19,14 @@
         bottom:-14px; top:auto; width:16px; height:16px;
         background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
       }
-
-      /* ONLY two tones on timeline */
       :root{
-        --vt-tone-light: #EAF4EE;  /* light green */
-        --vt-tone-dark:  #CFE7D6;  /* darker green */
+        --vt-tone-light: #EAF4EE;
+        --vt-tone-dark:  #CFE7D6;
       }
       #timeline .para-slot{
         background-color: var(--vt-tone-light) !important;
         background-image: none !important;
-        font-size: 12px;              /* uniform numbers */
+        font-size: 12px;
         line-height: 1.2;
         font-variant-numeric: tabular-nums;
       }
@@ -43,7 +38,6 @@
         font-size: inherit !important;
         line-height: inherit;
       }
-      /* neutralize possible third-tone states from themes */
       #timeline .para-slot.active,
       #timeline .para-slot.current,
       #timeline .para-slot.selected,
@@ -52,11 +46,8 @@
         background-image: none !important;
       }
       #timeline .para-slot::before,
-      #timeline .para-slot::after{
-        background: none !important;
-      }
+      #timeline .para-slot::after{ background: none !important; }
 
-      /* Compact stats line if we need to inject */
       .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
       .vt-stats b{ font-weight:600 }
       .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
@@ -64,7 +55,7 @@
     document.head.appendChild(style);
   })();
 
-  /* ========== Utils ========== */
+  /* ========== utils ========== */
   const $ = (sel, root=document)=> root.querySelector(sel);
   const $$ = (sel, root=document)=> Array.from(root.querySelectorAll(sel));
 
@@ -72,7 +63,8 @@
     if (!str || typeof str !== 'string') return [];
     return str.split(',').map(s=>s.trim()).flatMap(tok=>{
       const m = tok.match(/^(\d+)(?:-(\d+))?$/); if(!m) return [];
-      const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i); return [arr];
+      const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i);
+      return [arr];
     });
   }
   function getGroups(){
@@ -88,37 +80,40 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  /* ========== Two-tone with groups as single block ========== */
+  /* ========== two-tone with groups as one block ========== */
   function applyTwoToneWithGroups(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
 
-    // Reset any theme tinting; we only toggle 'alt'
+    // clean any theme classes and inline tints; we only use .alt
     slots.forEach(el=>{
-      el.classList.remove('alt-alt','group-alt','grp','group','galt','tone-a','tone-b','tone-c','tone-d','alt');
+      el.className = el.className
+        .replace(/\b(alt-alt|group-alt|grp|group|galt|tone-a|tone-b|tone-c|tone-d)\b/g,'')
+        .trim();
+      el.classList.remove('alt');
       el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor='';
     });
 
     const groups = getGroups();
     const starts = new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
 
-    let dark = false; // false=light tone; true=dark tone
+    let dark = false; // false=light, true=dark
     let i = 1;
     while (i <= slots.length){
       if (starts.has(i)){
         const g = starts.get(i);
-        g.forEach(p => { const el = slots[p-1]; if (!el) return; if (dark) el.classList.add('alt'); });
-        dark = !dark;                // flip ONCE after the whole group
-        i = g[g.length-1] + 1;       // jump after group
+        g.forEach(p => { const el = slots[p-1]; if (el && dark) el.classList.add('alt'); });
+        dark = !dark;                 // flip once after whole group
+        i = g[g.length-1] + 1;
       } else {
         const el = slots[i-1]; if (el && dark) el.classList.add('alt');
-        dark = !dark;
+        dark = !dark;                 // flip after single
         i++;
       }
     }
   }
 
-  /* ========== Data access from base ========== */
+  /* ========== base data access (unchanged) ========== */
   const getReadSet  = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
   const getFrameSet = ()=> window.__VT_FRAME_SET instanceof Set ? window.__VT_FRAME_SET : new Set();
   const getOrd      = ()=> window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
@@ -131,7 +126,7 @@
     return 0;
   }
 
-  /* ========== Message builder ========== */
+  /* ========== messages ========== */
   function buildSingleMsg(p){
     const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
     const o=ord.get(p)||{}, hasF=frames.has(p), hasR=reads.has(p);
@@ -160,7 +155,7 @@
     return buildSingleMsg(p);
   }
 
-  /* ========== Pins ========== */
+  /* ========== pins ========== */
   function layoutPins(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
@@ -186,7 +181,7 @@
     });
   }
 
-  /* ========== Info panel counts ========== */
+  /* ========== info panel counts ========== */
   function findInfoPanel(){
     const candidates = [
       '#article-info','#articleInfo','#article-panel','#articlePanel',
@@ -229,9 +224,8 @@
     }
   }
 
-  /* ========== Play/lock state (use page's own) ========== */
+  /* ========== play/lock state (use page's own) ========== */
   let isPlaying = false;
-  // Optional external explicit hook
   window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
 
   const lockPanel = findInfoPanel();
@@ -246,13 +240,13 @@
     return false;
   }
   if (lockPanel){
-    const updatePlaying = ()=>{ isPlaying = panelLooksLocked(lockPanel); };
-    const obs = new MutationObserver(updatePlaying);
+    const syncPlaying = ()=>{ isPlaying = panelLooksLocked(lockPanel); };
+    const obs = new MutationObserver(syncPlaying);
     obs.observe(lockPanel, {attributes:true, attributeFilter:['class','style']});
-    updatePlaying();
+    syncPlaying();
   }
 
-  /* ========== Timeline interaction ========== */
+  /* ========== timeline interaction ========== */
   function bindSlotClicks(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
@@ -261,14 +255,14 @@
       if (slot.__vtBound) return;
       slot.__vtBound = true;
       slot.addEventListener('click', ()=>{
-        if (isPlaying) return;       // ignore while playing
+        if (isPlaying) return;
         const msg = $('#message'); if (!msg) return;
         msg.textContent = buildMsgFor(p);
       });
     });
   }
 
-  /* ========== Keep message stable (override "Avsnitt N" from base) ========== */
+  /* ========== keep message stable ========== */
   function keepMessageStable(){
     const msg = $('#message'); if(!msg) return;
     const mo = new MutationObserver(()=>{
@@ -282,13 +276,21 @@
     mo.observe(msg, {childList:true, characterData:true, subtree:true});
   }
 
-  /* ========== Init ========== */
+  /* ========== apply & re-apply on timeline changes ========== */
   function applyAll(){
-    applyTwoToneWithGroups();   // only two colors; groups-as-block
+    applyTwoToneWithGroups();
     layoutPins();
     bindSlotClicks();
     keepMessageStable();
     updateStats();
+  }
+
+  // run once and every time the timeline DOM changes
+  function startObservers(){
+    const tl = $('#timeline');
+    if (!tl) return;
+    const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
+    mo.observe(tl, {childList:true, subtree:true});
   }
 
   const orig = window.drawTimeline;
@@ -296,13 +298,14 @@
     window.drawTimeline = function(){
       const r = orig.apply(this, arguments);
       requestAnimationFrame(applyAll);
+      requestAnimationFrame(startObservers);
       return r;
     };
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObservers(); });
   } else {
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', applyAll);
-    } else {
-      applyAll();
-    }
+    applyAll(); startObservers();
   }
 })();
