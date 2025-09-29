@@ -4,7 +4,7 @@
 
 (function(){
   /* ---------- Minimal CSS for pins ---------- */
- (function ensureCSS(){
+(function ensureCSS(){
   if (document.querySelector('style[data-index-addon]')) return;
   const style = document.createElement('style');
   style.setAttribute('data-index-addon','');
@@ -21,20 +21,47 @@
       background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
     }
 
-    /* NYTT: Konsistent tallstørrelse i tidslinjen */
+    /* === KUN TO FARGER PÅ TIDSLINJEN === */
+    /* Justér disse to hvis du vil matche paletten din 1:1 */
+    :root{
+      --vt-tone-light: #EAF4EE;  /* lys grønn */
+      --vt-tone-dark:  #CFE7D6;  /* mørkere grønn */
+    }
+
+    /* Tving bakgrunn på alle para-slot’er */
     #timeline .para-slot{
-      font-size: 12px;           /* match den minste størrelsen */
-      line-height: 1.2;          /* stabil vertikal plassering */
-      font-variant-numeric: tabular-nums; /* jevn bredde */
+      background-color: var(--vt-tone-light) !important;
+      background-image: none !important;
+    }
+    #timeline .para-slot.alt{
+      background-color: var(--vt-tone-dark) !important;
+      background-image: none !important;
+    }
+
+    /* Nøytraliser alternative stiler som kan snike inn en tredje farge */
+    #timeline .para-slot.active,
+    #timeline .para-slot.current,
+    #timeline .para-slot.selected,
+    #timeline .para-slot.is-active{
+      background-color: inherit !important;   /* behold to-tonen */
+      background-image: none !important;
+    }
+
+    /* Dersom noen temaer legger gradient via :before/:after */
+    #timeline .para-slot::before,
+    #timeline .para-slot::after{
+      background: none !important;
+    }
+
+    /* (valgfritt) jevn tallstørrelse i alle bokser */
+    #timeline .para-slot{
+      font-size: 12px;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
     }
     #timeline .para-slot *{
-      font-size: inherit !important;   /* ikke la barn blåse opp fonten */
-      line-height: inherit;
-    }
-    #timeline .para-slot b,
-    #timeline .para-slot strong{
-      font-weight: 600;               /* ok å være fet, men ikke større */
       font-size: inherit !important;
+      line-height: inherit;
     }
   `;
   document.head.appendChild(style);
