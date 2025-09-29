@@ -1,16 +1,16 @@
-// index-addon.js — v1.75-group-labels
-// Base: v1.75 (to-toner, grupper som blokk, pins, meldinger, tellere, klikk-låsing).
-// Nytt: ÉN felles label over hver gruppe (4&5 / 10–12), midtstilt over hele gruppa,
-// og skjul individuelle slot-tall i gruppa.
+// index-addon.js — v1.75 + group labels
+// Two tones only; groups share first tone and we flip after whole group.
+// Re-applies on any timeline DOM change (fix for timing where groups wasn't ready).
+// NEW: One shared overlay label per group (e.g., "4&5" or "10–12"), centered over the group's width,
+// and numbers inside the group's individual slots are hidden to make it look like one block.
 
 (function(){
-  /* ========== CSS ========== */
+  /* ========== CSS (base + overlays) ========== */
   (function ensureCSS(){
     if (document.querySelector('style[data-index-addon]')) return;
     const style = document.createElement('style');
     style.setAttribute('data-index-addon','');
     style.textContent = `
-      /* Pins */
       #timeline .para-slot i.frame-pin{
         position:absolute; left:50%; transform:translateX(-50%);
         top:-14px; bottom:auto; width:12px; height:12px;
@@ -21,21 +21,19 @@
         bottom:-14px; top:auto; width:16px; height:16px;
         background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
       }
-
-      /* To toner */
       :root{
-        --vt-tone-light: #EAF4EE; /* lys grønn */
-        --vt-tone-dark:  #CFE7D6; /* mørkere grønn */
+        --vt-tone-light: #EAF4EE;
+        --vt-tone-dark:  #CFE7D6;
       }
-      #timeline{ position:relative; } /* for overlay posisjonering */
+      /* For overlay posisjonering */
+      #timeline{ position:relative; }
+
       #timeline .para-slot{
         background-color: var(--vt-tone-light) !important;
         background-image: none !important;
-        font-size: 12px;                /* jevne tall */
+        font-size: 12px;
         line-height: 1.2;
         font-variant-numeric: tabular-nums;
-        position: relative;
-        overflow: hidden;
       }
       #timeline .para-slot.alt{
         background-color: var(--vt-tone-dark) !important;
@@ -45,7 +43,6 @@
         font-size: inherit !important;
         line-height: inherit;
       }
-      /* ikke tillat en "tredje" nyanse */
       #timeline .para-slot.active,
       #timeline .para-slot.current,
       #timeline .para-slot.selected,
@@ -56,30 +53,28 @@
       #timeline .para-slot::before,
       #timeline .para-slot::after{ background: none !important; }
 
-      /* Overlays for gruppe-labels */
+      .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
+      .vt-stats b{ font-weight:600 }
+      .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
+
+      /* === NEW: overlay labels for groups === */
       #timeline .vt-group-overlays{
         position:absolute; left:0; top:0; right:0; bottom:0;
-        pointer-events:none;
+        pointer-events:none; /* ikke stjel klikk */
       }
       #timeline .vt-group-overlay{
         position:absolute; top:0; height:100%;
         display:flex; align-items:center; justify-content:center;
         font-weight:600; opacity:.9;
       }
-
-      /* Skjul tall i slots som tilhører en gruppe (overlays viser felles label) */
+      /* Skjul tall i slots som inngår i en gruppe (overlays viser felles label) */
       #timeline .para-slot.vt-in-group{ color: transparent !important; }
       #timeline .para-slot.vt-in-group *{ color: transparent !important; }
-
-      /* Fallback liten statistikk-linje (om siden ikke har egne spans) */
-      .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
-      .vt-stats b{ font-weight:600 }
-      .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
     `;
     document.head.appendChild(style);
   })();
 
-  /* ========== Utils ========== */
+  /* ========== utils ========== */
   const $ = (sel, root=document)=> root.querySelector(sel);
   const $$ = (sel, root=document)=> Array.from(root.querySelectorAll(sel));
 
@@ -87,16 +82,16 @@
     if (!str || typeof str !== 'string') return [];
     return str.split(',').map(s=>s.trim()).flatMap(tok=>{
       const m = tok.match(/^(\d+)(?:-(\d+))?$/); if(!m) return [];
-      const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i); return [arr];
+      const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i);
+      return [arr];
     });
   }
-
   function getGroups(){
+    if (Array.isArray(window.__VT_GROUPS)) return window.__VT_GROUPS;
     const it = window.currentItem || window.ITEM || null;
     if (it && typeof it.groups === 'string') return parseGroupsString(it.groups);
     return [];
   }
-
   function rangeLabel(nums){
     const s=[...new Set(nums)].sort((a,b)=>a-b);
     if (s.length===1) return `Avsnitt ${s[0]}`;
@@ -104,12 +99,12 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  /* ========== To-toner med grupper som én blokk (men uten å slå sammen bokser) ========== */
+  /* ========== two-tone with groups as one block ========== */
   function applyTwoToneWithGroups(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
 
-    // reset temaklasser; bruk kun .alt
+    // clean any theme classes and inline tints; we only use .alt
     slots.forEach(el=>{
       el.className = el.className
         .replace(/\b(alt-alt|group-alt|grp|group|galt|tone-a|tone-b|tone-c|tone-d)\b/g,'')
@@ -121,25 +116,26 @@
     const groups = getGroups();
     const starts = new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
 
-    let dark=false; let i=1;
-    while(i<=slots.length){
+    let dark = false; // false=light, true=dark
+    let i = 1;
+    while (i <= slots.length){
       if (starts.has(i)){
         const g = starts.get(i);
-        for(const p of g){ const el = slots[p-1]; if (el && dark) el.classList.add('alt'); }
-        dark = !dark;                 // flip ÉN gang etter hele gruppa
+        g.forEach(p => { const el = slots[p-1]; if (el && dark) el.classList.add('alt'); });
+        dark = !dark;                 // flip once after whole group
         i = g[g.length-1] + 1;
       } else {
         const el = slots[i-1]; if (el && dark) el.classList.add('alt');
-        dark = !dark;
+        dark = !dark;                 // flip after single
         i++;
       }
     }
   }
 
-  /* ========== Data fra basiskoden ========== */
+  /* ========== base data access (unchanged) ========== */
   const getReadSet  = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
-  const getFrameSet = ()=> window.__VT_FRAME_SET   instanceof Set ? window.__VT_FRAME_SET   : new Set();
-  const getOrd      = ()=> window.__VT_ORD         instanceof Map ? window.__VT_ORD         : new Map();
+  const getFrameSet = ()=> window.__VT_FRAME_SET instanceof Set ? window.__VT_FRAME_SET : new Set();
+  const getOrd      = ()=> window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
 
   function getParaCount(){
     const it = window.currentItem || window.ITEM || null;
@@ -149,7 +145,7 @@
     return 0;
   }
 
-  /* ========== Meldingsbygger ========== */
+  /* ========== messages ========== */
   function buildSingleMsg(p){
     const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
     const o=ord.get(p)||{}, hasF=frames.has(p), hasR=reads.has(p);
@@ -178,7 +174,7 @@
     return buildSingleMsg(p);
   }
 
-  /* ========== Pins ========== */
+  /* ========== pins ========== */
   function layoutPins(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
@@ -204,7 +200,7 @@
     });
   }
 
-  /* ========== Info-panel (tellerlinje) ========== */
+  /* ========== info panel counts ========== */
   function findInfoPanel(){
     const candidates = [
       '#article-info','#articleInfo','#article-panel','#articlePanel',
@@ -215,13 +211,9 @@
   }
   function updateStats(){
     const panel = findInfoPanel(); if (!panel) return;
-    const it = window.currentItem || window.ITEM || null;
-    const paraCount =
-      (it && Array.isArray(it.words)) ? it.words.length :
-      (it && Array.isArray(it.para_lengths)) ? it.para_lengths.length :
-      getParaCount();
-    const readCount  = getReadSet().size;
-    const frameCount = getFrameSet().size;
+    const paraCount = getParaCount();
+    const readCount = getReadSet().size;
+    const frameCount= getFrameSet().size;
 
     const setText = (sel, text)=>{
       const el = $(sel, panel);
@@ -251,7 +243,7 @@
     }
   }
 
-  /* ========== Play/lock (bruk sidens egen) ========== */
+  /* ========== play/lock state (use page's own) ========== */
   let isPlaying = false;
   window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
 
@@ -273,56 +265,7 @@
     syncPlaying();
   }
 
-  /* ========== Gruppe-overlays (NYTT) ========== */
-  // Lager én overlay pr. gruppe (midtstilt over hele bredden) og skjuler tall i slots i gruppa.
-  function placeGroupOverlays(){
-    const tl = document.getElementById('timeline'); if (!tl) return;
-    const slots = Array.from(tl.querySelectorAll('.para-slot')); if (!slots.length) return;
-
-    // Fjern gamle overlays + in-group-markering
-    const oldWrap = tl.querySelector('.vt-group-overlays'); if (oldWrap) oldWrap.remove();
-    slots.forEach(s => s.classList.remove('vt-in-group'));
-
-    const groups = getGroups(); if (!groups.length) return;
-
-    // Hent prosent-bredder fra inline style (timeline setter width i % per slot)
-    const widths = slots.map(el => parseFloat(el.style.width || '0') || 0);
-    if (!widths.length) return;
-
-    // Prefikssummer i % for venstrekant
-    const leftPct = [0];
-    for (let i=0; i<widths.length; i++) leftPct[i+1] = leftPct[i] + widths[i];
-
-    // Container for overlays
-    const wrap = document.createElement('div');
-    wrap.className = 'vt-group-overlays';
-    tl.appendChild(wrap);
-
-    const labelText = g => (g.length===2 ? `${g[0]}&${g[1]}` : `${g[0]}–${g[g.length-1]}`);
-
-    groups.forEach(g=>{
-      if (!g || !g.length) return;
-      const first = g[0], last = g[g.length-1];
-      if (!slots[first-1] || !slots[last-1]) return;
-
-      // Skjul tall i alle slots i gruppa
-      g.forEach(p => { const el = slots[p-1]; if (el) el.classList.add('vt-in-group'); });
-
-      // Beregn overlay-område i %
-      const left = leftPct[first-1];
-      const width = leftPct[last] - leftPct[first-1];
-
-      const ov = document.createElement('div');
-      ov.className = 'vt-group-overlay';
-      ov.style.left = left + '%';
-      ov.style.width = width + '%';
-      ov.textContent = labelText(g);
-
-      wrap.appendChild(ov);
-    });
-  }
-
-  /* ========== Interaksjon ========== */
+  /* ========== timeline interaction ========== */
   function bindSlotClicks(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
@@ -331,14 +274,14 @@
       if (slot.__vtBound) return;
       slot.__vtBound = true;
       slot.addEventListener('click', ()=>{
-        if (isPlaying) return; // under Play: ignorér
+        if (isPlaying) return;
         const msg = $('#message'); if (!msg) return;
         msg.textContent = buildMsgFor(p);
       });
     });
   }
 
-  /* ========== Hold melding stabil (overstyr "Avsnitt N") ========== */
+  /* ========== keep message stable ========== */
   function keepMessageStable(){
     const msg = $('#message'); if(!msg) return;
     const mo = new MutationObserver(()=>{
@@ -352,21 +295,70 @@
     mo.observe(msg, {childList:true, characterData:true, subtree:true});
   }
 
-  /* ========== Apply + observers ========== */
-  function applyAll(){
-    applyTwoToneWithGroups();  // to farger (grupper som blokk)
-    layoutPins();              // pins
-    placeGroupOverlays();      // NYTT: felles label over grupper
-    bindSlotClicks();          // klikk
-    keepMessageStable();       // lås meldingen
-    updateStats();             // tellere
+  /* ========== NEW: group overlays (labels) ========== */
+  // Create one overlay per group (centered across that group's width)
+  // and hide numbers inside the grouped slots.
+  function placeGroupOverlays(){
+    const tl = document.getElementById('timeline'); if (!tl) return;
+    const slots = Array.from(tl.querySelectorAll('.para-slot')); if (!slots.length) return;
+
+    // Remove old overlays and clear markers
+    const oldWrap = tl.querySelector('.vt-group-overlays'); if (oldWrap) oldWrap.remove();
+    slots.forEach(s => s.classList.remove('vt-in-group'));
+
+    const groups = getGroups(); if (!groups.length) return;
+
+    // Use % widths from inline style (timeline sets width:% per slot)
+    const widths = slots.map(el => parseFloat(el.style.width || '0') || 0);
+    if (!widths.length) return;
+
+    // Prefix sums in % to compute left offsets
+    const leftPct = [0];
+    for (let i=0; i<widths.length; i++) leftPct[i+1] = leftPct[i] + widths[i];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'vt-group-overlays';
+    tl.appendChild(wrap);
+
+    const labelText = g => (g.length===2 ? `${g[0]}&${g[1]}` : `${g[0]}–${g[g.length-1]}`);
+
+    groups.forEach(g=>{
+      if (!g || !g.length) return;
+      const first = g[0], last = g[g.length-1];
+      if (!slots[first-1] || !slots[last-1]) return;
+
+      // Hide per-slot numbers within the group
+      g.forEach(p => { const el = slots[p-1]; if (el) el.classList.add('vt-in-group'); });
+
+      const left = leftPct[first-1];
+      const width = leftPct[last] - leftPct[first-1];
+
+      const ov = document.createElement('div');
+      ov.className = 'vt-group-overlay';
+      ov.style.left = left + '%';
+      ov.style.width = width + '%';
+      ov.textContent = labelText(g);
+
+      wrap.appendChild(ov);
+    });
   }
 
+  /* ========== apply & re-apply on timeline changes ========== */
+  function applyAll(){
+    applyTwoToneWithGroups();
+    layoutPins();
+    placeGroupOverlays();   // <— NEW
+    bindSlotClicks();
+    keepMessageStable();
+    updateStats();
+  }
+
+  // run once and every time the timeline DOM changes
   function startObservers(){
     const tl = $('#timeline');
     if (!tl) return;
     const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
-    mo.observe(tl, {childList:true, subtree:true, attributes:true, attributeFilter:['class','style']});
+    mo.observe(tl, {childList:true, subtree:true});
   }
 
   const orig = window.drawTimeline;
