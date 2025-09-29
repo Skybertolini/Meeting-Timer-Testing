@@ -4,24 +4,41 @@
 
 (function(){
   /* ---------- Minimal CSS for pins ---------- */
-  (function ensureCSS(){
-    if (document.querySelector('style[data-index-addon]')) return;
-    const style = document.createElement('style');
-    style.setAttribute('data-index-addon','');
-    style.textContent = `
-      #timeline .para-slot i.frame-pin{
-        position:absolute; left:50%; transform:translateX(-50%);
-        top:-14px; bottom:auto; width:12px; height:12px;
-        background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none;
-      }
-      #timeline .para-slot i.read-pin{
-        position:absolute; left:50%; transform:translateX(-50%);
-        bottom:-14px; top:auto; width:16px; height:16px;
-        background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
-      }
-    `;
-    document.head.appendChild(style);
-  })();
+ (function ensureCSS(){
+  if (document.querySelector('style[data-index-addon]')) return;
+  const style = document.createElement('style');
+  style.setAttribute('data-index-addon','');
+  style.textContent = `
+    /* Pins (som før) */
+    #timeline .para-slot i.frame-pin{
+      position:absolute; left:50%; transform:translateX(-50%);
+      top:-14px; bottom:auto; width:12px; height:12px;
+      background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none;
+    }
+    #timeline .para-slot i.read-pin{
+      position:absolute; left:50%; transform:translateX(-50%);
+      bottom:-14px; top:auto; width:16px; height:16px;
+      background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
+    }
+
+    /* NYTT: Konsistent tallstørrelse i tidslinjen */
+    #timeline .para-slot{
+      font-size: 12px;           /* match den minste størrelsen */
+      line-height: 1.2;          /* stabil vertikal plassering */
+      font-variant-numeric: tabular-nums; /* jevn bredde */
+    }
+    #timeline .para-slot *{
+      font-size: inherit !important;   /* ikke la barn blåse opp fonten */
+      line-height: inherit;
+    }
+    #timeline .para-slot b,
+    #timeline .para-slot strong{
+      font-weight: 600;               /* ok å være fet, men ikke større */
+      font-size: inherit !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
 
   /* ---------- Utils ---------- */
   const $ = (sel, root=document)=> root.querySelector(sel);
