@@ -1,15 +1,6 @@
-// index-addon.js — v1.72
-// - Teller og viser: Avsnitt / Les-skriftsteder / Rammer i infofeltet
-// - Pins: ramme over, les under
-// - Meldinger:
-//    * Single: "Avsnitt X" + (Ramme/Les i a/b-rekkefølge)
-//    * Gruppe (2): "Avsnittene X og Y" + ev. (Ramme/Les hvis minst ett i gruppen har det)
-//    * Gruppe (3+): "Avsnittene X–Y" + ev. (Ramme/Les hvis minst ett i gruppen har det)
-// - Klikk på tidslinjen:
-//    * tillatt før Play (velg start),
-//    * ignorert under Play (bruker sidens eksisterende “gråing/lock” som signal).
-// Forventer (som før): __VT_GROUPS | currentItem.groups (string "4-5,10-12"),
-// __VT_FRAME_SET (Set), __VT_READ_SET2 | readSet (Set), __VT_ORD (Map {frame,read} m/ a=1,b=2).
+// index-addon.js — v1.73
+// Kun to farger på tidslinjen (lys/mørk). Grupper arver første avsnitts farge, veksling fortsetter etter gruppa.
+// Beholder alt fra v1.72: pinner, meldinger (inkl. Ramme/Les og a/b), tellere, “ignorer klikk under Play”.
 
 (function(){
   /* ---------- Minimal CSS for pins ---------- */
@@ -28,10 +19,6 @@
         bottom:-14px; top:auto; width:16px; height:16px;
         background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
       }
-      /* Liten ikon for stats-linja i infofeltet (hvis vi må injisere selv) */
-      .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
-      .vt-stats b{ font-weight:600 }
-      .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
     `;
     document.head.appendChild(style);
   })();
@@ -60,25 +47,33 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  /* ---------- To-toner med grupper som blokk ---------- */
+  /* ---------- To-toner med grupper som blokk (kun lys/mørk) ---------- */
   function applyTwoToneWithGroups(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
-    // reset evt. særfarger
+
+    // 1) Nullstill all gruppe-spesifikk farging – vi tillater KUN klassen 'alt' som mørk tone.
     slots.forEach(el=>{
-      el.classList.remove('alt-alt','group-alt','grp','group','galt','alt');
+      el.classList.remove('alt-alt','group-alt','grp','group','galt','tone-a','tone-b','tone-c','tone-d','alt');
       el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor='';
     });
-    const groups=getGroups(); const starts=new Map(); groups.forEach(g=>{ if(g&&g.length) starts.set(g[0],g); });
-    let tone=false, i=1;
-    while(i<=slots.length){
+
+    // 2) Alternér: false = lys (ingen 'alt'), true = mørk ('alt').
+    const groups = getGroups();
+    const starts = new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
+
+    let dark = false; // starter lys
+    let i = 1;
+    while (i <= slots.length){
       if (starts.has(i)){
         const g = starts.get(i);
-        g.forEach(p=>{ const el=slots[p-1]; if (el && tone) el.classList.add('alt'); });
-        tone=!tone; i=g[g.length-1]+1;
+        g.forEach(p => { const el = slots[p-1]; if (!el) return; if (dark) el.classList.add('alt'); });
+        dark = !dark;                // flip ÉN gang for hele gruppa
+        i = g[g.length - 1] + 1;     // hopp til etter gruppa
       } else {
-        const el=slots[i-1]; if (el && tone) el.classList.add('alt');
-        tone=!tone; i++;
+        const el = slots[i-1]; if (el && dark) el.classList.add('alt');
+        dark = !dark;
+        i++;
       }
     }
   }
@@ -96,7 +91,7 @@
     return 0;
   }
 
-  /* ---------- Meldingsbygger ---------- */
+  /* ---------- Meldingsbygger (uendret logikk) ---------- */
   function buildSingleMsg(p){
     const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
     const o=ord.get(p)||{}, hasF=frames.has(p), hasR=reads.has(p);
@@ -148,7 +143,7 @@
     });
   }
 
-  /* ---------- Infofelt: vis tall ---------- */
+  /* ---------- Infofelt-tellere ---------- */
   function findInfoPanel(){
     const candidates = [
       '#article-info','#articleInfo','#article-panel','#articlePanel',
@@ -158,8 +153,7 @@
     return null;
   }
   function updateStats(){
-    const panel = findInfoPanel(); if (!panel) return; // respekter eksisterende oppsett hvis vi ikke finner
-    // Prøv å oppdatere eksisterende felt hvis de finnes:
+    const panel = findInfoPanel(); if (!panel) return;
     const paraCount = getParaCount();
     const readCount = getReadSet().size;
     const frameCount= getFrameSet().size;
@@ -175,7 +169,6 @@
       setText('#frameCount', String(frameCount));
 
     if (!updated){
-      // Lager en liten, diskret linje (én gang) hvis ikke noe å oppdatere
       if (!$('#vt-stats', panel)){
         const div = document.createElement('div');
         div.className = 'vt-stats'; div.id = 'vt-stats';
@@ -193,7 +186,7 @@
     }
   }
 
-  /* ---------- Spiller/ikke spiller: bruk sidens egen lock/gråing ---------- */
+  /* ---------- Spiller/ikke spiller (bruk sidens lock/gråing) ---------- */
   let isPlaying = false;
   window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
 
@@ -235,7 +228,6 @@
   function keepMessageStable(){
     const msg = $('#message'); if(!msg) return;
     const mo = new MutationObserver(()=>{
-      // Bytt "Avsnitt N ..." til vår full-format tekst
       const text = (msg.textContent || '').trim();
       const m = text.match(/^Avsnitt\s+(\d+)(?:\b|$)/);
       if (!m) return;
@@ -248,11 +240,11 @@
 
   /* ---------- Init ---------- */
   function applyAll(){
-    applyTwoToneWithGroups();
+    applyTwoToneWithGroups(); // <— kun to farger
     layoutPins();
     bindSlotClicks();
     keepMessageStable();
-    updateStats(); // <— tell og vis
+    updateStats();
   }
 
   const orig = window.drawTimeline;
