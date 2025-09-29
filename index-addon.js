@@ -1,10 +1,10 @@
-// index-addon.js — v1.69
-// Safe overlay: no global click swallowing, no pointer-events: none.
-// Keeps full message persistent, two-tone w/ groups-as-block, centered pins, and ignores
-// paragraph clicks only while playing. Optional external hook: window.__VT_SET_PLAYING(boolean)
+// index-addon.js — v1.71
+// Bruker eksisterende "grå ut / lock" fra hovedsiden som signal for Play.
+// Ingen egen gråing. Ignorerer kun tidslinje-klikk mens det faktisk spiller.
+// Beholder: to-tone m/grupper, pins, meldinger (Avsnitt/Avsnittene + Ramme/Les i A/B).
 
 (function(){
-  /* ========== Minimal CSS (scoped) ========== */
+  /* ========== Minimal CSS for pins (uendret) ========== */
   (function ensureCSS(){
     if (document.querySelector('style[data-index-addon]')) return;
     const style = document.createElement('style');
@@ -20,22 +20,19 @@
         bottom:-14px; top:auto; width:16px; height:16px;
         background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
       }
-      /* hvis du vil ha ekstra luft til beskjed-feltet, kan du avkommentere:
-      #message{ margin-top:22px; }
-      */
     `;
     document.head.appendChild(style);
   })();
 
   /* ========== Utils ========== */
+  const $ = (sel, root=document)=> root.querySelector(sel);
+  const $$ = (sel, root=document)=> Array.from(root.querySelectorAll(sel));
+
   function parseGroupsString(str){
     if (!str || typeof str !== 'string') return [];
     return str.split(',').map(s=>s.trim()).flatMap(tok=>{
-      const m = tok.match(/^(\d+)(?:-(\d+))?$/);
-      if (!m) return [];
-      const a = +m[1], b = m[2] ? +m[2] : a;
-      const arr=[]; for(let i=a;i<=b;i++) arr.push(i);
-      return [arr];
+      const m = tok.match(/^(\d+)(?:-(\d+))?$/); if(!m) return [];
+      const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i); return [arr];
     });
   }
   function getGroups(){
@@ -51,149 +48,149 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  /* ========== Two-tone med grupper som én blokk ========== */
-  function applyGroupAwareTwoTone(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    const slots = [...tl.querySelectorAll('.para-slot')]; if(!slots.length) return;
-    // fjern stray-klasser / inline-farger
+  /* ========== To-toner med grupper som blokk ========== */
+  function applyTwoToneWithGroups(){
+    const tl = $('#timeline'); if(!tl) return;
+    const slots = $$('.para-slot', tl); if(!slots.length) return;
     slots.forEach(el=>{
       el.classList.remove('alt-alt','group-alt','grp','group','galt','alt');
       el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor='';
     });
-    const groups=getGroups(); const starts=new Map();
-    groups.forEach(g=>{ if(g&&g.length) starts.set(g[0], g); });
-
-    let tone=false; // false=lys (ingen 'alt'), true=mørk ('alt')
-    let i=1;
+    const groups=getGroups(); const starts=new Map(); groups.forEach(g=>{ if(g&&g.length) starts.set(g[0],g); });
+    let tone=false, i=1;
     while(i<=slots.length){
       if (starts.has(i)){
         const g = starts.get(i);
-        g.forEach(p=>{ const el=slots[p-1]; if(el && tone) el.classList.add('alt'); });
-        tone = !tone;          // flip én gang for hele gruppa
-        i = g[g.length-1] + 1; // hopp til etter gruppa
+        g.forEach(p=>{ const el=slots[p-1]; if (el && tone) el.classList.add('alt'); });
+        tone=!tone; i=g[g.length-1]+1;
       } else {
         const el=slots[i-1]; if (el && tone) el.classList.add('alt');
-        tone = !tone;
-        i++;
+        tone=!tone; i++;
       }
     }
   }
 
-  /* ========== Pins + meldinger (klikk) ========== */
-  // Spesifikke datastrukturer forventes definert av basiskoden:
-  // window.__VT_ORD: Map(para => {frame: 1|2, read: 1|2})
-  // window.__VT_FRAME_SET: Set(para)  for rammer
-  // window.__VT_READ_SET2 eller window.readSet: Set(para) for les-skriftsteder
+  /* ========== Data fra basiskoden ========== */
+  const getReadSet  = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
+  const getFrameSet = ()=> window.__VT_FRAME_SET instanceof Set ? window.__VT_FRAME_SET : new Set();
+  const getOrd      = ()=> window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
 
-  let isPlaying = false;               // lokal til add-on
-  let lastMsgText = '';
+  /* ========== Meldingsbygger ========== */
+  function buildSingleMsg(p){
+    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
+    const o=ord.get(p)||{}, hasF=frames.has(p), hasR=reads.has(p);
+    if (!hasF && !hasR) return rangeLabel([p]);
+    if (hasF && hasR){
+      const f=o.frame ?? 1, r=o.read ?? 2;
+      return ( (f ?? 99) <= (r ?? 99) )
+        ? `${rangeLabel([p])} + Ramme og Les-skriftsted`
+        : `${rangeLabel([p])} + Les-skriftsted og Ramme`;
+    }
+    return hasF ? `${rangeLabel([p])} + Ramme` : `${rangeLabel([p])} + Les-skriftsted`;
+  }
+  function buildMsgFor(p){
+    const groups=getGroups();
+    for (const g of groups){ if (g.includes(p)) return rangeLabel(g); }
+    return buildSingleMsg(p);
+  }
 
-  // Valgfri ekstern hook fra din app:
-  window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
-
-  function layoutPinsAndBind(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    const slots = [...tl.querySelectorAll('.para-slot')]; if(!slots.length) return;
-
-    const ord = window.__VT_ORD || new Map();
-    const frameSet = window.__VT_FRAME_SET || new Set();
-    const readSet  = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
-
-    const groups=getGroups(); const starts=new Map();
-    groups.forEach(g=>{ if(g&&g.length) starts.set(g[0], g); });
-    const findGroupFor = (p)=>{ for(const g of groups){ if(g.includes(p)) return g.slice(); } return [p]; };
-
-    const buildSingleMsg = (p)=>{
-      const o = ord.get(p) || {};
-      const hasF = frameSet.has(p);
-      const hasR = readSet.has(p);
-      if (!hasF && !hasR) return rangeLabel([p]);
-      if (hasF && hasR){
-        const f=o.frame ?? 1, r=o.read ?? 2;
-        return ( (f ?? 99) <= (r ?? 99) )
-          ? `${rangeLabel([p])} + Ramme og Les-skriftsted`
-          : `${rangeLabel([p])} + Les-skriftsted og Ramme`;
-      }
-      return hasF ? `${rangeLabel([p])} + Ramme` : `${rangeLabel([p])} + Les-skriftsted`;
-    };
-    const buildMsgFor = (p)=>{
-      const g = starts.get(p) || findGroupFor(p);
-      if (g.length > 1) return rangeLabel(g);
-      return buildSingleMsg(p);
-    };
-    // eksponer for normalisering
-    window.__VT_BUILD_MSG_FOR = buildMsgFor;
-
+  /* ========== Pins ========== */
+  function layoutPins(){
+    const tl = $('#timeline'); if(!tl) return;
+    const slots = $$('.para-slot', tl); if(!slots.length) return;
+    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
     slots.forEach((slot, idx)=>{
-      const p = idx + 1;
-      const hasF = frameSet.has(p), hasR = readSet.has(p);
-
-      // pins
-      slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
-      if (hasF || hasR){
-        const items=[];
-        if (hasF) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
-        if (hasR) items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
-        items.sort((a,b)=>(a.order??99)-(b.order??99));
-        const gap=14, base=-((items.length-1)/2)*gap;
-        items.forEach((it,i)=>{
-          const el=document.createElement('i');
-          el.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
-          el.style.left = `calc(50% + ${base + i*gap}px)`;
-          slot.appendChild(el);
-        });
-      }
-
-      // klikk — men hopp over hvis vi spiller av (ikke stopp eventet globalt)
-      slot.removeEventListener('click', slot.__addonClick || (()=>{}));
-      const handler = ()=>{
-        if (isPlaying) return; // gjør ingenting mens det spiller
-        const msg = document.getElementById('message'); if (!msg) return;
-        msg.textContent = buildMsgFor(p);
-      };
-      slot.__addonClick = handler;
-      slot.addEventListener('click', handler);
+      const p=idx+1, hasF=frames.has(p), hasR=reads.has(p);
+      $$('.read-pin,.frame-pin', slot).forEach(n=>n.remove());
+      if (!hasF && !hasR) return;
+      const items=[];
+      if (hasF) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
+      if (hasR) items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
+      items.sort((a,b)=>(a.order??99)-(b.order??99));
+      const gap=14, base=-((items.length-1)/2)*gap;
+      items.forEach((it,i)=>{
+        const el=document.createElement('i');
+        el.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
+        el.style.left = `calc(50% + ${base + i*gap}px)`;
+        slot.appendChild(el);
+      });
     });
   }
 
-  /* ========== Hold meldingen stabil & detekter “spilling” uten å fange knapper ========== */
-  function observeMessageAndNormalize(){
-    const msg = document.getElementById('message'); if(!msg) return;
-    const buildMsgFor = window.__VT_BUILD_MSG_FOR || (p => `Avsnitt ${p}`);
+  /* ========== Spiller/ikke spiller: bruk SIDENS egen «gråing/lock» som signal ========== */
+  let isPlaying = false;
 
-    let lastChange = 0;
-    const BURST_MS = 450;   // oppdateringer tettere enn dette → sannsynligvis avspilling
-    const IDLE_MS  = 1200;  // ingen oppdateringer så lenge → sannsynligvis ikke avspilling
-    let idleTimer = null;
+  // Valgfri eksplisitt hook (om du allerede har den i appen):
+  window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
 
-    const normalize = ()=>{
-      const text = (msg.textContent || '').trim();
-      if (text !== lastMsgText){
-        const now = Date.now();
-        // enkel “burst”-deteksjon
-        if (now - lastChange < BURST_MS) isPlaying = true;
-        lastChange = now;
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimer = setTimeout(()=>{ isPlaying = false; }, IDLE_MS);
-        lastMsgText = text;
-      }
+  // Prøv å finne panelet som blir grått/locked av din kode
+  const candidateSelectors = [
+    '#article-info','#articleInfo','#article-panel','#articlePanel',
+    '.article-info','.article-meta','.article-details','#info',
+    '#article','.article','.content-info','.study-info'
+  ];
+  function findLockPanel(){
+    for (const sel of candidateSelectors){
+      const el = $(sel); if (el) return el;
+    }
+    return null;
+  }
+  const lockPanel = findLockPanel();
 
-      // Bytt «Avsnitt N …» til vår full-format tekst
-      const m = text.match(/^Avsnitt\s+(\d+)(?:\b|$)/);
-      if (m){
-        const p = Number(m[1]);
-        const desired = buildMsgFor(p);
-        if (desired && text !== desired) msg.textContent = desired;
-      }
-    };
+  // Vurderer "låst" hvis:
+  //  - classList inneholder playing/is-playing/running/locked/disabled/dim/inactive
+  //  - ELLER computed style har pointer-events: none eller filter med grayscale
+  function panelLooksLocked(el){
+    if (!el) return false;
+    const cls = (el.className||'').toLowerCase();
+    if (/(^|\s)(playing|is-playing|running|locked|disabled|dim|inactive)(\s|$)/.test(cls)) return true;
+    const cs = getComputedStyle(el);
+    if (cs.pointerEvents === 'none') return true;
+    const f = cs.filter || '';
+    if (/grayscale\(\s*(0\.[3-9]|[1-9]|\d+\.\d+)\s*\)/.test(f)) return true;
+    return false;
+    }
 
-    const mo = new MutationObserver(()=> normalize());
-    mo.observe(msg, {childList:true, characterData:true, subtree:true});
-    normalize();
+  // Observer: når panelet endrer klasse/stil → oppdater isPlaying
+  if (lockPanel){
+    const updatePlaying = ()=>{ isPlaying = panelLooksLocked(lockPanel); };
+    const obs = new MutationObserver(updatePlaying);
+    obs.observe(lockPanel, {attributes:true, attributeFilter:['class','style']});
+    updatePlaying();
   }
 
-  /* ========== Kjør ========== */
-  function applyAll(){ applyGroupAwareTwoTone(); layoutPinsAndBind(); observeMessageAndNormalize(); }
+  /* ========== Interaksjon på tidslinjen (respekterer isPlaying) ========== */
+  function bindSlotClicks(){
+    const tl = $('#timeline'); if(!tl) return;
+    const slots = $$('.para-slot', tl); if(!slots.length) return;
+    slots.forEach((slot, idx)=>{
+      const p=idx+1;
+      if (slot.__vtBound) return;
+      slot.__vtBound = true;
+      slot.addEventListener('click', ()=>{
+        if (isPlaying) return; // under Play: ignorér
+        const msg = $('#message'); if (!msg) return;
+        msg.textContent = buildMsgFor(p);
+      });
+    });
+  }
+
+  /* ========== Hold melding stabil (= overskriv "Avsnitt N" fra basis) ========== */
+  function keepMessageStable(){
+    const msg = $('#message'); if(!msg) return;
+    const mo = new MutationObserver(()=>{
+      const text = (msg.textContent || '').trim();
+      const m = text.match(/^Avsnitt\s+(\d+)(?:\b|$)/);
+      if (!m) return;
+      const p = Number(m[1]);
+      const desired = buildMsgFor(p);
+      if (desired && text !== desired) msg.textContent = desired;
+    });
+    mo.observe(msg, {childList:true, characterData:true, subtree:true});
+  }
+
+  /* ========== Init ========== */
+  function applyAll(){ applyTwoToneWithGroups(); layoutPins(); bindSlotClicks(); keepMessageStable(); }
 
   const orig = window.drawTimeline;
   if (typeof orig === 'function'){
@@ -202,15 +199,11 @@
       requestAnimationFrame(applyAll);
       return r;
     };
-  }
-  const obs = new MutationObserver(()=> requestAnimationFrame(applyAll));
-  function startObs(){
-    const tl = document.getElementById('timeline');
-    if (tl) obs.observe(tl, {childList:true, subtree:true, attributes:true, attributeFilter:['class','style']});
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObs(); });
   } else {
-    applyAll(); startObs();
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', applyAll);
+    } else {
+      applyAll();
+    }
   }
 })();
