@@ -129,32 +129,13 @@ textarea{resize:vertical;}
 /* Spacing between notes and timer section */
 #timerSection{margin-top:25px}
 
-/* --- addon COMBINED (images + groups + pins) --- */
-#timeline .para-slot i.read-pin,
-#timeline .para-slot i.frame-pin,
+/* --- addon: image pin --- */
 #timeline .para-slot i.image-pin{
   position:absolute; left:50%; transform:translateX(-50%);
-  bottom:-20px !important; top:auto; pointer-events:none; opacity:.95;
+  bottom:-20px; width:16px; height:16px;
+  background:url('./img/image-icon.png') center/contain no-repeat;
+  pointer-events:none; opacity:.95;
 }
-#timeline .para-slot i.read-pin{
-  width:16px; height:16px; background:url('./img/read-icon.png') center/contain no-repeat;
-}
-#timeline .para-slot i.frame-pin{
-  width:12px; height:12px; background:url('./img/box-icon.png') center/contain no-repeat;
-}
-#timeline .para-slot i.image-pin{
-  width:14px; height:14px; background:url('./img/image-icon.png') center/contain no-repeat;
-}
-#timeline .para-slot{ text-shadow:none !important; }
-.vt-inline-stat{ display:inline-flex; align-items:center; gap:.4em; margin-left:12px; white-space:nowrap; }
-.vt-inline-stat img.ic{ width:14px; height:14px; vertical-align:middle; }
-#timeline .vt-group-overlays{ position:absolute; inset:0; pointer-events:none; }
-#timeline .vt-group-overlay{
-  position:absolute; top:0; height:100%;
-  display:flex; align-items:center; justify-content:center;
-  font-weight:900; font-size:12px; line-height:1.2; color:#2b3432; opacity:.96;
-}
-#timeline .para-slot.vt-in-group>div{ visibility:hidden; }
 
 </style>
 </head>
@@ -660,112 +641,108 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
   <script src="./index-addon.js"></script>
 
 <script>
-// --- addon COMBINED v1.75.1 ---
 (function(){
-  const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-  function parseGroupsString(str){ if(!str||typeof str!=='string')return[]; return str.split(',').map(s=>s.trim()).flatMap(tok=>{ const m=tok.match(/^(\d+)(?:-(\d+))?$/); if(!m)return[]; const a=+m[1], b=m[2]?+m[2]:a, arr=[]; for(let i=a;i<=b;i++) arr.push(i); return [arr];}); }
-  function getItemsArray(){ if(window.DATA&&Array.isArray(window.DATA.items))return window.DATA.items; if(Array.isArray(window.items))return window.items; if(Array.isArray(window.ARTICLES))return window.ARTICLES; return[]; }
-  function getCurrentItemSafe(){
-    if(window.currentItem&&typeof window.currentItem==='object') return window.currentItem;
-    if(window.ITEM&&typeof window.ITEM==='object') return window.ITEM;
-    const items=getItemsArray(); const sel=$('#weekSel');
-    if(sel&&sel.selectedIndex>=0){ const opt=sel.options[sel.selectedIndex];
-      try{ const v=JSON.parse(opt.value); if(v?.week_start){ const f=items.find(it=>it.week_start===v.week_start); if(f)return f; } }catch{}
-      if(opt.dataset?.week_start){ const f=items.find(it=>it.week_start===opt.dataset.week_start); if(f)return f; }
-      const m=(opt.textContent||'').match(/\b\d{4}-\d{2}-\d{2}\b/); if(m){ const f=items.find(it=>it.week_start===m[0]); if(f)return f; }
+  // Utility: parse images array (supports numbers and "12a"/"5b"/"3c")
+  function expandWithOrder(refs){
+    const set = new Set(), ord = new Map();
+    if (!Array.isArray(refs)) return {set, ord};
+    const pri = c => c ? ({a:1,b:2,c:3}[String(c).toLowerCase()]||null) : null;
+    for (const v of refs){
+      if (typeof v === 'number'){ set.add(v); continue; }
+      const m = String(v).trim().match(/^(\d+)([abc])?$/i);
+      if (m){ const n=+m[1], o=pri(m[2]); set.add(n); if(o) ord.set(n,o); }
     }
-    return items.length===1?items[0]:null;
+    return {set, ord};
   }
-  function getGroups(){ const it=getCurrentItemSafe(); if(it&&typeof it.groups==='string') return parseGroupsString(it.groups); return window.__VT_GROUPS||[]; }
-  function expandRefsWithOrder(refs){ const set=new Set(), ord=new Map(); if(!Array.isArray(refs))return{set,ord};
-    const of=c=>c?({a:1,b:2,c:3}[c.toLowerCase()]||undefined):undefined;
-    const apply=(a,b,o)=>{ const lo=Math.min(a,b), hi=Math.max(a,b); for(let i=lo;i<=hi;i++){ set.add(i); if(o) ord.set(i,o);} };
-    refs.forEach(v=>{ if(typeof v==='number'){ set.add(v); return; } if(typeof v!=='string')return; const s=v.trim();
-      let m=s.match(/^(\d+)[\-–](\d+)([abc])?$/i); if(m){ apply(+m[1],+m[2],of(m[3])); return; }
-      m=s.match(/^(\d+)&(\d+)([abc])?$/i); if(m){ const o=of(m[3]); set.add(+m[1]); set.add(+m[2]); if(o){ord.set(+m[1],o); ord.set(+m[2],o);} return; }
-      m=s.match(/^(\d+)([abc])?$/i); if(m){ const p=+m[1], o=of(m[2]); set.add(p); if(o) ord.set(p,o); }
-    }); return {set,ord}; }
-  const getReadSet = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
-  const getFrameSet= ()=> window.__VT_FRAME_SET   instanceof Set ? window.__VT_FRAME_SET   : new Set();
-  const getOrd     = ()=> window.__VT_ORD         instanceof Map ? window.__VT_ORD         : new Map();
-  function getImageData(){
+
+  // Ensure the "Bilder:" pill is inside the article-info row (not bottom of page)
+  function ensureImagesPill(){
+    const row = document.getElementById('article-info');
+    if (!row) return;
+    let pill = document.getElementById('pillImages');
+    if (!pill){
+      pill = document.createElement('div');
+      pill.id = 'pillImages';
+      pill.className = 'pill';
+      pill.style.marginLeft = '8px';
+      pill.innerHTML = '<img src="./img/image-icon.png" alt="" style="height:14px;vertical-align:-2px;margin-right:4px">Bilder: <strong id="imageCount">0</strong>';
+      row.appendChild(pill);
+    } else if (!row.contains(pill)){
+      row.appendChild(pill);
+    }
+  }
+
+  // Update counters from globals or current item
+  function updateImagesCount(){
+    ensureImagesPill();
+    const strong = document.getElementById('imageCount');
+    if (!strong) return;
+    let count = 0;
     if (window.__VT_IMAGE_SET instanceof Set){
-      const set=window.__VT_IMAGE_SET, ord=new Map(), O=getOrd();
-      for (const p of set){ const o=O.get(p)||{}; if (o.image!=null) ord.set(p,o.image); }
-      return {set,ord};
+      count = window.__VT_IMAGE_SET.size;
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const {set} = expandWithOrder(it && it.images ? it.images : []);
+      count = set.size;
     }
-    const it=getCurrentItemSafe();
-    if (!it || !Array.isArray(it.images)) return {set:new Set(), ord:new Map()};
-    return expandRefsWithOrder(it.images);
+    strong.textContent = String(count);
   }
-  function applyTwoToneWithGroups(){
-    const tl=$('#timeline'); if(!tl) return; const slots=$$('.para-slot',tl); if(!slots.length) return;
-    slots.forEach(el=>{ el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor=''; el.classList.remove('alt'); });
-    const groups=getGroups(), starts=new Map(); groups.forEach(g=>{ if(g&&g.length) starts.set(g[0],g); });
-    let dark=false, i=1;
-    while(i<=slots.length){
-      if(starts.has(i)){ const g=starts.get(i); g.forEach(p=>{ const el=slots[p-1]; if(el&&dark) el.classList.add('alt'); }); dark=!dark; i=g[g.length-1]+1; }
-      else { const el=slots[i-1]; if(el&&dark) el.classList.add('alt'); dark=!dark; i++; }
+
+  // Add image pins under the timeline slots
+  function applyImagePins(){
+    const tl = document.getElementById('timeline'); if (!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if (!slots.length) return;
+
+    // Determine images set + order
+    let set = new Set(), ord = new Map();
+    if (window.__VT_IMAGE_SET instanceof Set){
+      set = window.__VT_IMAGE_SET;
+      // order is usually in window.__VT_ORD.image
+      const O = window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
+      for (const p of set){
+        const o = O.get(p)||{};
+        if (o.image != null) ord.set(p, o.image);
+      }
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const e = expandWithOrder(it && it.images ? it.images : []);
+      set = e.set; ord = e.ord;
     }
-  }
-  function placeGroupOverlays(){
-    const tl=$('#timeline'); if(!tl) return; const slots=$$('.para-slot',tl); if(!slots.length) return;
-    const container=slots[0].parentElement||tl; const old=container.querySelector('.vt-group-overlays'); if(old) old.remove();
-    slots.forEach(s=>s.classList.remove('vt-in-group')); const groups=getGroups(); if(!groups.length) return;
-    if(getComputedStyle(container).position==='static') container.style.position='relative';
-    const wrap=document.createElement('div'); wrap.className='vt-group-overlays'; container.appendChild(wrap);
-    const cref=container.getBoundingClientRect(); const labelText=g=>(g.length===2?`${g[0]}&${g[1]}`:`${g[0]}–${g[g.length-1]}`);
-    groups.forEach(g=>{ const first=slots[g[0]-1], last=slots[g[g.length-1]-1]; if(!first||!last) return;
-      g.forEach(p=>{ const el=slots[p-1]; if(el) el.classList.add('vt-in-group'); });
-      const r1=first.getBoundingClientRect(), r2=last.getBoundingClientRect();
-      const ov=document.createElement('div'); ov.className='vt-group-overlay';
-      ov.style.left=(r1.left - cref.left)+'px'; ov.style.width=(r2.right - r1.left)+'px'; ov.textContent=labelText(g); wrap.appendChild(ov);
+
+    slots.forEach((slot, idx)=>{
+      const p = idx+1;
+      slot.querySelectorAll('.image-pin').forEach(n=>n.remove());
+      if (!set.has(p)) return;
+      const el = document.createElement('i');
+      el.className = 'image-pin';
+      // sitte sammen med read/frame i orden: A(1) nærmest boksen, så B, så C
+      const order = ord.get(p) ?? 3;
+      el.style.zIndex = String(100 - order);
+      // let other pins sit slightly offset; we trust existing layout, so keep center
+      slot.appendChild(el);
     });
   }
-  function layoutPins(){
-    const tl=$('#timeline'); if(!tl) return; const slots=$$('.para-slot',tl); if(!slots.length) return;
-    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet(), imgData=getImageData();
-    slots.forEach((slot,idx)=>{
-      const p=Number(slot.dataset.p || (idx+1));
-      $$('.read-pin,.frame-pin,.image-pin',slot).forEach(n=>n.remove());
-      const items=[];
-      if(frames.has(p)) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
-      if(reads.has(p))  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
-      if(imgData.set.has(p)) items.push({type:'image', order:(imgData.ord.get(p) ?? 3)});
-      if(!items.length) return;
-      items.sort((a,b)=>(a.order??99)-(b.order??99));
-      const gap=6, base=-((items.length-1)/2)*gap;
-      items.forEach((it,i)=>{
-        const el=document.createElement('i');
-        el.className = it.type==='frame' ? 'frame-pin' : it.type==='read' ? 'read-pin' : 'image-pin';
-        el.style.left=`calc(50% + ${base + i*gap}px)`; el.style.zIndex=String(100 - (it.order ?? 99));
-        slot.appendChild(el);
-      });
-    });
+
+  function applyAll(){
+    updateImagesCount();
+    applyImagePins();
   }
-  function findInfoPanel(){ const c=['#article-info','#articleInfo','#article-panel','#articlePanel','.article-info','.article-meta','.article-details','#info']; for(const sel of c){ const el=$(sel); if(el) return el; } return null; }
-  function updateStats(){
-    const panel=findInfoPanel(); if(!panel) return;
-    const it=getCurrentItemSafe();
-    const paraCount= it?.words ? it.words.length : it?.para_lengths ? it.para_lengths.length : ($$('#timeline .para-slot').length||0);
-    const readCount =(getReadSet().size||0);
-    const frameCount=(getFrameSet().size||0);
-    const imageCount=(getImageData().set.size||0);
-    const setText=(sel,val)=>{ const el=$(sel,panel); if(el) el.textContent=val; return !!el; };
-    setText('#paraCount', String(paraCount)); setText('#readCount', String(readCount)); setText('#frameCount', String(frameCount));
-    let imgWrap = $('#vt-images-wrap', panel);
-    if (!imgWrap){ imgWrap=document.createElement('span'); imgWrap.className='vt-inline-stat'; imgWrap.id='vt-images-wrap';
-      imgWrap.innerHTML=`<img class="ic" src="./img/image-icon.png" alt=""><b>Bilder:</b> <span id="imageCount">0</span>`; panel.appendChild(imgWrap); }
-    const ic=$('#imageCount', panel); if(ic) ic.textContent=String(imageCount);
+
+  // Observe timeline changes so pins re-render
+  const tl = document.getElementById('timeline');
+  if (tl){
+    const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
+    mo.observe(tl, {childList:true, subtree:true});
   }
-  function applyAll(){ applyTwoToneWithGroups(); placeGroupOverlays(); layoutPins(); updateStats(); }
-  function whenTimelineReady(run){ let tries=0;(function tick(){ const tl=$('#timeline'); const ready=tl && $$('.para-slot',tl).length; if(ready){ run(); return; } if(tries++<30) setTimeout(tick,50); })(); }
-  function startObservers(){ const tl=$('#timeline'); if(!tl) return; const mo=new MutationObserver(()=>requestAnimationFrame(applyAll)); mo.observe(tl,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']}); }
-  const orig1=window.drawTimeline, orig2=window.renderTimeline;
-  if(typeof orig1==='function'){ window.drawTimeline=function(){ const r=orig1.apply(this,arguments); requestAnimationFrame(applyAll); requestAnimationFrame(startObservers); return r; }; }
-  if(typeof orig2==='function' && orig2!==orig1){ window.renderTimeline=function(){ const r=orig2.apply(this,arguments); requestAnimationFrame(applyAll); requestAnimationFrame(startObservers); return r; }; }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', ()=> whenTimelineReady(()=>{ applyAll(); startObservers(); })); }
-  else { whenTimelineReady(()=>{ applyAll(); startObservers(); }); }
+  // Also update when selection changes if select exists
+  const sel = document.getElementById('weekSel');
+  if (sel){ sel.addEventListener('change', ()=> setTimeout(applyAll, 0)); }
+
+  // Initial run
+  document.addEventListener('DOMContentLoaded', applyAll);
+  window.addEventListener('load', applyAll);
+  // Expose manual trigger if needed
+  window.__VT_APPLY_IMAGES = applyAll;
 })();
 </script>
 
