@@ -26,11 +26,11 @@
         background:url('./img/read-icon.png') center/contain no-repeat;
       }
       #timeline .para-slot i.frame-pin{
-        width:12px; height:12px;
+        width:16px; height:16px;
         background:url('./img/box-icon.png')  center/contain no-repeat;
       }
       #timeline .para-slot i.image-pin{
-        width:14px; height:14px;
+        width:16px; height:16px;
         background:url('./img/image-icon.png') center/contain no-repeat;
       }
 
