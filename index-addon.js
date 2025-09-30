@@ -1,34 +1,40 @@
-// index-addon.js — v1.75 + group labels (refined)
-// Two tones only; groups share first tone and we flip after whole group.
-// Re-applies on any timeline DOM change (fix for timing where groups wasn't ready).
-// NEW: One shared overlay label per group ("4&5" / "10–12"), centered across the group's total width,
-// with the same typography as the slot numbers. Numbers inside grouped slots are hidden.
+// index-addon.js — v1.75 + polish (group labels, css fixes, dropdown limit)
+/*  Hva den gjør:
+    - To grønntoner totalt. Grupper (f.eks. 4–5, 10–12) får samme tone som første,
+      og vi veksler først etter hele gruppa.
+    - Viser én felles label over gruppa ("4&5", "10–12") midtstilt over hele bredden.
+    - Pins: les-ikon under, ramme-ikon litt lavere (ca 2mm lavere).
+    - Fjerner hvit text-shadow på tallene.
+    - Filtrerer artikkel-lista til: forrige uke, denne uken, + 3 neste uker.
+*/
 
 (function(){
-  /* ========== CSS (base + overlays) ========== */
+  /* ========== CSS OVERRIDES (høy spesifisitet) ========== */
   (function ensureCSS(){
     if (document.querySelector('style[data-index-addon]')) return;
     const style = document.createElement('style');
     style.setAttribute('data-index-addon','');
     style.textContent = `
-      #timeline .para-slot i.frame-pin{
-        position:absolute; left:50%; transform:translateX(-50%);
-        top:-14px; bottom:auto; width:12px; height:12px;
-        background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none;
-      }
+      /* Fiks ikonplassering: les rett under, ramme litt lavere */
       #timeline .para-slot i.read-pin{
         position:absolute; left:50%; transform:translateX(-50%);
-        bottom:-14px; top:auto; width:16px; height:16px;
-        background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none;
+        bottom:-14px !important; top:auto; width:16px; height:16px;
+        background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:.95;
       }
+      #timeline .para-slot i.frame-pin{
+        position:absolute; left:50%; transform:translateX(-50%);
+        bottom:-28px !important; top:auto; width:12px; height:12px;
+        background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none; opacity:.95;
+      }
+
+      /* Fjern hvit skygge bak tallene i slottene */
+      #timeline .para-slot{ text-shadow: none !important; }
+
       :root{
         --vt-tone-light: #EAF4EE;
         --vt-tone-dark:  #CFE7D6;
       }
-
-      /* Ensure overlay positioning works */
-      #timeline{ position:relative; }
-
+      /* Vi bruker bare bakgrunnsfarge (to toner). */
       #timeline .para-slot{
         background-color: var(--vt-tone-light) !important;
         background-image: none !important;
@@ -54,11 +60,8 @@
       #timeline .para-slot::before,
       #timeline .para-slot::after{ background: none !important; }
 
-      .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
-      .vt-stats b{ font-weight:600 }
-      .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
-
-      /* === NEW: group overlay labels matching slot number styling === */
+      /* === Gruppe-labels (samme typografi som tallene, men bold) === */
+      #timeline{ position:relative; } /* for overlay-posisjonering */
       #timeline .vt-group-overlays{
         position:absolute; left:0; top:0; right:0; bottom:0;
         pointer-events:none;
@@ -66,20 +69,19 @@
       #timeline .vt-group-overlay{
         position:absolute; top:0; height:100%;
         display:flex; align-items:center; justify-content:center;
-        font-weight: 600;           /* same as slot numbers */
-        font-size: 12px;            /* same as slot numbers */
+        font-weight: 900;      /* match slot-nummer-bold */
+        font-size: 12px;       /* match slot-nummer-størrelse */
         line-height: 1.2;
-        color: inherit;
-        opacity: .95;
+        color: #2b3432;        /* fast, tydelig farge */
+        opacity:.96;
       }
-      /* Hide numbers inside grouped slots (overlay shows the shared label) */
-      #timeline .para-slot.vt-in-group{ color: transparent !important; }
-      #timeline .para-slot.vt-in-group *{ color: transparent !important; }
+      /* Skjul KUN tallene i grupper (ikke hele slotten) */
+      #timeline .para-slot.vt-in-group > div{ visibility: hidden; }
     `;
     document.head.appendChild(style);
   })();
 
-  /* ========== utils ========== */
+  /* ========== Hjelpere ========== */
   const $ = (sel, root=document)=> root.querySelector(sel);
   const $$ = (sel, root=document)=> Array.from(root.querySelectorAll(sel));
 
@@ -95,7 +97,8 @@
     if (Array.isArray(window.__VT_GROUPS)) return window.__VT_GROUPS;
     const it = window.currentItem || window.ITEM || null;
     if (it && typeof it.groups === 'string') return parseGroupsString(it.groups);
-    return [];
+    // index.html (din) mappet allerede __VT_GROUPS i useItem()
+    return window.__VT_GROUPS || [];
   }
   function rangeLabel(nums){
     const s=[...new Set(nums)].sort((a,b)=>a-b);
@@ -104,53 +107,42 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  /* ========== two-tone with groups as one block ========== */
+  /* ========== To toner, grupper som én blokk (override inline-stiler) ========== */
   function applyTwoToneWithGroups(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
 
-    // clean any theme classes and inline tints; we only use .alt
+    // Fjern inline farger som settes av siden, så CSS-ene våre gjelder
     slots.forEach(el=>{
-      el.className = el.className
-        .replace(/\b(alt-alt|group-alt|grp|group|galt|tone-a|tone-b|tone-c|tone-d)\b/g,'')
-        .trim();
-      el.classList.remove('alt');
       el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor='';
+      el.classList.remove('alt');
     });
 
+    // Bygg opp alternasjon per gruppe
     const groups = getGroups();
     const starts = new Map(); groups.forEach(g=>{ if (g && g.length) starts.set(g[0], g); });
 
-    let dark = false; // false=light, true=dark
-    let i = 1;
-    while (i <= slots.length){
+    let dark=false; // false=lys, true=mørk
+    let i=1;
+    while(i<=slots.length){
       if (starts.has(i)){
         const g = starts.get(i);
-        g.forEach(p => { const el = slots[p-1]; if (el && dark) el.classList.add('alt'); });
-        dark = !dark;                 // flip once after whole group
+        for (const p of g){ const el = slots[p-1]; if (el && dark) el.classList.add('alt'); }
+        dark = !dark;                        // flip etter hele gruppa
         i = g[g.length-1] + 1;
       } else {
         const el = slots[i-1]; if (el && dark) el.classList.add('alt');
-        dark = !dark;                 // flip after single
+        dark = !dark;                        // flip etter enkeltavsnitt
         i++;
       }
     }
   }
 
-  /* ========== base data access (unchanged) ========== */
+  /* ========== Meldinger (for stabilitet ved play) ========== */
   const getReadSet  = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
-  const getFrameSet = ()=> window.__VT_FRAME_SET instanceof Set ? window.__VT_FRAME_SET : new Set();
-  const getOrd      = ()=> window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
+  const getFrameSet = ()=> window.__VT_FRAME_SET   instanceof Set ? window.__VT_FRAME_SET   : new Set();
+  const getOrd      = ()=> window.__VT_ORD         instanceof Map ? window.__VT_ORD         : new Map();
 
-  function getParaCount(){
-    const it = window.currentItem || window.ITEM || null;
-    if (it && Array.isArray(it.words)) return it.words.length;
-    if (it && Array.isArray(it.para_lengths)) return it.para_lengths.length;
-    const tl = $('#timeline'); if (tl) return $$('.para-slot', tl).length;
-    return 0;
-  }
-
-  /* ========== messages ========== */
   function buildSingleMsg(p){
     const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
     const o=ord.get(p)||{}, hasF=frames.has(p), hasR=reads.has(p);
@@ -178,115 +170,6 @@
     for (const g of groups){ if (g.includes(p)) return buildGroupMsg(g); }
     return buildSingleMsg(p);
   }
-
-  /* ========== pins ========== */
-  function layoutPins(){
-    const tl = $('#timeline'); if(!tl) return;
-    const slots = $$('.para-slot', tl); if(!slots.length) return;
-    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
-
-    slots.forEach((slot, idx)=>{
-      const p=idx+1, hasF=frames.has(p), hasR=reads.has(p);
-      $$('.read-pin,.frame-pin', slot).forEach(n=>n.remove());
-      if (!hasF && !hasR) return;
-
-      const items=[];
-      if (hasF) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
-      if (hasR) items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
-      items.sort((a,b)=>(a.order??99)-(b.order??99));
-
-      const gap=14, base=-((items.length-1)/2)*gap;
-      items.forEach((it,i)=>{
-        const el=document.createElement('i');
-        el.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
-        el.style.left = `calc(50% + ${base + i*gap}px)`;
-        slot.appendChild(el);
-      });
-    });
-  }
-
-  /* ========== info panel counts ========== */
-  function findInfoPanel(){
-    const candidates = [
-      '#article-info','#articleInfo','#article-panel','#articlePanel',
-      '.article-info','.article-meta','.article-details','#info'
-    ];
-    for (const sel of candidates){ const el = $(sel); if (el) return el; }
-    return null;
-  }
-  function updateStats(){
-    const panel = findInfoPanel(); if (!panel) return;
-    const paraCount = getParaCount();
-    const readCount = getReadSet().size;
-    const frameCount= getFrameSet().size;
-
-    const setText = (sel, text)=>{
-      const el = $(sel, panel);
-      if (el) el.textContent = text;
-      return !!el;
-    };
-    const updated =
-      setText('#paraCount', String(paraCount)) |
-      setText('#readCount', String(readCount)) |
-      setText('#frameCount', String(frameCount));
-
-    if (!updated){
-      if (!$('#vt-stats', panel)){
-        const div = document.createElement('div');
-        div.className = 'vt-stats'; div.id = 'vt-stats';
-        div.innerHTML = `
-          <span><b>Avsnitt:</b> <span id="vt-paras">${paraCount}</span></span>
-          <span>📖 <b>Les-skriftsteder:</b> <span id="vt-reads">${readCount}</span></span>
-          <span><img class="ic" src="./img/box-icon.png" alt=""> <b>Rammer:</b> <span id="vt-frames">${frameCount}</span></span>
-        `;
-        panel.appendChild(div);
-      } else {
-        $('#vt-paras', panel).textContent  = String(paraCount);
-        $('#vt-reads', panel).textContent  = String(readCount);
-        $('#vt-frames', panel).textContent = String(frameCount);
-      }
-    }
-  }
-
-  /* ========== play/lock state (use page's own) ========== */
-  let isPlaying = false;
-  window.__VT_SET_PLAYING = (on)=>{ isPlaying = !!on; };
-
-  const lockPanel = findInfoPanel();
-  function panelLooksLocked(el){
-    if (!el) return false;
-    const cls = (el.className||'').toLowerCase();
-    if (/(^|\s)(playing|is-playing|running|locked|disabled|dim|inactive)(\s|$)/.test(cls)) return true;
-    const cs = getComputedStyle(el);
-    if (cs.pointerEvents === 'none') return true;
-    const f = cs.filter || '';
-    if (/grayscale\(\s*(0\.[3-9]|[1-9]|\d+\.\d+)\s*\)/.test(f)) return true;
-    return false;
-  }
-  if (lockPanel){
-    const syncPlaying = ()=>{ isPlaying = panelLooksLocked(lockPanel); };
-    const obs = new MutationObserver(syncPlaying);
-    obs.observe(lockPanel, {attributes:true, attributeFilter:['class','style']});
-    syncPlaying();
-  }
-
-  /* ========== timeline interaction ========== */
-  function bindSlotClicks(){
-    const tl = $('#timeline'); if(!tl) return;
-    const slots = $$('.para-slot', tl); if(!slots.length) return;
-    slots.forEach((slot, idx)=>{
-      const p=idx+1;
-      if (slot.__vtBound) return;
-      slot.__vtBound = true;
-      slot.addEventListener('click', ()=>{
-        if (isPlaying) return;
-        const msg = $('#message'); if (!msg) return;
-        msg.textContent = buildMsgFor(p);
-      });
-    });
-  }
-
-  /* ========== keep message stable ========== */
   function keepMessageStable(){
     const msg = $('#message'); if(!msg) return;
     const mo = new MutationObserver(()=>{
@@ -300,24 +183,19 @@
     mo.observe(msg, {childList:true, characterData:true, subtree:true});
   }
 
-  /* ========== NEW: group overlays (labels, precise centering) ========== */
-  // Create one overlay per group (centered across that group's width using px relative to the slot container),
-  // and hide numbers inside the grouped slots.
+  /* ========== Gruppe-overlays: midt over hele gruppa ========== */
   function placeGroupOverlays(){
     const tl = document.getElementById('timeline'); if (!tl) return;
-
     const slots = Array.from(tl.querySelectorAll('.para-slot')); if (!slots.length) return;
 
-    // Use same parent as the slots to avoid padding/offset issues from #timeline
     const container = slots[0].parentElement || tl;
 
-    // Remove previous overlays and clear markers
+    // Fjern gamle overlays + vis tall igjen
     const oldWrap = container.querySelector('.vt-group-overlays'); if (oldWrap) oldWrap.remove();
     slots.forEach(s => s.classList.remove('vt-in-group'));
 
-    const groups = (typeof getGroups === 'function' ? getGroups() : []); if (!groups.length) return;
+    const groups = getGroups(); if (!groups.length) return;
 
-    // Ensure container is positioned for absolute children
     const cs = getComputedStyle(container);
     if (cs.position === 'static') container.style.position = 'relative';
 
@@ -334,10 +212,9 @@
       const first = slots[firstIdx], last = slots[lastIdx];
       if (!first || !last) return;
 
-      // Hide slot numbers inside the group
+      // Skjul tallene i gruppa (behold bakgrunn/pins)
       g.forEach(p => { const el = slots[p-1]; if (el) el.classList.add('vt-in-group'); });
 
-      // Exact px positioning relative to the slot container
       const r1 = first.getBoundingClientRect();
       const r2 = last.getBoundingClientRect();
       const leftPx  = r1.left  - cref.left;
@@ -353,24 +230,18 @@
     });
   }
 
-  /* ========== apply & re-apply on timeline changes ========== */
+  /* ========== Påfør alt + reapply ved DOM-endringer ========== */
   function applyAll(){
     applyTwoToneWithGroups();
-    layoutPins();
-    placeGroupOverlays();   // NEW
-    bindSlotClicks();
+    placeGroupOverlays();
     keepMessageStable();
-    updateStats();
   }
-
-  // run once and every time the timeline DOM changes
   function startObservers(){
     const tl = $('#timeline');
     if (!tl) return;
     const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
-    mo.observe(tl, {childList:true, subtree:true});
+    mo.observe(tl, {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
   }
-
   const orig = window.drawTimeline;
   if (typeof orig === 'function'){
     window.drawTimeline = function(){
@@ -380,113 +251,83 @@
       return r;
     };
   }
-
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObservers(); });
   } else {
     applyAll(); startObservers();
-  }/* ========== Limit article dropdown to prev week + current + next 3 weeks ========== */
-(function limitArticleDropdown(){
-  // Finn mandag i en gitt dato
-  function monday(d){
-    const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-    const day = x.getUTCDay() || 7; // 1=man ... 7=søndag
-    if (day !== 1) x.setUTCDate(x.getUTCDate() - (day - 1));
-    x.setUTCHours(0,0,0,0);
-    return x;
-  }
-  // Hjelper
-  const fmt = d => d.toISOString().slice(0,10); // YYYY-MM-DD
-  const addDays = (d,n)=>{ const x=new Date(d); x.setUTCDate(x.getUTCDate()+n); return x; };
-
-  // Lag tillatt vindu (prev, current, +1w, +2w, +3w)
-  function allowedWeekStarts(){
-    const now = new Date();
-    const curr = monday(now);
-    const prev = addDays(curr, -7);
-    const n1 = addDays(curr, 7);
-    const n2 = addDays(curr, 14);
-    const n3 = addDays(curr, 21);
-    // Hvis du vil *ekskludere* inneværende uke, fjern "curr" under ↓
-    return new Set([fmt(prev), fmt(curr), fmt(n1), fmt(n2), fmt(n3)]);
   }
 
-  // Finn data-array uansett hva hovedsiden kaller den
-  function getItemsRef(){
-    const cand = [
-      () => (window.DATA && Array.isArray(window.DATA.items)) ? window.DATA.items : null,
-      () => (window.items && Array.isArray(window.items)) ? window.items : null,
-      () => (window.ARTICLES && Array.isArray(window.ARTICLES)) ? window.ARTICLES : null
-    ];
-    for (const f of cand){ const r=f(); if (r) return r; }
-    return null;
-  }
+  /* ========== Begrens nedtrekkslista: forrige uke + nå + 3 neste ========== */
+  (function limitArticleDropdown(){
+    function mondayLocal(d=new Date()){
+      const day=d.getDay(); const diff=(day===0?-6:1-day);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
+    }
+    function fmt(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}` }
+    function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-  // Forsøk å finne dropdown/datalist
-  function findListRoots(){
-    const roots = [];
-    const ids = ['#article-select','#articleSelect','#article-list','#articleList','#articles'];
-    ids.forEach(id=>{
-      const el = document.querySelector(id);
-      if (el) roots.push(el);
-    });
-    // fallback: alle <select> eller <datalist> i "artikel-velger" seksjon
-    document.querySelectorAll('select, datalist').forEach(el=>{
-      if (!roots.includes(el) && /article|artikkel|week|uke|list/i.test(el.id+el.className))
-        roots.push(el);
-    });
-    return roots;
-  }
+    const allowSet = (()=>{
+      const curr = mondayLocal(new Date());
+      const prev = addDays(curr, -7);
+      const n1 = addDays(curr,  7);
+      const n2 = addDays(curr, 14);
+      const n3 = addDays(curr, 21);
+      return new Set([fmt(prev), fmt(curr), fmt(n1), fmt(n2), fmt(n3)]);
+    })();
 
-  function repopulateDropdown(){
-    const items = getItemsRef(); if (!items) return false;
-    const allow = allowedWeekStarts();
+    function filterWeekSel(){
+      const sel = document.getElementById('weekSel');
+      if (!sel) return;
 
-    // Lag (og husk) filtrert liste
-    const filtered = items.filter(it => it && typeof it.week_start === 'string' && allow.has(it.week_start));
-    window.__VT_ALLOWED_ITEMS = filtered;
+      // Hvis options er "JSON.stringify(item)" (slik i index), filtrer basert på .week_start
+      const opts = Array.from(sel.options);
+      let changed=false;
+      opts.forEach(opt=>{
+        try{
+          const it = JSON.parse(opt.value);
+          if (!it || !allowSet.has(it.week_start)) {
+            opt.remove(); changed=true;
+          }
+        }catch{
+          // Hvis verdien ikke er JSON (fallback), skjul den
+          opt.remove(); changed=true;
+        }
+      });
 
-    // Hvis hovedkoden har en kjent "render" kan vi gi hint
-    if (typeof window.renderArticleList === 'function'){
-      try { window.renderArticleList(filtered); return true; } catch(e){}
+      // Hvis ingenting igjen (edge), ikke gjør noe mer
+      if (!sel.options.length) return;
+
+      // Velg nærmeste: preferer "denne uken" hvis finnes, ellers første
+      let idx = Array.from(sel.options).findIndex(o=>{
+        try{ return JSON.parse(o.value).week_start === Array.from(allowSet)[1]; }catch{return false;}
+      });
+      if (idx<0) idx=0;
+      sel.selectedIndex = idx;
+
+      // Trigger change slik at riktig artikkel lastes om nødvendig
+      sel.dispatchEvent(new Event('change', {bubbles:true}));
     }
 
-    // Manuell: finn <select>/<datalist> og bygg options
-    const roots = findListRoots(); if (!roots.length) return false;
+    // Kjør når DOM er klar, og også litt senere i tilfelle hydrateOptions kjører etterpå
+    function run(){
+      filterWeekSel();
+      setTimeout(filterWeekSel, 300);  // etter hydrateOptions
+      setTimeout(filterWeekSel, 1200); // ekstra sikkerhet
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
+    }
 
-    roots.forEach(root=>{
-      // Tøm eks. options
-      while (root.firstChild) root.removeChild(root.firstChild);
+    // Overvåk endringer i #weekSel (hvis siden repopulerer)
+    const obs = new MutationObserver(()=> filterWeekSel());
+    const hook = ()=>{ const sel=document.getElementById('weekSel'); if (sel) obs.observe(sel, {childList:true}); };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hook);
+    } else {
+      hook();
+    }
+  })();
 
-      filtered.forEach((it, idx)=>{
-        const opt = document.createElement(root.tagName.toLowerCase()==='datalist' ? 'option' : 'option');
-        opt.value = it.title || (`Uke ${it.week_start}`);
-        opt.text  = it.title || (`Uke ${it.week_start}`);
-        opt.dataset.week_start = it.week_start;
-        // For <datalist> er 'label' nyttig; for <select> brukes text
-        if (root.tagName.toLowerCase()==='datalist'){
-          opt.label = it.title || (`Uke ${it.week_start}`);
-        }
-        root.appendChild(opt);
-      });
-    });
-
-    return true;
-  }
-
-  // Kjør når data/DOM er klare
-  function tryOnce(){
-    repopulateDropdown();
-  }
-
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', tryOnce);
-  } else {
-    tryOnce();
-  }
-
-  // Hvis siden bytter dataset dynamisk, lytt etter endringer på <body>
-  const bodyObs = new MutationObserver(()=> { tryOnce(); });
-  bodyObs.observe(document.body, {childList:true, subtree:true});
-})();
 })();
