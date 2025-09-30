@@ -297,43 +297,71 @@
     applyAll(); startObservers();
   }
 
-  /* ================= Limit dropdown to prev + current + next 3 ================= */
-  (function limitArticleDropdown(){
-    function mondayLocal(d=new Date()){
-      const day=d.getDay(); const diff=(day===0?-6:1-day);
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
-    }
-    function fmt(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}` }
-    function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+/* ================= Limit dropdown to prev + current + next 3 (robust) ================= */
+(function limitArticleDropdown(){
+  function mondayLocal(d=new Date()){
+    const day=d.getDay(); const diff=(day===0?-6:1-day);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
+  }
+  function fmt(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}` }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-    const allowSet = (()=>{
-      const curr=mondayLocal(new Date());
-      const prev=addDays(curr,-7), n1=addDays(curr,7), n2=addDays(curr,14), n3=addDays(curr,21);
-      return new Set([fmt(prev), fmt(curr), fmt(n1), fmt(n2), fmt(n3)]);
-    })();
-
-    function filterWeekSel(){
-      const sel=document.getElementById('weekSel'); if (!sel) return;
-      const opts=Array.from(sel.options);
-      opts.forEach(opt=>{
-        try{
-          const it=JSON.parse(opt.value);
-          if (!it || !allowSet.has(it.week_start)) opt.remove();
-        }catch{ opt.remove(); } // not our format → remove
-      });
-      if (!sel.options.length) return;
-      // Prefer current week if present
-      const arr=Array.from(allowSet); const current=arr[1];
-      let idx = Array.from(sel.options).findIndex(o=>{ try{ return JSON.parse(o.value).week_start===current; }catch{return false;} });
-      if (idx<0) idx=0; sel.selectedIndex=idx;
-      sel.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-
-    function run(){ filterWeekSel(); setTimeout(filterWeekSel,300); setTimeout(filterWeekSel,1200); }
-    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
-
-    const hook=()=>{ const sel=document.getElementById('weekSel'); if (sel) new MutationObserver(()=>filterWeekSel()).observe(sel,{childList:true}); };
-    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
+  const allowSet = (()=>{
+    const curr=mondayLocal(new Date());
+    const prev=addDays(curr,-7), n1=addDays(curr,7), n2=addDays(curr,14), n3=addDays(curr,21);
+    return new Set([fmt(prev), fmt(curr), fmt(n1), fmt(n2), fmt(n3)]);
   })();
 
+  // prøv å hente week_start fra flere kilder
+  function getWeekStartFromOption(opt){
+    // 1) JSON i value
+    try{
+      const v = JSON.parse(opt.value);
+      if (v && typeof v.week_start === 'string') return v.week_start;
+    }catch{}
+    // 2) data-week_start
+    if (opt.dataset && typeof opt.dataset.week_start === 'string') return opt.dataset.week_start;
+    // 3) prøv å finne YYYY-MM-DD i textContent
+    const m = (opt.textContent||'').match(/\b\d{4}-\d{2}-\d{2}\b/);
+    if (m) return m[0];
+    return null;
+  }
+
+  function filterWeekSel(){
+    const sel=document.getElementById('weekSel'); if (!sel) return;
+
+    // Ikke fjern options blindt. Deaktiver de som er utenfor rekkevidde.
+    const opts=Array.from(sel.options);
+    let firstKeptIndex = -1, currentWeekIndex = -1;
+
+    opts.forEach((opt, idx)=>{
+      const ws = getWeekStartFromOption(opt);
+      const keep = !!(ws && allowSet.has(ws));
+      opt.hidden = !keep;
+      opt.disabled = !keep;
+      if (keep && firstKeptIndex === -1) firstKeptIndex = idx;
+      // prøv å velge "denne uken" om mulig
+      const arr = Array.from(allowSet); const current = arr[1];
+      if (keep && ws === current) currentWeekIndex = idx;
+    });
+
+    // Hvis alt ble skjult (edge), ikke rør selection
+    const anyKept = opts.some(o=>!o.hidden && !o.disabled);
+    if (!anyKept) return;
+
+    // Velg "denne uken" om mulig, ellers første beholdte
+    let targetIndex = currentWeekIndex !== -1 ? currentWeekIndex : firstKeptIndex;
+    if (targetIndex !== -1) {
+      sel.selectedIndex = targetIndex;
+      sel.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+  }
+
+  function run(){ filterWeekSel(); setTimeout(filterWeekSel,300); setTimeout(filterWeekSel,1200); }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
+
+  // Re-filtrer hvis listen blir regenerert
+  const hook=()=>{ const sel=document.getElementById('weekSel'); if (sel) new MutationObserver(()=>filterWeekSel()).observe(sel,{childList:true, subtree:false}); };
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
+})();
 })();
