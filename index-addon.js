@@ -32,7 +32,7 @@
 
       :root{
         --vt-tone-light:#EAF4EE;
-        --vt-tone-dark:#CFE7D6;
+        --vt-tone-dark:#DEEFE4;
       }
       #timeline{ position:relative; } /* for overlays */
       #timeline .para-slot{
