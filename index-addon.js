@@ -1,11 +1,11 @@
-// index-addon.js — v1.75 + images (pins, counts, messages) + group labels + pin stacking + dropdown limit
-// - Two tones total; groups share first tone and flip after whole group
-// - One overlay label per group ("4&5" / "10–12"), centered across the group's width
-// - Read/Frame/Image icons on the same line under the timeline; A > B > C (z-index & order)
-// - Info panel shows Avsnitt, Les-skriftsteder, Rammer, Bilder (with icons)
-// - Message builder includes + Ramme / + Les-skriftsted / + Bilde in A/B/C order
-// - Supports a/b/c suffix in data for frames/reads/images on single numbers AND ranges (&, - / –)
-// - Dropdown limited to prev week + current + next 3
+// index-addon.js — v1.75 + robust currentItem + images (pins/count/message) + group labels + A/B/C stacking + dropdown limit
+// - To grønntoner, flip etter hele grupper (grupper arver første tone)
+// - Én overlaylabel per gruppe ("4&5" / "10–12"), piksel-presist midtstilt
+// - Les/Ramme/Bilde-ikoner på samme linje under tidslinjen; A > B > C (z-index og rekkefølge)
+// - Infofelt viser Avsnitt, Les-skriftsteder, Rammer og Bilder
+// - Meldingstekst inkluderer + Ramme / + Les-skriftsted / + Bilde i A/B/C-rekkefølge
+// - Robust henting av "current item" (fungerer uansett om siden bruker currentItem/ITEM/DATA.items + weekSel)
+// - Dropdown viser bare forrige uke + denne + neste 3 uker (robust mot ulike option-formater)
 
 (function(){
   /* ================= CSS ================= */
@@ -14,7 +14,7 @@
     const style = document.createElement('style');
     style.setAttribute('data-index-addon','');
     style.textContent = `
-      /* Icons: all types on the same line under the timeline */
+      /* Pins: alle på samme linje under tidslinjen */
       #timeline .para-slot i.read-pin,
       #timeline .para-slot i.frame-pin,
       #timeline .para-slot i.image-pin{
@@ -26,22 +26,22 @@
         background:url('./img/read-icon.png') center/contain no-repeat;
       }
       #timeline .para-slot i.frame-pin{
-        width:16px; height:16px;
-        background:url('./img/box-icon.png')  center/contain no-repeat;
+        width:12px; height:12px;
+        background:url('./img/box-icon.png') center/contain no-repeat;
       }
       #timeline .para-slot i.image-pin{
-        width:16px; height:16px;
+        width:14px; height:14px;
         background:url('./img/image-icon.png') center/contain no-repeat;
       }
 
-      /* Clean slot number rendering */
+      /* Ryddige tall i slottene */
       #timeline .para-slot{ text-shadow:none !important; }
 
       :root{
         --vt-tone-light:#EAF4EE;
         --vt-tone-dark:#CFE7D6;
       }
-      #timeline{ position:relative; } /* for overlays */
+      #timeline{ position:relative; } /* for overlayene */
       #timeline .para-slot{
         background-color:var(--vt-tone-light) !important;
         background-image:none !important;
@@ -61,7 +61,7 @@
       #timeline .para-slot::before,
       #timeline .para-slot::after{ background:none !important; }
 
-      /* Group overlay labels (bold, same size as slot numbers) */
+      /* Gruppe-overlays (bold, samme str som tall) */
       #timeline .vt-group-overlays{
         position:absolute; left:0; top:0; right:0; bottom:0; pointer-events:none;
       }
@@ -72,10 +72,10 @@
         color:#2b3432; opacity:.96;
       }
 
-      /* Hide only the number content inside grouped slots (not the background/pins) */
+      /* Skjul kun tall-innholdet i gruppeslots (ikke bakgrunn/pins) */
       #timeline .para-slot.vt-in-group > div{ visibility:hidden; }
 
-      /* Info line (fallback if page has no dedicated spans) */
+      /* Fallback infolinje hvis siden ikke har sin egen */
       .vt-stats{ display:flex; gap:12px; align-items:center; font-size:.95em; opacity:.9; flex-wrap:wrap }
       .vt-stats b{ font-weight:600 }
       .vt-stats .ic{ width:14px; height:14px; vertical-align:middle; margin-right:6px; }
@@ -96,7 +96,7 @@
   }
   function getGroups(){
     if (Array.isArray(window.__VT_GROUPS)) return window.__VT_GROUPS;
-    const it = window.currentItem || window.ITEM || null;
+    const it = getCurrentItemSafe();
     if (it && typeof it.groups === 'string') return parseGroupsString(it.groups);
     return window.__VT_GROUPS || [];
   }
@@ -107,57 +107,77 @@
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
   }
 
-  // Expand references with optional order suffix "a"/"b"/"c" on single or grouped tokens.
-  // Examples: "5a", "4-5b", "10–12c", "7&8a"
-  // Returns { set:Set<number>, ord: Map<number, 1|2|3> } where 1=a,2=b,3=c (or undefined if none)
+  /* ================= Robust "current item" ================= */
+  function getItemsArray(){
+    if (window.DATA && Array.isArray(window.DATA.items)) return window.DATA.items;
+    if (Array.isArray(window.items)) return window.items;
+    if (Array.isArray(window.ARTICLES)) return window.ARTICLES;
+    return [];
+  }
+  function getCurrentItemSafe(){
+    // direkte
+    if (window.currentItem && typeof window.currentItem === 'object') return window.currentItem;
+    if (window.ITEM && typeof window.ITEM === 'object') return window.ITEM;
+
+    // via weekSel
+    const items = getItemsArray();
+    const sel = document.getElementById('weekSel');
+    if (sel && sel.selectedIndex >= 0){
+      const opt = sel.options[sel.selectedIndex];
+      // a) JSON i value
+      try {
+        const v = JSON.parse(opt.value);
+        if (v && v.week_start) {
+          const found = items.find(it => it.week_start === v.week_start);
+          if (found) return found;
+        }
+      } catch {}
+      // b) data-week_start
+      if (opt.dataset && opt.dataset.week_start){
+        const found = items.find(it => it.week_start === opt.dataset.week_start);
+        if (found) return found;
+      }
+      // c) dato i tekst
+      const m = (opt.textContent||'').match(/\b\d{4}-\d{2}-\d{2}\b/);
+      if (m){
+        const found = items.find(it => it.week_start === m[0]);
+        if (found) return found;
+      }
+    }
+
+    // fallback
+    if (items.length === 1) return items[0];
+    return null;
+  }
+
+  /* ================= Expand refs med a/b/c ================= */
+  // Støtter: 5a, "4-5b", "10–12c", "7&8a", 15
   function expandRefsWithOrder(refs){
     const set = new Set();
-    const ord = new Map();
+    const ord = new Map(); // p -> 1|2|3 (a|b|c)
     if (!Array.isArray(refs)) return {set, ord};
 
-    function applyToRange(a,b,order){
-      const lo=Math.min(a,b), hi=Math.max(a,b);
-      for(let i=lo;i<=hi;i++){ set.add(i); if (order) ord.set(i, order); }
-    }
-    function orderFromSuffix(ch){
-      if (!ch) return undefined;
-      const x = ch.toLowerCase();
-      if (x==='a') return 1;
-      if (x==='b') return 2;
-      if (x==='c') return 3;
-      return undefined;
-    }
+    const of = ch => ch ? ({a:1,b:2,c:3}[ch.toLowerCase()]||undefined) : undefined;
+    const apply = (a,b,o)=>{ const lo=Math.min(a,b), hi=Math.max(a,b); for(let i=lo;i<=hi;i++){ set.add(i); if(o) ord.set(i,o);} };
 
     refs.forEach(v=>{
       if (typeof v === 'number' && Number.isFinite(v)) { set.add(v); return; }
       if (typeof v !== 'string') return;
       const s = v.trim();
 
-      // a-bX  (hyphen)  or a–bX (en dash)
       let m = s.match(/^(\d+)[\-–](\d+)([abc])?$/i);
-      if (m){
-        const a=+m[1], b=+m[2], o=orderFromSuffix(m[3]);
-        applyToRange(a,b,o); return;
-      }
-      // a&bX
+      if (m){ apply(+m[1], +m[2], of(m[3])); return; }
+
       m = s.match(/^(\d+)&(\d+)([abc])?$/i);
-      if (m){
-        const a=+m[1], b=+m[2], o=orderFromSuffix(m[3]);
-        set.add(a); set.add(b);
-        if (o){ ord.set(a,o); ord.set(b,o); }
-        return;
-      }
-      // single number with optional suffix
+      if (m){ const o=of(m[3]); set.add(+m[1]); set.add(+m[2]); if(o){ord.set(+m[1],o); ord.set(+m[2],o);} return; }
+
       m = s.match(/^(\d+)([abc])?$/i);
-      if (m){
-        const p=+m[1], o=orderFromSuffix(m[2]);
-        set.add(p); if (o) ord.set(p,o);
-      }
+      if (m){ const p=+m[1], o=of(m[2]); set.add(p); if(o) ord.set(p,o); }
     });
     return {set, ord};
   }
 
-  /* ================= Two tones with group blocks ================= */
+  /* ================= Two tones med grupper ================= */
   function applyTwoToneWithGroups(){
     const tl = $('#timeline'); if(!tl) return;
     const slots = $$('.para-slot', tl); if(!slots.length) return;
@@ -183,58 +203,58 @@
     }
   }
 
-  /* ================= Data access ================= */
+  /* ================= Data-aksess til pins ================= */
   const getReadSet  = ()=> window.__VT_READ_SET2 instanceof Set ? window.__VT_READ_SET2 : (window.readSet || new Set());
   const getFrameSet = ()=> window.__VT_FRAME_SET   instanceof Set ? window.__VT_FRAME_SET   : new Set();
-  const getOrd      = ()=> window.__VT_ORD         instanceof Map ? window.__VT_ORD         : new Map(); // frame/read orders from main page
+  const getOrd      = ()=> window.__VT_ORD         instanceof Map ? window.__VT_ORD         : new Map();
 
   function getImageData(){
-    const it = window.currentItem || window.ITEM || null;
-    if (!it || !Array.isArray(it.images)) return {set:new Set(), ord:new Map()};
+    const it = getCurrentItemSafe();
+    if (!it || !Array.isArray(it.images)) return { set:new Set(), ord:new Map() };
     return expandRefsWithOrder(it.images);
   }
 
   function getParaCount(){
-    const it = window.currentItem || window.ITEM || null;
+    const it = getCurrentItemSafe();
     if (it && Array.isArray(it.words)) return it.words.length;
     if (it && Array.isArray(it.para_lengths)) return it.para_lengths.length;
     const tl = $('#timeline'); if (tl) return $$('.para-slot', tl).length;
     return 0;
   }
 
-  /* ================= Messages ================= */
+  /* ================= Meldinger (A/B/C) ================= */
+  function joinParts(arr){
+    if (arr.length===1) return arr[0];
+    if (arr.length===2) return `${arr[0]} og ${arr[1]}`;
+    return `${arr.slice(0,-1).join(', ')} og ${arr[arr.length-1]}`;
+  }
   function buildSingleMsg(p){
     const frames=getFrameSet(), reads=getReadSet(), imgData=getImageData();
     const hasF=frames.has(p), hasR=reads.has(p), hasI=imgData.set.has(p);
-
     if (!hasF && !hasR && !hasI) return rangeLabel([p]);
 
-    // determine A/B/C order using available order maps
     const ord=getOrd(), o = ord.get(p)||{};
-    const oF = hasF ? (o.frame ?? 2) : null;  // historically frame defaulted to 1; we keep 2 to avoid always-first if unknown
-    const oR = hasR ? (o.read  ?? 2) : null;
-    const oI = hasI ? (imgData.ord.get(p) ?? 3) : null; // images default to C
+    const oF = hasF ? (o.frame ?? 1) : null;  // frame default A
+    const oR = hasR ? (o.read  ?? 2) : null;  // read  default B
+    const oI = hasI ? (imgData.ord.get(p) ?? 3) : null; // image default C
 
-    const parts = [];
-    if (hasF) parts.push({label:'Ramme', order:oF??99});
-    if (hasR) parts.push({label:'Les-skriftsted', order:oR??99});
-    if (hasI) parts.push({label:'Bilde', order:oI??99});
+    const parts=[];
+    if (hasF) parts.push({label:'Ramme',         order:oF??99});
+    if (hasR) parts.push({label:'Les-skriftsted',order:oR??99});
+    if (hasI) parts.push({label:'Bilde',         order:oI??99});
     parts.sort((a,b)=>a.order-b.order);
 
-    const tail = joinParts(parts.map(x=>x.label));
-    return `${rangeLabel([p])} + ${tail}`;
+    return `${rangeLabel([p])} + ${joinParts(parts.map(x=>x.label))}`;
   }
-
   function buildGroupMsg(g){
     const frames=getFrameSet(), reads=getReadSet(), imgData=getImageData();
+    const ord=getOrd();
 
-    // For grupper: ta MIN rekkefølge innen gruppen for hver type
     let hasF=false, hasR=false, hasI=false;
     let oF=Infinity, oR=Infinity, oI=Infinity;
 
-    const ord=getOrd();
     for (const p of g){
-      if (frames.has(p)){ hasF=true; oF=Math.min(oF, (ord.get(p)||{}).frame ?? 2); }
+      if (frames.has(p)){ hasF=true; oF=Math.min(oF, (ord.get(p)||{}).frame ?? 1); }
       if (reads.has(p)){  hasR=true; oR=Math.min(oR, (ord.get(p)||{}).read  ?? 2); }
       if (imgData.set.has(p)){ hasI=true; oI=Math.min(oI, imgData.ord.get(p) ?? 3); }
     }
@@ -242,27 +262,18 @@
     if (!hasF && !hasR && !hasI) return rangeLabel(g);
 
     const parts=[];
-    if (hasF) parts.push({label:'Ramme', order:oF});
-    if (hasR) parts.push({label:'Les-skriftsted', order:oR});
-    if (hasI) parts.push({label:'Bilde', order:oI});
+    if (hasF) parts.push({label:'Ramme',         order:oF});
+    if (hasR) parts.push({label:'Les-skriftsted',order:oR});
+    if (hasI) parts.push({label:'Bilde',         order:oI});
     parts.sort((a,b)=>a.order-b.order);
 
-    const tail = joinParts(parts.map(x=>x.label));
-    return `${rangeLabel(g)} + ${tail}`;
+    return `${rangeLabel(g)} + ${joinParts(parts.map(x=>x.label))}`;
   }
-
   function buildMsgFor(p){
     const groups=getGroups();
     for (const g of groups){ if (g.includes(p)) return buildGroupMsg(g); }
     return buildSingleMsg(p);
   }
-
-  function joinParts(arr){
-    if (arr.length===1) return arr[0];
-    if (arr.length===2) return `${arr[0]} og ${arr[1]}`;
-    return `${arr.slice(0,-1).join(', ')} og ${arr[arr.length-1]}`;
-  }
-
   function keepMessageStable(){
     const msg = $('#message'); if(!msg) return;
     const mo = new MutationObserver(()=>{
@@ -276,7 +287,7 @@
     mo.observe(msg, {childList:true, characterData:true, subtree:true});
   }
 
-  /* ================= Group overlays (precise centering) ================= */
+  /* ================= Group overlays ================= */
   function placeGroupOverlays(){
     const tl = document.getElementById('timeline'); if (!tl) return;
     const slots = Array.from(tl.querySelectorAll('.para-slot')); if (!slots.length) return;
@@ -310,7 +321,7 @@
     });
   }
 
-  /* ================= Pins with A/B/C stacking ================= */
+  /* ================= Pins (A/B/C-stabling) ================= */
   function layoutPins(){
     const tl = document.getElementById('timeline'); if(!tl) return;
     const slots = Array.from(tl.querySelectorAll('.para-slot')); if(!slots.length) return;
@@ -322,9 +333,9 @@
       Array.from(slot.querySelectorAll('.read-pin,.frame-pin,.image-pin')).forEach(n=>n.remove());
 
       const items=[];
-      if (frames.has(p)) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1}); // default frame A
-      if (reads.has(p))  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2}); // default read B
-      if (imgData.set.has(p)) items.push({type:'image', order:(imgData.ord.get(p) ?? 3)}); // default image C
+      if (frames.has(p)) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1}); // A
+      if (reads.has(p))  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2}); // B
+      if (imgData.set.has(p)) items.push({type:'image', order:(imgData.ord.get(p) ?? 3)}); // C
 
       if (!items.length) return;
 
@@ -337,60 +348,69 @@
           it.type==='frame' ? 'frame-pin' :
           it.type==='read'  ? 'read-pin'  : 'image-pin';
         el.style.left   = `calc(50% + ${base + i*gap}px)`;
-        el.style.zIndex = String(100 - (it.order ?? 99)); // A above B above C
+        el.style.zIndex = String(100 - (it.order ?? 99)); // A over B over C
         slot.appendChild(el);
       });
     });
   }
 
-  /* ================= Info panel counts (now includes images) ================= */
+  /* ================= Info panel (inkl. Bilder) ================= */
   function findInfoPanel(){
     const candidates = [
       '#article-info','#articleInfo','#article-panel','#articlePanel',
       '.article-info','.article-meta','.article-details','#info'
     ];
-    for (const sel of candidates){ const el = $(sel); if (el) return el; }
-    return null;
+    for (const sel of candidates){ const el = document.querySelector(sel); if (el) return el; }
+
+    // Fallback: legg en bar øverst i artikkelområdet
+    let host = document.querySelector('#article') || document.querySelector('#content') || document.body;
+    let bar = document.getElementById('vt-stats-host');
+    if (!bar){
+      bar = document.createElement('div');
+      bar.id = 'vt-stats-host';
+      bar.style.margin = '8px 0';
+      host.prepend(bar);
+    }
+    return bar;
   }
   function updateStats(){
     const panel = findInfoPanel(); if (!panel) return;
 
-    const paraCount = getParaCount();
-    const readCount = getReadSet().size;
-    const frameCount= getFrameSet().size;
+    const it = getCurrentItemSafe();
+    const paraCount =
+      it && Array.isArray(it.words) ? it.words.length :
+      it && Array.isArray(it.para_lengths) ? it.para_lengths.length :
+      ($$('#timeline .para-slot').length || 0);
 
-    const imgData = getImageData();
-    const imageCount = imgData.set.size;
+    const readCount  = (getReadSet && getReadSet().size) || 0;
+    const frameCount = (getFrameSet && getFrameSet().size) || 0;
+    const imageCount = (getImageData && getImageData().set.size) || 0;
 
-    // Try update existing spans; else create a compact vt-stats line
     const setText = (sel, text)=>{
-      const el = $(sel, panel);
+      const el = panel.querySelector(sel);
       if (el) el.textContent = text;
       return !!el;
     };
     const updated =
-      setText('#paraCount', String(paraCount)) |
-      setText('#readCount', String(readCount)) |
+      setText('#paraCount',  String(paraCount)) |
+      setText('#readCount',  String(readCount)) |
       setText('#frameCount', String(frameCount)) |
       setText('#imageCount', String(imageCount));
 
     if (!updated){
-      if (!$('#vt-stats', panel)){
-        const div = document.createElement('div');
-        div.className = 'vt-stats'; div.id = 'vt-stats';
-        div.innerHTML = `
+      panel.innerHTML = `
+        <div class="vt-stats" id="vt-stats">
           <span><b>Avsnitt:</b> <span id="vt-paras">${paraCount}</span></span>
           <span>📖 <b>Les-skriftsteder:</b> <span id="vt-reads">${readCount}</span></span>
           <span><img class="ic" src="./img/box-icon.png" alt=""> <b>Rammer:</b> <span id="vt-frames">${frameCount}</span></span>
           <span><img class="ic" src="./img/image-icon.png" alt=""> <b>Bilder:</b> <span id="vt-images">${imageCount}</span></span>
-        `;
-        panel.appendChild(div);
-      } else {
-        $('#vt-paras', panel).textContent   = String(paraCount);
-        $('#vt-reads', panel).textContent   = String(readCount);
-        $('#vt-frames', panel).textContent  = String(frameCount);
-        $('#vt-images', panel).textContent  = String(imageCount);
-      }
+        </div>
+      `;
+    } else {
+      const vp = panel.querySelector('#vt-paras');  if (vp) vp.textContent = String(paraCount);
+      const vr = panel.querySelector('#vt-reads');  if (vr) vr.textContent = String(readCount);
+      const vf = panel.querySelector('#vt-frames'); if (vf) vf.textContent = String(frameCount);
+      const vi = panel.querySelector('#vt-images'); if (vi) vi.textContent = String(imageCount);
     }
   }
 
@@ -422,7 +442,7 @@
     applyAll(); startObservers();
   }
 
-  /* ================= Limit dropdown to prev + current + next 3 (robust) ================= */
+  /* ================= Begrens dropdown: forrige + denne + 3 neste (robust) ================= */
   (function limitArticleDropdown(){
     function mondayLocal(d=new Date()){
       const day=d.getDay(); const diff=(day===0?-6:1-day);
@@ -480,5 +500,13 @@
     const hook=()=>{ const sel=document.getElementById('weekSel'); if (sel) new MutationObserver(()=>filterWeekSel()).observe(sel,{childList:true, subtree:false}); };
     if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
   })();
+
+  /* ====== liten engangssjekk i konsoll (kan fjernes) ====== */
+  setTimeout(()=>{
+    const it = getCurrentItemSafe();
+    const img = getImageData();
+    console.log('[VT] currentItem:', it?.title, it?.week_start);
+    console.log('[VT] images count:', img.set.size, 'sample:', Array.from(img.set).slice(0,10));
+  }, 600);
 
 })();
