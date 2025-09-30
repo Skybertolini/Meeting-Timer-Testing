@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeting Timer</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --tone-light:#EAF4EE; --tone-dark:#CFE7D6; --ink:#22302B; }
+  html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;}
+  .wrap{max-width:980px;margin:24px auto;padding:0 16px;}
+  h1{font-weight:900;letter-spacing:.3px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .pill{background:#f6f7f8;border:1px solid #e4e6e8;border-radius:999px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+  .pill img{height:14px;vertical-align:-2px}
+  #weekSel{flex:1;min-width:260px;padding:10px 12px;border:1px solid #d9dedb;border-radius:12px;background:#fff;font-size:16px}
+  #message{font-size:24px;font-weight:600;background:#fafbfa;border:1px solid #e5ebe6;border-radius:14px;padding:18px 16px;margin:12px 0 10px 0}
+  #timeline{position:relative;margin:8px 0 28px 0;background:#f2f5f1;border-radius:14px;border:1px solid #dfe9e2;overflow:hidden}
+  .slots{display:flex;position:relative}
+  .para-slot{position:relative;flex:1;min-width:28px;padding:8px 0;text-align:center;background:var(--tone-light);border-right:1px solid #e8efe9}
+  .para-slot.alt{background:var(--tone-dark)}
+  .para-slot:last-child{border-right:none}
+  .para-slot>div{font-weight:900;font-size:12px;line-height:1.2}
+  /* pins */
+  .para-slot i.read-pin,.para-slot i.frame-pin,.para-slot i.image-pin{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:-20px;pointer-events:none;opacity:.95
+  }
+  .para-slot i.read-pin{width:16px;height:16px;background:url('./img/read-icon.png') center/contain no-repeat}
+  .para-slot i.frame-pin{width:12px;height:12px;background:url('./img/box-icon.png') center/contain no-repeat}
+  .para-slot i.image-pin{width:14px;height:14px;background:url('./img/image-icon.png') center/contain no-repeat}
+  /* group overlay */
+  .overlays{position:absolute;inset:0;pointer-events:none}
+  .overlay{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#2b3432;opacity:.96}
+  .para-slot.vt-in-group>div{visibility:hidden}
+  /* controls */
+  .controls{display:flex;gap:14px;align-items:center;margin-top:10px}
+  .btn{width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+  .btn.play{background:#7bd598}.btn.pause{background:#76a9ff}.btn.stop{background:#ffb15a}
+  .timer{font-size:48px;font-weight:900;letter-spacing:1px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row" id="article-info">
+      <select id="weekSel" title="Velg artikkel"></select>
+      <div class="pill">Avsnitt: <strong id="paraCount">0</strong></div>
+      <div class="pill">📖 Les-skriftsteder: <strong id="readCount">0</strong></div>
+      <div class="pill" id="pillFrames"><img src="./img/box-icon.png" alt="">Rammer: <strong id="frameCount">0</strong></div>
+      <div class="pill" id="pillImages"><img src="./img/image-icon.png" alt="">Bilder: <strong id="imageCount">0</strong></div>
+    </div>
+
+    <h1 id="title">Meeting Timer</h1>
+    <div id="message">Klar til start. Trykk ▶︎ når du er klar.</div>
+
+    <div id="timeline">
+      <div class="overlays"></div>
+      <div class="slots" id="slots"></div>
+    </div>
+
+    <div class="timer" id="clock">00:00</div>
+    <div class="controls">
+      <button class="btn play" id="btnPlay" title="Start">▶</button>
+      <button class="btn pause" id="btnPause" title="Pause">⏸</button>
+      <button class="btn stop" id="btnStop" title="Stopp">■</button>
+    </div>
+  </div>
+
+<script>
+const DATA_URL = './data/no-2025.json'; // endre sti om nødvendig
+let DATA = {items:[]};
+let currentItem = null;
+let isPlaying = false;
+let timer=null, elapsed=0;
+function pad(n){return String(n).padStart(2,'0')}
+function renderClock(){const m=Math.floor(elapsed/60), s=elapsed%60; document.getElementById('clock').textContent=pad(m)+':'+pad(s);}
+function start(){ if (isPlaying) return; isPlaying=true; timer=setInterval(()=>{elapsed++; renderClock();},1000); }
+function pause(){ if (!isPlaying) return; isPlaying=false; clearInterval(timer); }
+function stop(){ isPlaying=false; clearInterval(timer); elapsed=0; renderClock(); }
+document.getElementById('btnPlay').onclick=start;
+document.getElementById('btnPause').onclick=pause;
+document.getElementById('btnStop').onclick=stop;
+
+/* a/b/c helpers */
+function expandRefsWithOrder(refs){
+  const set=new Set(), ord=new Map();
+  if (!Array.isArray(refs)) return {set,ord};
+  const of = ch => ch? ({a:1,b:2,c:3}[ch.toLowerCase()]||undefined):undefined;
+  const apply=(a,b,o)=>{ const lo=Math.min(a,b), hi=Math.max(a,b); for(let i=lo;i<=hi;i++){ set.add(i); if(o) ord.set(i,o);} };
+  for (const v of refs){
+    if (typeof v==='number'){ set.add(v); continue; }
+    const s=String(v).trim();
+    let m=s.match(/^(\d+)[\-–](\d+)([abc])?$/i);
+    if (m){ apply(+m[1],+m[2],of(m[3])); continue; }
+    m=s.match(/^(\d+)&(\d+)([abc])?$/i);
+    if (m){ const o=of(m[3]); set.add(+m[1]); set.add(+m[2]); if(o){ord.set(+m[1],o); ord.set(+m[2],o);} continue; }
+    m=s.match(/^(\d+)([abc])?$/i);
+    if (m){ const p=+m[1], o=of(m[2]); set.add(p); if(o) ord.set(p,o); }
+  }
+  return {set,ord};
+}
+function parseGroupsString(str){
+  if (!str || typeof str!=='string') return [];
+  return str.split(',').map(t=>t.trim()).flatMap(tok=>{
+    const m = tok.match(/^(\d+)(?:-(\d+))?$/); if(!m) return [];
+    const a=+m[1], b=m[2]?+m[2]:a; const arr=[]; for(let i=a;i<=b;i++) arr.push(i); return [arr];
+  });
+}
+function rangeLabel(nums){
+  const s=[...new Set(nums)].sort((a,b)=>a-b);
+  if (s.length===1) return `Avsnitt ${s[0]}`;
+  if (s.length===2 && s[1]===s[0]+1) return `Avsnittene ${s[0]} og ${s[1]}`;
+  return `Avsnittene ${s[0]}–${s[s.length-1]}`;
+}
+function joinParts(a){ if (a.length===1) return a[0]; if (a.length===2) return `${a[0]} og ${a[1]}`; return `${a.slice(0,-1).join(', ')} og ${a[a.length-1]}`; }
+
+function drawTimeline(){
+  const slotsEl = document.getElementById('slots');
+  const overlays = document.querySelector('#timeline .overlays');
+  slotsEl.innerHTML=''; overlays.innerHTML='';
+  if (!currentItem) return;
+
+  const paraCount = (currentItem.words||currentItem.para_lengths||[]).length;
+  const groups = parseGroupsString(currentItem.groups||'');
+  const starts = new Map(); groups.forEach(g=>{ if(g.length) starts.set(g[0],g); });
+
+  const r = expandRefsWithOrder(currentItem.reads);
+  const f = expandRefsWithOrder(currentItem.frames);
+  const im = expandRefsWithOrder(currentItem.images);
+
+  window.__VT_READ_SET2 = r.set;
+  window.__VT_FRAME_SET = f.set;
+  window.__VT_IMAGE_SET = im.set;
+  const ORD = new Map();
+  for (const p of r.set){ const o=ORD.get(p)||{}; o.read = r.ord.get(p) ?? (o.read??2); ORD.set(p,o); }
+  for (const p of f.set){ const o=ORD.get(p)||{}; o.frame= f.ord.get(p)?? (o.frame??1); ORD.set(p,o); }
+  for (const p of im.set){ const o=ORD.get(p)||{}; o.image= im.ord.get(p)?? (o.image??3); ORD.set(p,o); }
+  window.__VT_ORD = ORD;
+  window.__VT_GROUPS = groups;
+
+  let dark=false; let i=1;
+  while(i<=paraCount){
+    if (starts.has(i)){
+      const g = starts.get(i);
+      for (const p of g){
+        const slot=document.createElement('div'); slot.className='para-slot'+(dark?' alt':''); slot.dataset.p=p;
+        slot.innerHTML='<div>'+p+'</div>';
+        slotsEl.appendChild(slot);
+      }
+      dark=!dark; i=g[g.length-1]+1;
+    } else {
+      const slot=document.createElement('div'); slot.className='para-slot'+(dark?' alt':''); slot.dataset.p=i;
+      slot.innerHTML='<div>'+i+'</div>';
+      slotsEl.appendChild(slot);
+      dark=!dark; i++;
+    }
+  }
+
+  if (groups.length){
+    const slotEls = Array.from(slotsEl.children);
+    const cref = slotsEl.getBoundingClientRect();
+    const labelText = g => (g.length===2 ? `${g[0]}&${g[1]}` : `${g[0]}–${g[g.length-1]}`);
+    groups.forEach(g=>{
+      const first=slotEls[g[0]-1], last=slotEls[g[g.length-1]-1]; if(!first||!last) return;
+      g.forEach(p=>{ const el=slotEls[p-1]; if (el) el.classList.add('vt-in-group'); });
+      const r1=first.getBoundingClientRect(), r2=last.getBoundingClientRect();
+      const ov=document.createElement('div');
+      ov.className='overlay';
+      ov.style.left=(r1.left - cref.left)+'px';
+      ov.style.width=(r2.right - r1.left)+'px';
+      ov.textContent=labelText(g);
+      overlays.appendChild(ov);
+    });
+  }
+
+  const slotEls = Array.from(slotsEl.children);
+  slotEls.forEach((slot,idx)=>{
+    const p=idx+1;
+    const items=[];
+    if (f.set.has(p)) items.push({t:'frame', o: (ORD.get(p)||{}).frame ?? 1});
+    if (r.set.has(p)) items.push({t:'read',  o: (ORD.get(p)||{}).read  ?? 2});
+    if (im.set.has(p))items.push({t:'image', o: (ORD.get(p)||{}).image ?? 3});
+    if (!items.length) return;
+    items.sort((a,b)=>(a.o??99)-(b.o??99));
+    const gap=6, base=-((items.length-1)/2)*gap;
+    items.forEach((it,i2)=>{
+      const el=document.createElement('i');
+      el.className = it.t+'-pin';
+      el.style.left = `calc(50% + ${base + i2*gap}px)`;
+      el.style.zIndex = String(100 - (it.o??99));
+      slot.appendChild(el);
+    });
+    slot.addEventListener('click', ()=>{
+      if (isPlaying) return;
+      const msg = buildMsgFor(p, groups, ORD, r.set, f.set, im.set, im.ord);
+      document.getElementById('message').textContent = msg;
+    }, {passive:true});
+  });
+
+  document.getElementById('title').textContent = currentItem.title || 'Meeting Timer';
+  document.getElementById('paraCount').textContent = String(paraCount);
+  document.getElementById('readCount').textContent = String(r.set.size);
+  document.getElementById('frameCount').textContent = String(f.set.size);
+  document.getElementById('imageCount').textContent = String(im.set.size);
+  document.getElementById('message').textContent = 'Klar til start. Trykk ▶︎ når du er klar.';
+}
+
+function buildMsgFor(p, groups, ORD, readSet, frameSet, imgSet, imgOrd){
+  const inGroup = groups.find(g=>g.includes(p));
+  const label = inGroup ? rangeLabel(inGroup) : rangeLabel([p]);
+  const parts=[];
+  function orderFor(type){
+    if (!inGroup){
+      const o=ORD.get(p)||{};
+      if (type==='frame' && frameSet.has(p)) return o.frame ?? 1;
+      if (type==='read'  && readSet.has(p))  return o.read  ?? 2;
+      if (type==='image' && imgSet.has(p))   return imgOrd.get(p) ?? 3;
+      return null;
+    } else {
+      let best=Infinity, has=false;
+      for (const x of inGroup){
+        const o=ORD.get(x)||{};
+        if (type==='frame' && frameSet.has(x)){ has=true; best=Math.min(best, o.frame ?? 1); }
+        if (type==='read'  && readSet.has(x)){  has=true; best=Math.min(best, o.read  ?? 2); }
+        if (type==='image' && imgSet.has(x)){   has=true; best=Math.min(best, imgOrd.get(x) ?? 3); }
+      }
+      return has?best:null;
+    }
+  }
+  const of=orderFor('frame'), or=orderFor('read'), oi=orderFor('image');
+  if (of!=null) parts.push({t:'Ramme',o:of});
+  if (or!=null) parts.push({t:'Les-skriftsted',o:or});
+  if (oi!=null) parts.push({t:'Bilde',o:oi});
+  if (!parts.length) return label;
+  parts.sort((a,b)=>a.o-b.o);
+  return `${label} + ${joinParts(parts.map(x=>x.t))}`;
+}
+
+async function init(){
+  try{
+    const res = await fetch(DATA_URL, {cache:'no-store'});
+    DATA = await res.json();
+  }catch(e){ console.error('Kunne ikke laste data', e); DATA = {items:[]}; }
+
+  const sel = document.getElementById('weekSel');
+  sel.innerHTML='';
+  (DATA.items||[]).forEach(it=>{
+    const opt = document.createElement('option');
+    opt.value = JSON.stringify({week_start: it.week_start});
+    opt.dataset.week_start = it.week_start;
+    opt.textContent = `${it.week_start} – ${it.title}`;
+    sel.appendChild(opt);
+  });
+
+  function mondayLocal(d=new Date()){ const day=d.getDay(); const diff=(day===0?-6:1-day); return new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);}
+  function fmt(d){const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`;}
+  const wsThis = fmt(mondayLocal(new Date()));
+  const idx = Array.from(sel.options).findIndex(o=>{ try{ return JSON.parse(o.value).week_start===wsThis }catch{ return false } });
+  sel.selectedIndex = idx>=0 ? idx : 0;
+
+  sel.addEventListener('change', ()=>{
+    try{ const v=JSON.parse(sel.value); currentItem = (DATA.items||[]).find(it=>it.week_start===v.week_start) || null; }catch{ currentItem=null; }
+    drawTimeline();
+  });
+
+  try{ const v=JSON.parse(sel.value); currentItem = (DATA.items||[]).find(it=>it.week_start===v.week_start) || null; }catch{ currentItem=null; }
+  drawTimeline(); renderClock();
+}
+init();
+</script>
+</body>
+</html>
