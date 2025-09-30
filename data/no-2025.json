@@ -1,130 +1,6 @@
 {
   "items": [
     {
-      "week_start": "2025-08-25",
-      "title": "Hva vi kan lære av Jakobs profeti om sønnene sine – del 2",
-      "para_lengths": [
-        91,
-        153,
-        84,
-        169,
-        113,
-        121,
-        112,
-        209,
-        85,
-        195,
-        110,
-        145,
-        92,
-        183,
-        150,
-        88,
-        149,
-        93,
-        130
-      ],
-      "groups": "",
-      "frames": [],
-      "reads": [],
-      "images": []
-    },
-    {
-      "week_start": "2025-09-01",
-      "title": "Aksepter ydmykt at det er ting du ikke vet",
-      "para_lengths": [
-        62,
-        178,
-        80,
-        90,
-        101,
-        114,
-        145,
-        84,
-        114,
-        172,
-        64,
-        73,
-        74,
-        203,
-        176,
-        127,
-        127,
-        186,
-        129,
-        250
-      ],
-      "groups": "",
-      "frames": [],
-      "reads": [],
-      "images": []
-    },
-    {
-      "week_start": "2025-09-08",
-      "title": "Hjelp den du studerer med, til å tjene Jehova",
-      "para_lengths": [
-        100,
-        108,
-        86,
-        79,
-        140,
-        159,
-        128,
-        96,
-        168,
-        207,
-        108,
-        148,
-        94,
-        100,
-        86,
-        100,
-        167,
-        141,
-        120,
-        189,
-        248
-      ],
-      "groups": "",
-      "frames": [],
-      "reads": [],
-      "images": []
-    },
-    {
-      "week_start": "2025-09-15",
-      "title": "Ta imot gode råd!",
-      "para_lengths": [
-        42,
-        78,
-        79,
-        106,
-        135,
-        128,
-        157,
-        101,
-        134,
-        65,
-        82,
-        160,
-        88,
-        225,
-        113,
-        158,
-        214,
-        70,
-        189
-      ],
-      "groups": "",
-      "frames": [],
-      "reads": [
-        1,
-        7,
-        9,
-        16
-      ],
-      "images": []
-    },
-    {
       "week_start": "2025-09-22",
       "title": "Hvordan gi råd",
       "para_lengths": [
@@ -182,7 +58,9 @@
         219
       ],
       "groups": "",
-      "frames": [16],
+      "frames": [
+        16
+      ],
       "reads": [
         2,
         5,
@@ -223,7 +101,10 @@
         9,
         12
       ],
-      "images": []
+      "images": [
+        5,
+        9
+      ]
     },
     {
       "week_start": "2025-10-13",
@@ -257,7 +138,11 @@
         12,
         15
       ],
-      "images": []
+      "images": [
+        6,
+        14,
+        17
+      ]
     },
     {
       "week_start": "2025-10-20",
@@ -283,7 +168,9 @@
         201
       ],
       "groups": "",
-      "frames": [16],
+      "frames": [
+        16
+      ],
       "reads": [
         3,
         9,
@@ -291,7 +178,9 @@
         14,
         15
       ],
-      "images": []
+      "images": [
+        1
+      ]
     },
     {
       "week_start": "2025-10-27",
