@@ -385,5 +385,108 @@
     document.addEventListener('DOMContentLoaded', ()=>{ applyAll(); startObservers(); });
   } else {
     applyAll(); startObservers();
+  }/* ========== Limit article dropdown to prev week + current + next 3 weeks ========== */
+(function limitArticleDropdown(){
+  // Finn mandag i en gitt dato
+  function monday(d){
+    const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const day = x.getUTCDay() || 7; // 1=man ... 7=søndag
+    if (day !== 1) x.setUTCDate(x.getUTCDate() - (day - 1));
+    x.setUTCHours(0,0,0,0);
+    return x;
   }
+  // Hjelper
+  const fmt = d => d.toISOString().slice(0,10); // YYYY-MM-DD
+  const addDays = (d,n)=>{ const x=new Date(d); x.setUTCDate(x.getUTCDate()+n); return x; };
+
+  // Lag tillatt vindu (prev, current, +1w, +2w, +3w)
+  function allowedWeekStarts(){
+    const now = new Date();
+    const curr = monday(now);
+    const prev = addDays(curr, -7);
+    const n1 = addDays(curr, 7);
+    const n2 = addDays(curr, 14);
+    const n3 = addDays(curr, 21);
+    // Hvis du vil *ekskludere* inneværende uke, fjern "curr" under ↓
+    return new Set([fmt(prev), fmt(curr), fmt(n1), fmt(n2), fmt(n3)]);
+  }
+
+  // Finn data-array uansett hva hovedsiden kaller den
+  function getItemsRef(){
+    const cand = [
+      () => (window.DATA && Array.isArray(window.DATA.items)) ? window.DATA.items : null,
+      () => (window.items && Array.isArray(window.items)) ? window.items : null,
+      () => (window.ARTICLES && Array.isArray(window.ARTICLES)) ? window.ARTICLES : null
+    ];
+    for (const f of cand){ const r=f(); if (r) return r; }
+    return null;
+  }
+
+  // Forsøk å finne dropdown/datalist
+  function findListRoots(){
+    const roots = [];
+    const ids = ['#article-select','#articleSelect','#article-list','#articleList','#articles'];
+    ids.forEach(id=>{
+      const el = document.querySelector(id);
+      if (el) roots.push(el);
+    });
+    // fallback: alle <select> eller <datalist> i "artikel-velger" seksjon
+    document.querySelectorAll('select, datalist').forEach(el=>{
+      if (!roots.includes(el) && /article|artikkel|week|uke|list/i.test(el.id+el.className))
+        roots.push(el);
+    });
+    return roots;
+  }
+
+  function repopulateDropdown(){
+    const items = getItemsRef(); if (!items) return false;
+    const allow = allowedWeekStarts();
+
+    // Lag (og husk) filtrert liste
+    const filtered = items.filter(it => it && typeof it.week_start === 'string' && allow.has(it.week_start));
+    window.__VT_ALLOWED_ITEMS = filtered;
+
+    // Hvis hovedkoden har en kjent "render" kan vi gi hint
+    if (typeof window.renderArticleList === 'function'){
+      try { window.renderArticleList(filtered); return true; } catch(e){}
+    }
+
+    // Manuell: finn <select>/<datalist> og bygg options
+    const roots = findListRoots(); if (!roots.length) return false;
+
+    roots.forEach(root=>{
+      // Tøm eks. options
+      while (root.firstChild) root.removeChild(root.firstChild);
+
+      filtered.forEach((it, idx)=>{
+        const opt = document.createElement(root.tagName.toLowerCase()==='datalist' ? 'option' : 'option');
+        opt.value = it.title || (`Uke ${it.week_start}`);
+        opt.text  = it.title || (`Uke ${it.week_start}`);
+        opt.dataset.week_start = it.week_start;
+        // For <datalist> er 'label' nyttig; for <select> brukes text
+        if (root.tagName.toLowerCase()==='datalist'){
+          opt.label = it.title || (`Uke ${it.week_start}`);
+        }
+        root.appendChild(opt);
+      });
+    });
+
+    return true;
+  }
+
+  // Kjør når data/DOM er klare
+  function tryOnce(){
+    repopulateDropdown();
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', tryOnce);
+  } else {
+    tryOnce();
+  }
+
+  // Hvis siden bytter dataset dynamisk, lytt etter endringer på <body>
+  const bodyObs = new MutationObserver(()=> { tryOnce(); });
+  bodyObs.observe(document.body, {childList:true, subtree:true});
+})();
 })();
