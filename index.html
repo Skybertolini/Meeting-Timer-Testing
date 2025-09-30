@@ -68,7 +68,6 @@ body{
 .para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
 .read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .frame-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
-.image-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/image-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 /* Rød tone for SP sin elapsed */
 #elapsedSP{background:rgba(210,60,60,.28)}
@@ -129,6 +128,15 @@ textarea{resize:vertical;}
 
 /* Spacing between notes and timer section */
 #timerSection{margin-top:25px}
+
+/* --- addon: image pin --- */
+#timeline .para-slot i.image-pin{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:-20px; width:16px; height:16px;
+  background:url('./img/image-icon.png') center/contain no-repeat;
+  pointer-events:none; opacity:.95;
+}
+
 </style>
 </head>
 <body>
@@ -306,27 +314,6 @@ try{
         const g=[]; for(let k=a;k<=b;k++) g.push(k); return [g];
       });
     })(window.__VT_GROUPS_RAW);
-  })();
-  // parse images (supports a/b/c ordering)
-  (function(){
-    function parseImg(e){ const m=String(e).match(/^(\d+)([abc])?$/i); return m? {n:Number(m[1]), o:(m[2]? ({a:1,b:2,c:3}[m[2].toLowerCase()]): null)} : null; }
-    const IM = Array.isArray(it.images) ? it.images.map(parseImg).filter(Boolean) : [];
-    window.__VT_IMAGE_SET = new Set(IM.map(x=>x.n));
-    const ORD2 = window.__VT_ORD || new Map();
-    IM.forEach(x=>{ const m = ORD2.get(x.n)||{}; if (x.o!=null) m.image = x.o; ORD2.set(x.n,m); });
-    window.__VT_ORD = ORD2;
-  })();
-  // ensure Images pill exists and update count
-  (function(){
-    var el=document.getElementById('pillImages');
-    if(!el){
-      var framesEl=document.getElementById('pillFrames')||document.querySelector('[id*=pillFrames]');
-      el=document.createElement('div'); el.id='pillImages'; el.className=framesEl?framesEl.className:'pill'; el.style.marginLeft='8px';
-      el.innerHTML='<img src="./img/image-icon.png" alt="" style="height:14px;vertical-align:-2px;margin-right:4px">Bilder: <strong>0</strong>';
-      if(framesEl && framesEl.parentElement) framesEl.insertAdjacentElement('afterend', el); else document.body.appendChild(el);
-    }
-    var s=el.querySelector('strong');
-    if(s) s.textContent=String((window.__VT_IMAGE_SET? new Set(Array.from(window.__VT_IMAGE_SET)).size : 0));
   })();
 }catch(e){}
 
@@ -652,5 +639,112 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
   
   <!-- Add-on med trygge UI-tilpasninger -->
   <script src="./index-addon.js"></script>
+
+<script>
+(function(){
+  // Utility: parse images array (supports numbers and "12a"/"5b"/"3c")
+  function expandWithOrder(refs){
+    const set = new Set(), ord = new Map();
+    if (!Array.isArray(refs)) return {set, ord};
+    const pri = c => c ? ({a:1,b:2,c:3}[String(c).toLowerCase()]||null) : null;
+    for (const v of refs){
+      if (typeof v === 'number'){ set.add(v); continue; }
+      const m = String(v).trim().match(/^(\d+)([abc])?$/i);
+      if (m){ const n=+m[1], o=pri(m[2]); set.add(n); if(o) ord.set(n,o); }
+    }
+    return {set, ord};
+  }
+
+  // Ensure the "Bilder:" pill is inside the article-info row (not bottom of page)
+  function ensureImagesPill(){
+    const row = document.getElementById('article-info');
+    if (!row) return;
+    let pill = document.getElementById('pillImages');
+    if (!pill){
+      pill = document.createElement('div');
+      pill.id = 'pillImages';
+      pill.className = 'pill';
+      pill.style.marginLeft = '8px';
+      pill.innerHTML = '<img src="./img/image-icon.png" alt="" style="height:14px;vertical-align:-2px;margin-right:4px">Bilder: <strong id="imageCount">0</strong>';
+      row.appendChild(pill);
+    } else if (!row.contains(pill)){
+      row.appendChild(pill);
+    }
+  }
+
+  // Update counters from globals or current item
+  function updateImagesCount(){
+    ensureImagesPill();
+    const strong = document.getElementById('imageCount');
+    if (!strong) return;
+    let count = 0;
+    if (window.__VT_IMAGE_SET instanceof Set){
+      count = window.__VT_IMAGE_SET.size;
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const {set} = expandWithOrder(it && it.images ? it.images : []);
+      count = set.size;
+    }
+    strong.textContent = String(count);
+  }
+
+  // Add image pins under the timeline slots
+  function applyImagePins(){
+    const tl = document.getElementById('timeline'); if (!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if (!slots.length) return;
+
+    // Determine images set + order
+    let set = new Set(), ord = new Map();
+    if (window.__VT_IMAGE_SET instanceof Set){
+      set = window.__VT_IMAGE_SET;
+      // order is usually in window.__VT_ORD.image
+      const O = window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
+      for (const p of set){
+        const o = O.get(p)||{};
+        if (o.image != null) ord.set(p, o.image);
+      }
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const e = expandWithOrder(it && it.images ? it.images : []);
+      set = e.set; ord = e.ord;
+    }
+
+    slots.forEach((slot, idx)=>{
+      const p = idx+1;
+      slot.querySelectorAll('.image-pin').forEach(n=>n.remove());
+      if (!set.has(p)) return;
+      const el = document.createElement('i');
+      el.className = 'image-pin';
+      // sitte sammen med read/frame i orden: A(1) nærmest boksen, så B, så C
+      const order = ord.get(p) ?? 3;
+      el.style.zIndex = String(100 - order);
+      // let other pins sit slightly offset; we trust existing layout, so keep center
+      slot.appendChild(el);
+    });
+  }
+
+  function applyAll(){
+    updateImagesCount();
+    applyImagePins();
+  }
+
+  // Observe timeline changes so pins re-render
+  const tl = document.getElementById('timeline');
+  if (tl){
+    const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
+    mo.observe(tl, {childList:true, subtree:true});
+  }
+  // Also update when selection changes if select exists
+  const sel = document.getElementById('weekSel');
+  if (sel){ sel.addEventListener('change', ()=> setTimeout(applyAll, 0)); }
+
+  // Initial run
+  document.addEventListener('DOMContentLoaded', applyAll);
+  window.addEventListener('load', applyAll);
+  // Expose manual trigger if needed
+  window.__VT_APPLY_IMAGES = applyAll;
+})();
+</script>
+
 </body>
 </html>
