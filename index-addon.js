@@ -1,7 +1,7 @@
-// index-addon.js — v1.75 + group labels + pin stacking + dropdown limit
+// index-addon.js — v1.75 + group labels + pin stacking + images + dropdown limit
 // - Two green tones; groups share first tone; flip after whole group
 // - One overlay label per group ("4&5" / "10–12"), centrally across the group's width
-// - Read & frame icons on the same line under the timeline; A-order sits above B if needed
+// - Read, frame, image icons on the same line under the timeline; A-order sits above B if needed
 // - Clean slot number rendering; hide numbers inside grouped slots
 // - Limit dropdown to prev week + current + next 3
 
@@ -12,9 +12,10 @@
     const style = document.createElement('style');
     style.setAttribute('data-index-addon','');
     style.textContent = `
-      /* Icons: both types in the same line under the timeline */
+      /* Icons: all types in the same line under the timeline */
       #timeline .para-slot i.read-pin,
-      #timeline .para-slot i.frame-pin{
+      #timeline .para-slot i.frame-pin,
+      #timeline .para-slot i.image-pin{
         position:absolute; left:50%; transform:translateX(-50%);
         bottom:-20px !important; top:auto; pointer-events:none; opacity:.95;
       }
@@ -26,13 +27,17 @@
         width:12px; height:12px;
         background:url('./img/box-icon.png')  center/contain no-repeat;
       }
+      #timeline .para-slot i.image-pin{
+        width:14px; height:14px;
+        background:url('./img/image-icon.png') center/contain no-repeat;
+      }
 
       /* Remove any white text-shadow on slot numbers */
       #timeline .para-slot{ text-shadow:none !important; }
 
       :root{
         --vt-tone-light:#EAF4EE;
-        --vt-tone-dark:#DEEFE4;
+        --vt-tone-dark:#CFE7D6;
       }
       #timeline{ position:relative; } /* for overlays */
       #timeline .para-slot{
@@ -93,6 +98,34 @@
     if (s.length===1) return `Avsnitt ${s[0]}`;
     if (s.length===2 && s[1]===s[0]+1) return `Avsnittene ${s[0]} og ${s[1]}`;
     return `Avsnittene ${s[0]}–${s[s.length-1]}`;
+  }
+
+  // Parse a list like ["10-12", "4&5", 7] into a Set of indices
+  function expandParaRefs(refs){
+    const set = new Set();
+    if (!Array.isArray(refs)) return set;
+    refs.forEach(v=>{
+      if (typeof v === 'number' && Number.isFinite(v)) { set.add(v); return; }
+      if (typeof v !== 'string') return;
+      const s = v.trim();
+      // a–b (en dash) or a-b
+      let m = s.match(/^(\d+)[\-–](\d+)$/);
+      if (m){
+        const a=+m[1], b=+m[2];
+        for (let i=Math.min(a,b); i<=Math.max(a,b); i++) set.add(i);
+        return;
+      }
+      // a&b (typically two adjacent)
+      m = s.match(/^(\d+)&(\d+)$/);
+      if (m){
+        set.add(+m[1]); set.add(+m[2]);
+        return;
+      }
+      // single number as string
+      m = s.match(/^\d+$/);
+      if (m){ set.add(+s); }
+    });
+    return set;
   }
 
   /* ================= Two tones with group blocks ================= */
@@ -196,31 +229,42 @@
     });
   }
 
-  /* ================= Pins with A-over-B stacking ================= */
+  /* ================= Pins with A-over-B stacking + images ================= */
+  function getImageSet(){
+    const it = window.currentItem || window.ITEM || null;
+    if (it && Array.isArray(it.images)) return expandParaRefs(it.images);
+    return new Set();
+  }
+
   function layoutPins(){
     const tl = document.getElementById('timeline'); if(!tl) return;
     const slots = Array.from(tl.querySelectorAll('.para-slot')); if(!slots.length) return;
 
-    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet();
+    const ord=getOrd(), frames=getFrameSet(), reads=getReadSet(), images=getImageSet();
 
     slots.forEach((slot, idx)=>{
       const p=idx+1;
-      Array.from(slot.querySelectorAll('.read-pin,.frame-pin')).forEach(n=>n.remove());
+      Array.from(slot.querySelectorAll('.read-pin,.frame-pin,.image-pin')).forEach(n=>n.remove());
 
       const items=[];
-      if (frames.has(p)) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
-      if (reads.has(p))  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
+      if (frames.has(p)) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1}); // A/B relevant
+      if (reads.has(p))  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2}); // A/B relevant
+      if (images.has(p)) items.push({type:'image', order:  3}); // kommer etter A/B
+
       if (!items.length) return;
 
-      // Sort by A/B (lower order first). A should sit above B if overlapping.
+      // Sorter slik at A (order 1) > B (2) > image (3)
       items.sort((a,b)=>(a.order??99)-(b.order??99));
 
       const gap=6; const base=-((items.length-1)/2)*gap;
       items.forEach((it,i)=>{
         const el=document.createElement('i');
-        el.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
+        el.className =
+          it.type==='frame' ? 'frame-pin' :
+          it.type==='read'  ? 'read-pin'  : 'image-pin';
         el.style.left = `calc(50% + ${base + i*gap}px)`;
-        el.style.zIndex = String(100 - (it.order ?? 99)); // A above B
+        // Høy z-index for lav order → A over B over image
+        el.style.zIndex = String(100 - (it.order ?? 99));
         slot.appendChild(el);
       });
     });
