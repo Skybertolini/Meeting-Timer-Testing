@@ -66,7 +66,7 @@
       #timeline .vt-group-overlay{
         position:absolute; top:0; height:100%;
         display:flex; align-items:center; justify-content:center;
-        font-weight: 400;           /* same as slot numbers */
+        font-weight: 600;           /* same as slot numbers */
         font-size: 12px;            /* same as slot numbers */
         line-height: 1.2;
         color: inherit;
