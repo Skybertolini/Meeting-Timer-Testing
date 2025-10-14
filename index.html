@@ -114,6 +114,19 @@ textarea{resize:vertical;}
 .select-article{flex:1 1 auto; max-width:100%; height:42px; line-height:42px; padding:0 12px; margin:0}
 @media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
 
+/* Stats row: avsnitt/les/bilder + studietid */
+.stats-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:8px;
+  align-items:stretch;
+}
+.stats-row .pill{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:10px 12px;
 /* Stats row: avsnitt/les + 60/30 pill til høyre */
 .stats-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .stats-row .pill{
@@ -127,6 +140,48 @@ textarea{resize:vertical;}
   font-weight:800;
   font-size:.95rem;
   color:#2f3b34;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+  min-height:46px;
+  text-align:center;
+  line-height:1.25;
+  flex-wrap:wrap;
+}
+.stats-row .pill .pill-icon{width:16px; height:16px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12));}
+.stats-row .pill .pill-label{white-space:normal;}
+.stats-row .pill .pill-value{font-weight:900; white-space:nowrap;}
+.stats-row .modepill{
+  display:flex;
+  gap:6px;
+  background:var(--pill);
+  border:1px solid var(--border);
+  border-radius:999px;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+  padding:4px;
+  min-height:46px;
+}
+.stats-row .modepill button{
+  flex:1 1 50%;
+  min-width:0;
+  height:38px;
+  line-height:38px;
+  padding:0 12px;
+  background:transparent;
+  color:#2f3b34;
+  border:0;
+  border-radius:999px;
+  font-weight:800;
+  font-size:.95rem;
+  transition:background .2s ease, color .2s ease;
+}
+.stats-row .modepill button:hover{background:rgba(0,0,0,.05);}
+.stats-row .modepill button:focus-visible{
+  outline:2px solid #2f3b34;
+  outline-offset:2px;
+}
+.stats-row .modepill button.active{
+  background:#2f3b34;
+  color:#fff;
+}
   white-space:nowrap;
   box-shadow:0 4px 12px rgba(70,50,30,.05);
 }
@@ -136,6 +191,16 @@ textarea{resize:vertical;}
 .stats-row .modepill button{height:34px; line-height:34px; padding:0 12px; background:var(--pill); color:#2f3b34; border:1px solid var(--border); border-radius:999px}
 /* Nøytral stil og ✓-markør for aktiv knapp */
 .stats-row .modepill button.active::after{ content:"\2713"; font-weight:900; display:inline-block; margin-left:8px; }
+
+@media (min-width:720px){
+  .stats-row{grid-auto-rows:1fr;}
+  .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
+}
+
+@media (max-width:480px){
+  .stats-row{grid-template-columns:1fr;}
+  .stats-row .modepill{width:100%;}
+}
 
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
