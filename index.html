@@ -117,9 +117,8 @@ textarea{resize:vertical;}
 /* Stats row: avsnitt/les + 60/30 pill til høyre */
 .stats-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .stats-row .pill{
-  display:flex;
+  display:inline-flex;
   align-items:center;
-  justify-content:center;
   gap:6px;
   padding:8px 12px;
   background:var(--pill);
@@ -128,18 +127,13 @@ textarea{resize:vertical;}
   font-weight:800;
   font-size:.95rem;
   color:#2f3b34;
+  white-space:nowrap;
   box-shadow:0 4px 12px rgba(70,50,30,.05);
-  flex:1 1 160px;
-  min-width:0;
-  text-align:center;
-  line-height:1.2;
-  flex-wrap:wrap;
 }
 .stats-row .pill .pill-icon{width:16px; height:16px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12));}
-.stats-row .pill .pill-label{white-space:normal;}
-.stats-row .pill .pill-value{font-weight:900; white-space:nowrap;}
-.stats-row .modepill{margin-left:auto; display:flex; align-items:center; justify-content:center; gap:8px; min-height:34px; flex:1 1 160px; min-width:0}
-.stats-row .modepill button{height:34px; line-height:34px; padding:0 12px; background:var(--pill); color:#2f3b34; border:1px solid var(--border); border-radius:999px; flex:1 1 50%; min-width:0}
+.stats-row .pill .pill-value{font-weight:900;}
+.stats-row .modepill{margin-left:auto; display:inline-flex; align-items:center; height:34px}
+.stats-row .modepill button{height:34px; line-height:34px; padding:0 12px; background:var(--pill); color:#2f3b34; border:1px solid var(--border); border-radius:999px}
 /* Nøytral stil og ✓-markør for aktiv knapp */
 .stats-row .modepill button.active::after{ content:"\2713"; font-weight:900; display:inline-block; margin-left:8px; }
 
