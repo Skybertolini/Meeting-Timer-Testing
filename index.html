@@ -285,6 +285,13 @@ async function hydrateOptions(){
   sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
 }
 function useItem(it){
+  if (!it || typeof it !== 'object') {
+    window.currentItem = null;
+    try { window.ITEM = null; } catch (e) {}
+    return;
+  }
+  window.currentItem = it;
+  try { window.ITEM = it; } catch (e) {}
 // VT 1.48 backfill & mapping
 try{
   if (Array.isArray(it.para_lengths) && (!Array.isArray(it.words) || !it.words.length)) {
