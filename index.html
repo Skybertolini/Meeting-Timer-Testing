@@ -248,9 +248,12 @@ function slots(){
 
 /* ===== WT state ===== */
 let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
-let reads=0, readSet=new Set();
+let readSet=new Set();
 let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
 let wtShownWarn=false; let wtMsgHoldTimer=null, wtMsgHoldUntil=0, wtLastE=0;
+
+let allItems=[];
+let optionLookup=new Map();
 
 /* ===== Laste artikkeldata ===== */
 async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
@@ -275,19 +278,110 @@ async function hydrateOptions(){
   }
 
   const sel=$('#weekSel'); sel.innerHTML='';
-  let idx = sorted.indexOf(current);
+  allItems = sorted;
+  optionLookup = new Map();
+
+  const makeKey=(idx, it)=>{
+    const base = (it && it.week_start) ? `week:${it.week_start}` : 'item';
+    return `${base}#${idx}`;
+  };
+
+  const idxOf=(item)=> (item ? sorted.indexOf(item) : -1);
+
+  let idx = idxOf(current);
   const start=Math.max(0, idx-6), end=Math.min(sorted.length, idx+6);
   const visibleItems=sorted.slice(start,end);
+
+  if(!visibleItems.length){
+    const opt=document.createElement('option');
+    opt.textContent='Ingen data';
+    opt.value='';
+    sel.appendChild(opt);
+    useItem(null);
+    return;
+  }
+
+  sorted.forEach((it, sortedIdx)=>{
+    if(!it) return;
+    const key=makeKey(sortedIdx, it);
+    optionLookup.set(key, it);
+  });
+
+  visibleItems.forEach(it=>{
+    if(!it) return;
+    const idxRef=idxOf(it);
+    if(!Number.isFinite(idxRef) || idxRef<0) return;
+    const key=makeKey(idxRef, it);
+    const o=document.createElement('option');
+    o.value=key;
+    o.dataset.idx=String(idxRef);
+    o.textContent=it.title||'(uten tittel)';
+    optionLookup.set(key,it);
+    sel.appendChild(o);
+  });
+
+  let selectedIndex = visibleItems.indexOf(current);
+  if(selectedIndex<0 && visibleItems.length){
+    current = visibleItems[0];
+    selectedIndex = 0;
+  }
+
+  if(current){
+    const idxRef = idxOf(current);
+    const key = makeKey(idxRef, current);
+    sel.value = key;
+    const optIndex = Array.from(sel.options).findIndex(opt=>opt.value===key);
+    sel.selectedIndex = optIndex>=0 ? optIndex : selectedIndex;
+  } else {
+    sel.selectedIndex = -1;
+  }
+
+  useItem(current||null);
   visibleItems.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
   sel.selectedIndex = visibleItems.indexOf(current);
   useItem(current);
 
-  sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
+  sel.addEventListener('change', (e)=>{
+    const target=e.target;
+    if(!target) return;
+    const key=target.value;
+    let next=null;
+    if(key && optionLookup.has(key)){
+      next=optionLookup.get(key);
+    }
+    if(!next && key){
+      const idxKey=key.split('#').pop();
+      const parsedIdx=parseInt(idxKey,10);
+      if(Number.isFinite(parsedIdx) && allItems[parsedIdx]){
+        next=allItems[parsedIdx];
+      }
+    }
+    if(!next){
+      const opt = (target.selectedOptions && target.selectedOptions[0]) || target.options[target.selectedIndex] || null;
+      if(opt && opt.dataset && opt.dataset.idx){
+        const n=parseInt(opt.dataset.idx,10);
+        if(Number.isFinite(n) && allItems[n]) next=allItems[n];
+      }
+    }
+    if(!next && key){
+      try{ next=JSON.parse(key); }catch(err){ next=null; }
+    }
+    useItem(next||null);
+  });
 }
 function useItem(it){
   if (!it || typeof it !== 'object') {
     window.currentItem = null;
     try { window.ITEM = null; } catch (e) {}
+    paras=[]; perParagraph=[]; cumulative=[]; totalParagraphs=0; readSet=new Set();
+    $('#articleTitle').textContent='—';
+    $('#pillParas').textContent='Avsnitt: 0';
+    $('#pillReads').textContent='📖 Les-skriftsteder: 0';
+    const framePill=document.getElementById('pillFrames');
+    if(framePill){ const s=framePill.querySelector('strong'); if(s) s.textContent='0'; }
+    computeAllocation();
+    drawTimeline();
+    resetWTUI();
     return;
   }
   window.currentItem = it;
@@ -326,9 +420,22 @@ try{
 
   $('#articleTitle').textContent=it.title||'—';
   totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
-  reads = it.reads|0;
-  const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
-  readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : []));
+  const rawReadParas = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
+  const toNumList=(arr)=>Array.from(new Set((arr||[]).map(v=>{
+    const n=parseInt(v,10);
+    return Number.isFinite(n)?n:null;
+  }).filter(n=>n!=null)));
+  let readParas = rawReadParas ? toNumList(rawReadParas) : null;
+  if((!readParas || !readParas.length) && window.__VT_READ_SET2 instanceof Set && window.__VT_READ_SET2.size){
+    readParas = Array.from(window.__VT_READ_SET2);
+  }
+  if((!readParas || !readParas.length) && Array.isArray(it.reads)){
+    readParas = toNumList(it.reads);
+  }
+  if((!readParas || !readParas.length) && Number.isFinite(it.reads) && it.reads>0){
+    readParas = Array.from({length:it.reads},(_,i)=>i+1);
+  }
+  readSet = new Set(readParas||[]);
   paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false}));
   if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
   $('#pillParas').textContent=`Avsnitt: ${totalParagraphs}`;
