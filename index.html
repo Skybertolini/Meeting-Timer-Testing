@@ -116,6 +116,22 @@ textarea{resize:vertical;}
 
 /* Stats row: avsnitt/les + 60/30 pill til høyre */
 .stats-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.stats-row .pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--pill);
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-weight:800;
+  font-size:.95rem;
+  color:#2f3b34;
+  white-space:nowrap;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+}
+.stats-row .pill .pill-icon{width:16px; height:16px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12));}
+.stats-row .pill .pill-value{font-weight:900;}
 .stats-row .modepill{margin-left:auto; display:inline-flex; align-items:center; height:34px}
 .stats-row .modepill button{height:34px; line-height:34px; padding:0 12px; background:var(--pill); color:#2f3b34; border:1px solid var(--border); border-radius:999px}
 /* Nøytral stil og ✓-markør for aktiv knapp */
@@ -154,8 +170,20 @@ textarea{resize:vertical;}
     </div>
 
     <div class="stats-row" style="margin-top:10px">
-      <div class="pill" id="pillParas">Avsnitt: 0</div>
-      <div class="pill" id="pillReads">📖 Les-skriftsteder: 0</div>
+      <div class="pill" id="pillParas">
+        <span class="pill-label">Avsnitt:</span>
+        <span class="pill-value" id="pillParasValue">0</span>
+      </div>
+      <div class="pill" id="pillReads">
+        <img class="pill-icon" src="./img/read-icon.png" alt="" aria-hidden="true">
+        <span class="pill-label">Les-skriftsteder:</span>
+        <span class="pill-value" id="pillReadsValue">0</span>
+      </div>
+      <div class="pill" id="pillImages">
+        <img class="pill-icon" src="./img/image-icon.png" alt="" aria-hidden="true">
+        <span class="pill-label">Bilder:</span>
+        <span class="pill-value" id="pillImagesValue">0</span>
+      </div>
       <div class="modepill" aria-label="Studietid">
         <button id="mode60" type="button" class="active">60 min</button>
         <button id="mode30" type="button">30 min</button>
@@ -317,6 +345,9 @@ try{
   })();
 }catch(e){}
 
+  window.currentItem = it;
+  window.ITEM = it;
+
   $('#articleTitle').textContent=it.title||'—';
   totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
   reads = it.reads|0;
@@ -324,19 +355,28 @@ try{
   readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : []));
   paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false}));
   if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
-  $('#pillParas').textContent=`Avsnitt: ${totalParagraphs}`;
-  $('#pillReads').textContent=`📖 Les-skriftsteder: ${readSet.size}`;
-  (function(){ 
-    var el=document.getElementById('pillFrames');
+  const setPillValue = (id, value)=>{ const el=document.getElementById(id); if(el) el.textContent=String(value); };
+  setPillValue('pillParasValue', totalParagraphs);
+  setPillValue('pillReadsValue', readSet.size);
+  (function(){
+    let el=document.getElementById('pillFrames');
     if(!el){
-      var readsEl=document.getElementById('pillReads')||document.querySelector('[id*=pillReads]');
-      el=document.createElement('div'); el.id='pillFrames'; el.className=readsEl?readsEl.className:'pill'; el.style.marginLeft='8px';
-      el.innerHTML='<img src="./img/box-icon.png" alt="" style="height:14px;vertical-align:-2px;margin-right:4px">Rammer: <strong>0</strong>';
-      if(readsEl && readsEl.parentElement) readsEl.insertAdjacentElement('afterend', el); else document.body.appendChild(el);
+      const anchor=document.getElementById('pillImages')||document.getElementById('pillReads')||document.querySelector('[id*=pillReads]');
+      el=document.createElement('div');
+      el.id='pillFrames';
+      el.className='pill';
+      el.innerHTML='<img class="pill-icon" src="./img/box-icon.png" alt="" aria-hidden="true"><span class="pill-label">Rammer:</span><span class="pill-value" id="pillFramesValue">0</span>';
+      if(anchor && anchor.parentElement){ anchor.insertAdjacentElement('afterend', el); }
+      else { document.body.appendChild(el); }
+    } else if (!document.getElementById('pillFramesValue')){
+      el.innerHTML='<img class="pill-icon" src="./img/box-icon.png" alt="" aria-hidden="true"><span class="pill-label">Rammer:</span><span class="pill-value" id="pillFramesValue">0</span>';
     }
-    var s=el.querySelector('strong'); if(s) s.textContent=String((window.__VT_FRAME_SET? new Set(Array.from(window.__VT_FRAME_SET)).size : 0));
+    setPillValue('pillFramesValue', (window.__VT_FRAME_SET instanceof Set) ? window.__VT_FRAME_SET.size : 0);
   })();
   computeAllocation(); drawTimeline(); resetWTUI();
+  if (typeof window.__VT_APPLY_IMAGES === 'function'){
+    try{ window.__VT_APPLY_IMAGES(); }catch(e){}
+  }
 }
 
 /* ===== Fordele tid (WT) ===== */
@@ -666,28 +706,10 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
     return {set, ord};
   }
 
-  // Ensure the "Bilder:" pill is inside the article-info row (not bottom of page)
-  function ensureImagesPill(){
-    const row = document.getElementById('article-info');
-    if (!row) return;
-    let pill = document.getElementById('pillImages');
-    if (!pill){
-      pill = document.createElement('div');
-      pill.id = 'pillImages';
-      pill.className = 'pill';
-      pill.style.marginLeft = '8px';
-      pill.innerHTML = '<img src="./img/image-icon.png" alt="" style="height:14px;vertical-align:-2px;margin-right:4px">Bilder: <strong id="imageCount">0</strong>';
-      row.appendChild(pill);
-    } else if (!row.contains(pill)){
-      row.appendChild(pill);
-    }
-  }
-
   // Update counters from globals or current item
   function updateImagesCount(){
-    ensureImagesPill();
-    const strong = document.getElementById('imageCount');
-    if (!strong) return;
+    const valueEl = document.getElementById('pillImagesValue');
+    if (!valueEl) return;
     let count = 0;
     if (window.__VT_IMAGE_SET instanceof Set){
       count = window.__VT_IMAGE_SET.size;
@@ -696,7 +718,7 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
       const {set} = expandWithOrder(it && it.images ? it.images : []);
       count = set.size;
     }
-    strong.textContent = String(count);
+    valueEl.textContent = String(count);
   }
 
   // Add image pins under the timeline slots
