@@ -118,27 +118,11 @@
     const tl=$('#timeline'); if(!tl) return;
     const slots=$$('.para-slot',tl); if(!slots.length) return;
     slots.forEach(el=>{ el.style.background=''; el.style.backgroundImage=''; el.style.backgroundColor=''; el.classList.remove('alt'); });
-    const starts=new Map();
-    const groups=getGroups();
-    groups.forEach(g=>{
-      if (!Array.isArray(g) || !g.length) return;
-      const unique=Array.from(new Set(g.filter(n=>Number.isFinite(n) && n>=1))).sort((a,b)=>a-b);
-      if (!unique.length) return;
-      starts.set(unique[0], unique);
-    });
+    const groups=getGroups(), starts=new Map(); groups.forEach(g=>{ if(g&&g.length) starts.set(g[0],g); });
     let dark=false, i=1;
     while(i<=slots.length){
-      if (starts.has(i)){
-        const g=starts.get(i);
-        const last=Math.min(g[g.length-1], slots.length);
-        g.forEach(p=>{ const el=slots[p-1]; if(!el) return; if(dark) el.classList.add('alt'); else el.classList.remove('alt'); });
-        dark=!dark;
-        i=Number.isFinite(last) ? last+1 : i+1;
-      }
-      else {
-        const el=slots[i-1]; if(el){ if(dark) el.classList.add('alt'); else el.classList.remove('alt'); }
-        dark=!dark; i++;
-      }
+      if (starts.has(i)){ const g=starts.get(i); g.forEach(p=>{ const el=slots[p-1]; if(el && dark) el.classList.add('alt'); }); dark=!dark; i=g[g.length-1]+1; }
+      else { const el=slots[i-1]; if(el && dark) el.classList.add('alt'); dark=!dark; i++; }
     }
   }
 
