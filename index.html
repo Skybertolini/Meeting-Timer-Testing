@@ -57,15 +57,15 @@ body{
 .message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:56px;box-shadow:0 8px 24px rgba(70,50,30,.05);margin:0 auto 20px;max-width:var(--content-max);color:#4a5552;font-size:clamp(1.1rem, 3.2vw, 1.62rem);line-height:1.3;display:flex;align-items:center}
 
 /* Timeline */
-.timeline-wrap{margin-top:22px;margin-bottom:40px;width:100%;max-width:var(--content-max);margin-inline:auto;position:relative;overflow-x:hidden;overflow-y:visible}
-.timeline{position:relative;height:56px;border-radius:14px;overflow-x:hidden;overflow-y:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border)}
-.slot{position:absolute;top:0;height:100%;opacity:.22;min-width:0}
+.timeline-wrap{margin-top:22px; margin-bottom:40px; max-width:var(--content-max); margin-inline:auto; position:relative}
+.timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border)}
+.slot{position:absolute;top:0;height:100%;opacity:.22}
 #introSlot{background:var(--phase-intro)}
 #reviewSlot{background:var(--phase-review)}
 #outroSlot{background:var(--phase-outro)}
-.para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:0;background:var(--tl-green-1);padding-inline:1px}
+.para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
 .para-slot.alt{background:var(--tl-green-2)}
-.para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1;max-width:100%;}
+.para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
 .read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .frame-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
@@ -82,10 +82,7 @@ body{
 #clockWT{margin-top:40px}
 #clockSP{margin-top:40px}
 
-.controls{display:flex;gap:12px;margin-top:12px;width:100%;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
-@media (max-width:560px){
-  .controls{justify-content:center}
-}
+.controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08);transition:box-shadow .15s ease, filter .15s ease, transform .05s ease}
 .round.pressed, .round.pressed:disabled{filter:brightness(.92) saturate(1.05); box-shadow:inset 0 4px 12px rgba(0,0,0,.22),0 6px 18px rgba(70,50,30,.12)}
 .play{background:var(--green)}
@@ -113,21 +110,13 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 textarea{resize:vertical;}
 
 /* Top row (select only) */
-.wt-toprow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:nowrap; width:100%}
-.select-article{flex:1 1 auto; max-width:100%; height:42px; line-height:42px; padding:0 12px; margin:0; min-width:0; width:100%}
+.wt-toprow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:nowrap}
+.select-article{flex:1 1 auto; max-width:100%; height:42px; line-height:42px; padding:0 12px; margin:0}
 @media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
 
 /* Stats row: avsnitt/les + 60/30 pill til høyre */
 .stats-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .stats-row .modepill{margin-left:auto; display:inline-flex; align-items:center; height:34px}
-.stats-row .pill{display:flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--pill); border:1px solid var(--border); box-shadow:0 4px 10px rgba(70,50,30,.05); font-weight:800;}
-.stats-row .pill img{margin-right:6px}
-@media (max-width:560px){
-  .stats-row{flex-direction:column; align-items:stretch; gap:10px}
-  .stats-row .pill{justify-content:center}
-  .stats-row .modepill{margin-left:0; justify-content:center; width:100%;}
-  .stats-row .modepill button{flex:1 1 auto}
-}
 .stats-row .modepill button{height:34px; line-height:34px; padding:0 12px; background:var(--pill); color:#2f3b34; border:1px solid var(--border); border-radius:999px}
 /* Nøytral stil og ✓-markør for aktiv knapp */
 .stats-row .modepill button.active::after{ content:"\2713"; font-weight:900; display:inline-block; margin-left:8px; }
@@ -259,38 +248,14 @@ function slots(){
 
 /* ===== WT state ===== */
 let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
-let readSet=new Set();
+let reads=0, readSet=new Set();
 let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
 let wtShownWarn=false; let wtMsgHoldTimer=null, wtMsgHoldUntil=0, wtLastE=0;
 
-let allItems=[];
-let optionLookup=new Map();
-
 /* ===== Laste artikkeldata ===== */
 async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
-
-async function loadYear(y){
-  const stamp = Date.now().toString().slice(7);
-  const candidates = [
-    `data/no-${y}.json`,
-    `Data/no-${y}.json`,
-    `data/no-${y}.json?v=${stamp}`,
-    `Data/no-${y}.json?v=${stamp}`
-  ];
-  for(const url of candidates){
-    try{
-      const res = await fetch(url, { cache: 'no-store' });
-      if(res && res.ok){
-        const json = await res.json();
-        // Return the whole object; caller will pick .items or treat as array
-        return json;
-      }
-    }catch(e){ /* try next candidate */ }
-  }
-  throw new Error('loadYear failed for '+y);
-}
+async function loadYear(y){ for(const p of [`data/no-${y}.json`,`Data/no-${y}.json`,`data/no-${y}`,`Data/no-${y}`]){ try{ return await fetchJSON(p+`?v=${Date.now().toString().slice(7)}`);}catch{} } throw 0; }
 async function hydrateOptions(){
-
   const year=(new Date()).getFullYear();
   let items=[];
   try{
@@ -310,110 +275,16 @@ async function hydrateOptions(){
   }
 
   const sel=$('#weekSel'); sel.innerHTML='';
-  allItems = sorted;
-  optionLookup = new Map();
-
-  const makeKey=(idx, it)=>{
-    const base = (it && it.week_start) ? `week:${it.week_start}` : 'item';
-    return `${base}#${idx}`;
-  };
-
-  const idxOf=(item)=> (item ? sorted.indexOf(item) : -1);
-
-  let idx = idxOf(current);
+  let idx = sorted.indexOf(current);
   const start=Math.max(0, idx-6), end=Math.min(sorted.length, idx+6);
-  const visibleItems=sorted.slice(start,end);
+  const window=sorted.slice(start,end);
+  window.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
+  sel.selectedIndex = window.indexOf(current);
+  useItem(current);
 
-  if(!visibleItems.length){
-    const opt=document.createElement('option');
-    opt.textContent='Ingen data';
-    opt.value='';
-    sel.appendChild(opt);
-    useItem(null);
-    return;
-  }
-
-  sorted.forEach((it, sortedIdx)=>{
-    if(!it) return;
-    const key=makeKey(sortedIdx, it);
-    optionLookup.set(key, it);
-  });
-
-  visibleItems.forEach(it=>{
-    if(!it) return;
-    const idxRef=idxOf(it);
-    if(!Number.isFinite(idxRef) || idxRef<0) return;
-    const key=makeKey(idxRef, it);
-    const o=document.createElement('option');
-    o.value=key;
-    o.dataset.idx=String(idxRef);
-    o.textContent=it.title||'(uten tittel)';
-    optionLookup.set(key,it);
-    sel.appendChild(o);
-  });
-
-  let selectedIndex = visibleItems.indexOf(current);
-  if(selectedIndex<0 && visibleItems.length){
-    current = visibleItems[0];
-    selectedIndex = 0;
-  }
-
-  if(current){
-    const idxRef = idxOf(current);
-    const key = makeKey(idxRef, current);
-    sel.value = key;
-    const optIndex = Array.from(sel.options).findIndex(opt=>opt.value===key);
-    sel.selectedIndex = optIndex>=0 ? optIndex : selectedIndex;
-  } else {
-    sel.selectedIndex = -1;
-  }
-
-  useItem(current||null);
-  
-sel.addEventListener('change', (e)=>{
-  const el = e.target;
-  if(!el) return;
-  const key = el.value;
-  let next = null;
-
-  // 1) Direct via key/map
-  if (key && optionLookup.has(key)) next = optionLookup.get(key);
-
-  // 2) Via data-idx on selected option
-  if (!next) {
-    const opt = el.selectedOptions?.[0] || el.options[el.selectedIndex] || null;
-    const n = opt?.dataset?.idx ? parseInt(opt.dataset.idx,10) : NaN;
-    if (Number.isFinite(n) && allItems[n]) next = allItems[n];
-  }
-
-  // 3) Fallback: week_start
-  if (!next) {
-    const opt = el.selectedOptions?.[0] || el.options[el.selectedIndex] || null;
-    const ws = opt?.dataset?.week_start;
-    if (ws) next = allItems.find(it => it.week_start === ws) || null;
-  }
-
-  useItem(next || null);
-});
-
+  sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
 }
 function useItem(it){
-  if (!it || typeof it !== 'object') {
-    window.currentItem = null;
-    try { window.ITEM = null; } catch (e) {}
-    paras=[]; perParagraph=[]; cumulative=[]; totalParagraphs=0; readSet=new Set();
-    $('#articleTitle').textContent='—';
-    $('#pillParas').textContent='Avsnitt: 0';
-    $('#pillReads').textContent='📖 Les-skriftsteder: 0';
-    const framePill=document.getElementById('pillFrames');
-    if(framePill){ const s=framePill.querySelector('strong'); if(s) s.textContent='0'; }
-    computeAllocation();
-    drawTimeline();
-    resetWTUI();
-    return;
-  }
-  window.currentItem = it;
-  try { window.ITEM = it; } catch (e) {}
 // VT 1.48 backfill & mapping
 try{
   if (Array.isArray(it.para_lengths) && (!Array.isArray(it.words) || !it.words.length)) {
@@ -448,22 +319,9 @@ try{
 
   $('#articleTitle').textContent=it.title||'—';
   totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
-  const rawReadParas = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
-  const toNumList=(arr)=>Array.from(new Set((arr||[]).map(v=>{
-    const n=parseInt(v,10);
-    return Number.isFinite(n)?n:null;
-  }).filter(n=>n!=null)));
-  let readParas = rawReadParas ? toNumList(rawReadParas) : null;
-  if((!readParas || !readParas.length) && window.__VT_READ_SET2 instanceof Set && window.__VT_READ_SET2.size){
-    readParas = Array.from(window.__VT_READ_SET2);
-  }
-  if((!readParas || !readParas.length) && Array.isArray(it.reads)){
-    readParas = toNumList(it.reads);
-  }
-  if((!readParas || !readParas.length) && Number.isFinite(it.reads) && it.reads>0){
-    readParas = Array.from({length:it.reads},(_,i)=>i+1);
-  }
-  readSet = new Set(readParas||[]);
+  reads = it.reads|0;
+  const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
+  readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : []));
   paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false}));
   if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
   $('#pillParas').textContent=`Avsnitt: ${totalParagraphs}`;
@@ -515,8 +373,7 @@ function drawTimeline(){
   for(let i=1;i<=totalParagraphs;i++){
     const leftP=(cumulative[i-1]/S.total)*100, widthP=(perParagraph[i-1]/S.total)*100;
     const slot=document.createElement('div'); slot.className='para-slot'+(i%2===0?' alt':''); slot.style.left=leftP+'%'; slot.style.width=widthP+'%';
-    slot.dataset.p = String(i);
-const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec; const fs=Math.max(9,Math.min(14,Math.floor(slotPx*0.33)));
+    const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec; const fs=Math.max(9,Math.min(14,Math.floor(slotPx*0.33)));
     lbl.style.fontSize=fs+'px'; lbl.textContent=String(i); slot.appendChild(lbl);
     if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
     // Klikk for å hoppe (når ikke spiller)
@@ -525,63 +382,27 @@ const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec
   }
   $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
 
-  // VT enhance: treat paragraph groups as a single colour block and keep ordered pins
+  // VT 1.48 enhance: group colors and ordered pins (frame/read with a/b)
   try{
     const t = document.getElementById('timeline'); if(t){
+      // map para -> group id
+      const groups = window.__VT_GROUPS || [];
+      const paraToGroupId = new Map(); groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
       const slots = Array.from(t.querySelectorAll('.para-slot'));
-      if (slots.length){
-        // reset any previous inline tinting
-        slots.forEach(slot=>{
-          slot.classList.remove('alt');
-          slot.style.background='';
-          slot.style.backgroundImage='';
-          slot.style.backgroundColor='';
-        });
-
-        // organise groups by their first paragraph (1-indexed)
-        const starts = new Map();
-        const rawGroups = Array.isArray(window.__VT_GROUPS) ? window.__VT_GROUPS : [];
-        rawGroups.forEach(group=>{
-          if (!Array.isArray(group) || !group.length) return;
-          const unique = Array.from(new Set(group.filter(n=>Number.isFinite(n) && n>=1))).sort((a,b)=>a-b);
-          if (!unique.length) return;
-          starts.set(unique[0], unique);
-        });
-
-        // walk across the timeline assigning alternating tones, but keep each group uniform
-        let dark=false; // false = light, true = dark
-        let idx=1;
-        while(idx<=slots.length){
-          if (starts.has(idx)){
-            const g = starts.get(idx);
-            const last = Math.min(g[g.length-1], slots.length);
-            g.forEach(p=>{
-              const slot = slots[p-1];
-              if (!slot) return;
-              if (dark) slot.classList.add('alt'); else slot.classList.remove('alt');
-            });
-            dark=!dark;
-            idx = Number.isFinite(last) ? last+1 : idx+1;
-          } else {
-            const slot = slots[idx-1];
-            if (slot){
-              if (dark) slot.classList.add('alt'); else slot.classList.remove('alt');
-            }
-            dark=!dark;
-            idx++;
-          }
-        }
-      }
-
-      // rebuild pins in correct, declared order
+      // define color function
+      function groupColor(gid){ if(gid===null || gid===undefined) return null; const baseHue=150; const l=66 - (gid % 3) * 8; return `hsl(${baseHue} 40% ${l}%)`; }
       const ord = window.__VT_ORD || new Map();
       const frameSet = window.__VT_FRAME_SET || new Set();
       const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
       slots.forEach((slot, idx)=>{
         const p = idx+1;
+        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
+        const col = groupColor(gid);
+        if (col) slot.style.background = col;
+        // rebuild pins in correct order
         slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
-        const hasRead = typeof numericReads.has==='function' ? numericReads.has(p) : false;
-        const hasFrame = typeof frameSet.has==='function' ? frameSet.has(p) : false;
+        const hasRead = numericReads.has ? numericReads.has(p) : false;
+        const hasFrame = frameSet.has ? frameSet.has(p) : false;
         if (!hasRead && !hasFrame) return;
         const items = [];
         if (hasFrame) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
