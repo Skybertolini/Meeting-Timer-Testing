@@ -118,6 +118,34 @@
   const getFrameSet = ()=> window.__VT_FRAME_SET instanceof Set ? window.__VT_FRAME_SET : new Set();
   const getOrd      = ()=> window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
 
+  function expandRefsWithOrder(refs){
+    const set = new Set();
+    if (!Array.isArray(refs)) return {set};
+    refs.forEach(v=>{
+      if (typeof v === 'number' && Number.isFinite(v)){ set.add(v); return; }
+      if (typeof v !== 'string') return;
+      const s = v.trim();
+      let m = s.match(/^(\d+)[\-–](\d+)([abc])?$/i);
+      if (m){ const a=+m[1], b=+m[2]; for(let i=Math.min(a,b); i<=Math.max(a,b); i++) set.add(i); return; }
+      m = s.match(/^(\d+)&(\d+)([abc])?$/i);
+      if (m){ set.add(+m[1]); set.add(+m[2]); return; }
+      m = s.match(/^(\d+)([abc])?$/i);
+      if (m){ set.add(+m[1]); }
+    });
+    return {set};
+  }
+
+  function getCurrentItem(){
+    return window.currentItem || window.ITEM || null;
+  }
+
+  function getImageSet(){
+    if (window.__VT_IMAGE_SET instanceof Set) return window.__VT_IMAGE_SET;
+    const it = getCurrentItem();
+    if (it && Array.isArray(it.images)) return expandRefsWithOrder(it.images).set;
+    return new Set();
+  }
+
   function getParaCount(){
     const it = window.currentItem || window.ITEM || null;
     if (it && Array.isArray(it.words)) return it.words.length;
@@ -195,6 +223,7 @@
     const paraCount = getParaCount();
     const readCount = getReadSet().size;
     const frameCount= getFrameSet().size;
+    const imageCount= getImageSet().size;
 
     const setText = (sel, text)=>{
       const el = $(sel, panel);
@@ -204,7 +233,8 @@
     const updated =
       setText('#paraCount', String(paraCount)) |
       setText('#readCount', String(readCount)) |
-      setText('#frameCount', String(frameCount));
+      setText('#frameCount', String(frameCount)) |
+      setText('#imageCount', String(imageCount));
 
     if (!updated){
       if (!$('#vt-stats', panel)){
@@ -214,12 +244,14 @@
           <span><b>Avsnitt:</b> <span id="vt-paras">${paraCount}</span></span>
           <span>📖 <b>Les-skriftsteder:</b> <span id="vt-reads">${readCount}</span></span>
           <span><img class="ic" src="./img/box-icon.png" alt=""> <b>Rammer:</b> <span id="vt-frames">${frameCount}</span></span>
+          <span><img class="ic" src="./img/image-icon.png" alt=""> <b>Bilder:</b> <span id="vt-images">${imageCount}</span></span>
         `;
         panel.appendChild(div);
       } else {
         $('#vt-paras', panel).textContent  = String(paraCount);
         $('#vt-reads', panel).textContent  = String(readCount);
         $('#vt-frames', panel).textContent = String(frameCount);
+        $('#vt-images', panel).textContent = String(imageCount);
       }
     }
   }
