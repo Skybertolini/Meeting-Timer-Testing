@@ -277,7 +277,16 @@
 
   function startObservers(){
     const tl=$('#timeline'); if (!tl) return;
-    const mo=new MutationObserver(()=> requestAnimationFrame(applyAll));
+    const ignoreIds=new Set(['elapsed','cursor','elapsedSP','cursorSP']);
+    const mo=new MutationObserver(records=>{
+      const relevant=records.some(rec=>{
+        if(rec.type!=='attributes') return true;
+        const id=rec.target && rec.target.id;
+        if(ignoreIds.has(id)) return false;
+        return true;
+      });
+      if(relevant) requestAnimationFrame(applyAll);
+    });
     mo.observe(tl,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
   }
 
