@@ -337,6 +337,9 @@ async function hydrateOptions(){
   }
 
   useItem(current||null);
+  visibleItems.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
+  sel.selectedIndex = visibleItems.indexOf(current);
+  useItem(current);
 
   sel.addEventListener('change', (e)=>{
     const target=e.target;
