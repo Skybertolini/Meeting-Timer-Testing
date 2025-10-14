@@ -277,9 +277,9 @@ async function hydrateOptions(){
   const sel=$('#weekSel'); sel.innerHTML='';
   let idx = sorted.indexOf(current);
   const start=Math.max(0, idx-6), end=Math.min(sorted.length, idx+6);
-  const window=sorted.slice(start,end);
-  window.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
-  sel.selectedIndex = window.indexOf(current);
+  const visibleItems=sorted.slice(start,end);
+  visibleItems.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
+  sel.selectedIndex = visibleItems.indexOf(current);
   useItem(current);
 
   sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
