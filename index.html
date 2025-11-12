@@ -65,42 +65,9 @@ body{
 .para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
 .para-slot.alt{background:var(--tl-green-2)}
 .para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
-
-/* FIXED: Stacking pins vertically with proper spacing */
-.read-pin{
-  position:absolute; 
-  left:50%; 
-  transform:translateX(-50%); 
-  bottom:-24px;  /* First row - closest to timeline */
-  width:18px; 
-  height:18px; 
-  background:url('./img/read-icon.png') center/contain no-repeat; 
-  pointer-events:none; 
-  opacity:0.95;
-}
-.image-pin{
-  position:absolute; 
-  left:50%; 
-  transform:translateX(-50%); 
-  bottom:-46px;  /* Second row - middle position */
-  width:18px; 
-  height:18px; 
-  background:url('./img/image-icon.png') center/contain no-repeat; 
-  pointer-events:none; 
-  opacity:0.95;
-}
-.frame-pin{
-  position:absolute; 
-  left:50%; 
-  transform:translateX(-50%); 
-  bottom:-68px;  /* Third row - furthest from timeline */
-  width:18px; 
-  height:18px; 
-  background:url('./img/box-icon.png') center/contain no-repeat; 
-  pointer-events:none; 
-  opacity:0.95;
-}
-
+.read-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-24px; width:18px; height:18px; background:url('./img/read-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
+.image-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-46px; width:18px; height:18px; background:url('./img/image-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
+.frame-pin{position:absolute; left:50%; transform:translateX(-50%); bottom:-68px; width:18px; height:18px; background:url('./img/box-icon.png') center/contain no-repeat; pointer-events:none; opacity:0.95}
 .elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
 /* Rød tone for SP sin elapsed */
 #elapsedSP{background:rgba(210,60,60,.28)}
@@ -208,370 +175,720 @@ textarea{resize:vertical;}
   background:#2f3b34;
   color:#fff;
 }
+.stats-row .modepill button.active::after{ content:"\\2713"; font-weight:900; display:inline-block; margin-left:8px; }
 
-/* Section-based layout for WT / SP */
-.section{
-  margin-bottom:24px;
-  transition:margin-bottom .25s ease;
+@media (min-width:720px){
+  .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
 }
-.section-title{
+
+@media (max-width:480px){
+  .stats-row{grid-template-columns:1fr;}
+  .stats-row .modepill{width:100%;}
+}
+
+/* Locked state when study started */
+#wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
+#wtControlsCard.locked .select, 
+#wtControlsCard.locked .modepill button{pointer-events:none}
+
+/* Spacing between notes and timer section */
+#timerSection{margin-top:25px}
+
+/* --- addon: image pin --- */
+#timeline .para-slot i.image-pin{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:-20px; width:16px; height:16px;
+  background:url('./img/image-icon.png') center/contain no-repeat;
+  pointer-events:none; opacity:.95;
+}
+</style>
+
+<style>
+/* --- Kollaps av informasjonsvinduet når avspilling pågår --- */
+#wtControlsCard.collapsed .wt-toprow { display:none; }                 /* skjul uke-velger */
+#wtControlsCard.collapsed .pill { display:none; }                      /* skjul Avsnitt/Les/Bilder/Rammer */
+#wtControlsCard.collapsed .stats-row { justify-content:flex-start; }   /* bare 60/30 igjen */
+#wtControlsCard.collapsed .modepill { opacity:.55; }                   /* visuelt grå */
+</style>
+<style>
+/* --- Touch-vennlig nedover-resize for notatfelt --- */
+#wtNotes { min-height: 72px; max-height: 75vh; }
+#wtNotesGrip {
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 8px;
+  background: repeating-linear-gradient(to right, rgba(0,0,0,.25) 0 8px, rgba(0,0,0,0) 8px 16px);
+  cursor: ns-resize;
+  touch-action: none; /* nødvendig for iOS Safari */
+}
+.dark #wtNotesGrip {
+  background: repeating-linear-gradient(to right, rgba(255,255,255,.35) 0 8px, rgba(255,255,255,0) 8px 16px);
+}
+</style>
+<style>
+.timerTitle {
+  font-size: 1.2em;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 6px;
+  opacity: .85;
+}
+.dark .timerTitle { opacity: .9; }
+</style>
+
+<style>
+/* --- Kollapsbare seksjoner --- */
+.collapsible { max-width: var(--content-max); margin: 0 auto 18px; }
+.section-title {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  cursor:pointer; user-select:none;
+  padding:4px 8px; border-radius:10px;
+}
+.section-title:focus-visible { outline: 2px solid #2f3b34; outline-offset: 2px; }
+.collapsible .section-body { display:block; }
+.collapsible.collapsed .section-body { display:none; }
+
+/* Tittel-indikator ▸/▾ */
+.section-title .caret { font-weight:900; opacity:.75; }
+.collapsible.collapsed .section-title .caret::before { content:"▸"; }
+.collapsible:not(.collapsed) .section-title .caret::before { content:"▾"; }
+
+/* Skjul den gamle h1-tittelen inne i SP-kortet (vi har ny seksjonstittel) */
+.hide-in-card { display:none !important; }
+</style>
+<style>
+#timeline .para-slot .pin-stack{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:calc(100% + 10px); /* below the bar */
   display:flex;
+  flex-direction:column;
   align-items:center;
-  justify-content:space-between;
-  cursor:pointer;
-  padding:14px 18px;
-  border-radius:var(--radius) var(--radius) 0 0;
-  background:linear-gradient(180deg,#2f3b34 0%,#24302e 100%);
-  color:#fff;
-  font-weight:900;
-  font-size:1.1rem;
-  text-transform:uppercase;
-  letter-spacing:.02em;
-  box-shadow:0 4px 12px rgba(0,0,0,.12);
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
+  gap: 2px;
+  pointer-events:none;
 }
-.section-title:hover{filter:brightness(1.08);}
-.section-title:active{filter:brightness(.96);}
-.section-title .icon-chevron{
-  width:20px;
-  height:20px;
-  transition:transform .25s ease;
+#timeline .para-slot .pin-stack .pin{
+  width:18px; height:18px;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:contain;
+  opacity:.98;
 }
-.section.collapsed .icon-chevron{
-  transform:rotate(180deg);
-}
-.section-body{
-  overflow:hidden;
-  max-height:9999px;
-  opacity:1;
-  transition:max-height .35s ease, opacity .25s ease, padding .25s ease;
-  padding:16px 0 0;
-}
-.section.collapsed .section-body{
-  max-height:0;
-  opacity:0;
-  padding:0;
-}
-
-/* Notater-textarea */
-#wtNotes{
-  width:100%;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px;
-  background:var(--pill);
-  font-family:inherit;
-  font-weight:600;
-  font-size:.95rem;
-  color:#2f3b34;
-  box-shadow:0 6px 16px rgba(70,50,30,.06);
-  min-height:72px;
-  max-height:75vh;
-  resize:none;
-  overflow-y:auto;
-  scrollbar-width:thin;
-}
-#wtNotes:focus-visible{
-  outline:2px solid #2f3b34;
-  outline-offset:2px;
-}
-#wtNotes::placeholder{
-  color:#8b827a;
-}
-
-/* Resize-grip under wtNotes */
-#wtNotesGrip{
-  width:60px;
-  height:6px;
-  margin:6px auto 0;
-  background:#c0bdb8;
-  border-radius:999px;
-  cursor:ns-resize;
-  user-select:none;
-  -webkit-user-drag:none;
-  touch-action:none;
-}
-#wtNotesGrip:hover{background:#9f9c97;}
-#wtNotesGrip:active{background:#7a7770;}
+#timeline .para-slot .pin-stack .pin.read{  background-image:url('./img/read-icon.png'); }
+#timeline .para-slot .pin-stack .pin.image{ background-image:url('./img/image-icon.png'); }
+#timeline .para-slot .pin-stack .pin.frame{ background-image:url('./img/box-icon.png'); }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="topbar">
-    <div class="brand">
-      <img src="./img/logo.png" alt="Logo" id="logo"/>
+    <div class="brand" id="brandBox">
+      <img id="logoImg" src="./img/meeting-timer-logo.png" alt="Meeting Timer logo">
     </div>
   </div>
 
-  <!-- WT SECTION -->
-  <div id="wtSection" class="section">
-    <div class="section-title" role="button" tabindex="0" aria-expanded="true">
-      <span>Vakttårnstudiet</span>
-      <svg class="icon-chevron" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-      </svg>
+  <section id="wtSection" class="collapsible">
+<!-- VAKTTÅRN -->
+  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true" class="timerTitle">Vakttårnstudiet</h2>
+<div class="section-body" id="wtSectionBody">
+<div id="wtControlsCard" class="card" style="max-width:var(--content-max);margin-inline:auto">
+    <div class="wt-toprow">
+      <select id="weekSel" class="select select-article" aria-label="Artikkel"><option>Laster …</option></select>
     </div>
-    <div class="section-body">
-      <div class="card" id="wtControlsCard">
-        <!-- Week + Stats Row -->
-        <div style="margin-bottom:16px;">
-          <!-- Top row with only the select -->
-          <div class="wt-toprow">
-            <select class="select select-article" id="weekSel" aria-label="Velg uke">
-              <!-- JS adds options -->
-            </select>
-          </div>
 
-          <!-- Stats row: separate line -->
-          <div class="stats-row" style="margin-top:12px;">
-            <div class="pill">
-              <img src="./img/para-icon.png" class="pill-icon" alt="Avsnitt"/>
-              <span class="pill-label">Avsnitt:</span>
-              <span class="pill-value" id="pillParaValue">0</span>
-            </div>
-            <div class="pill">
-              <img src="./img/read-icon.png" class="pill-icon" alt="Les"/>
-              <span class="pill-label">Les:</span>
-              <span class="pill-value" id="pillReadsValue">0</span>
-            </div>
-            <div class="pill">
-              <img src="./img/image-icon.png" class="pill-icon" alt="Bilder"/>
-              <span class="pill-label">Bilder:</span>
-              <span class="pill-value" id="pillImagesValue">0</span>
-            </div>
-            <div class="modepill">
-              <button id="btnModeGroups" class="active">Grupper</button>
-              <button id="btnModeTimer">Tidstyrt</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="studyTimeDisplay" class="h1" style="margin:0;text-align:center;margin-bottom:12px;"></div>
-        <div class="timeline-wrap">
-          <div class="timeline" id="timeline">
-            <div id="introSlot" class="slot"></div>
-            <div id="reviewSlot" class="slot"></div>
-            <div id="outroSlot" class="slot"></div>
-            <div id="elapsed" class="elapsed"></div>
-            <div id="cursor" class="cursor"></div>
-          </div>
-        </div>
-
-        <div class="big-clock" id="clockWT">0:00</div>
-        <div class="controls">
-          <button class="round play" data-action="play" aria-label="Spill av">▶</button>
-          <button class="round pause" data-action="pause" aria-label="Pause">❚❚</button>
-          <button class="round stop" data-action="stop" aria-label="Stopp">■</button>
-        </div>
-
-        <div class="preset-row">
-          <div class="preset" data-minutes="25">25 min</div>
-          <div class="preset" data-minutes="30">30 min</div>
-          <div class="preset" data-minutes="35">35 min</div>
-          <div class="preset" data-minutes="40">40 min</div>
-          <div class="preset" data-minutes="45">45 min</div>
-        </div>
-
-        <div class="target-row" id="adjustRow">
-          <button class="round small" id="btnMinus" aria-label="Reduser tid">−</button>
-          <div class="target-box" id="targetTimeBox">
-            <div id="targetTimeDisplay">30:00</div>
-          </div>
-          <button class="round small" id="btnPlus" aria-label="Øk tid">+</button>
-        </div>
+    <div class="stats-row" style="margin-top:10px">
+      <div class="pill" id="pillParas">
+        <span class="pill-label">Avsnitt:</span>
+        <span class="pill-value" id="pillParasValue">0</span>
       </div>
-
-      <img id="milestoneWT" class="milestone-img" alt="Milepæl" style="display:none;"/>
-
-      <div class="card" style="max-width:var(--content-max);margin-inline:auto;margin-top:20px;">
-        <textarea id="wtNotes" placeholder="Skriv notater her..."></textarea>
-        <div id="wtNotesGrip"></div>
+      <div class="pill" id="pillReads">
+        <img class="pill-icon" src="./img/read-icon.png" alt="" aria-hidden="true">
+        <span class="pill-label">Les-skriftsteder:</span>
+        <span class="pill-value" id="pillReadsValue">0</span>
+      </div>
+      <div class="pill" id="pillImages">
+        <img class="pill-icon" src="./img/image-icon.png" alt="" aria-hidden="true">
+        <span class="pill-label">Bilder:</span>
+        <span class="pill-value" id="pillImagesValue">0</span>
+      </div>
+      <div class="modepill" aria-label="Studietid">
+        <button id="mode60" type="button" class="active">60 min</button>
+        <button id="mode30" type="button">30 min</button>
       </div>
     </div>
   </div>
-
-  <!-- SP SECTION -->
-  <div id="spSection" class="section collapsed">
-    <div class="section-title" role="button" tabindex="0" aria-expanded="false">
-      <span>Taler-timer</span>
-      <svg class="icon-chevron" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-      </svg>
+  <div class="h1" id="articleTitle">—</div>
+  <div class="message" id="message" aria-live="polite">Velg artikkel for å laste timer.</div>
+  <div class="timeline-wrap">
+    <div id="timeline" class="timeline">
+      <div id="introSlot" class="slot"></div>
+      <div id="reviewSlot" class="slot"></div>
+      <div id="outroSlot" class="slot"></div>
+      <div id="elapsed" class="elapsed"></div>
+      <div id="cursor" class="cursor"></div>
     </div>
-    <div class="section-body">
-      <div class="card" style="max-width:var(--content-max);margin-inline:auto;">
-        <div class="h1" style="margin:0 0 10px;text-align:center;">Service Meeting</div>
-        <div class="timeline-wrap">
-          <div class="timeline" id="timelineSP">
-            <div id="elapsedSP" class="elapsed"></div>
-            <div id="ticksSP"></div>
-          </div>
-        </div>
-        <div class="big-clock" id="clockSP">0:00</div>
-        <div class="controls">
-          <button class="round play" id="spPlay" aria-label="Spill av">▶</button>
-          <button class="round pause" id="spPause" aria-label="Pause">❚❚</button>
-          <button class="round stop" id="spStop" aria-label="Stopp">■</button>
-        </div>
-        <div class="preset-row">
-          <div class="preset" id="spPreset30" data-minutes="30">30 min</div>
-          <div class="preset" id="spPreset45" data-minutes="45">45 min</div>
-        </div>
-      </div>
-      <img id="milestoneSP" class="milestone-img" alt="Milepæl" style="display:none;"/>
-    </div>
+    <div class="clock" id="clockWT">00:00</div>
+  </div>
+  <div class="controls">
+    <button id="playWT" class="round play">▶</button>
+    <button id="pauseWT" class="round pause" disabled>❚❚</button>
+    <button id="stopWT" class="round stop" disabled>■</button>
+  </div>
+  <div class="card" style="margin-top:14px;max-width:var(--content-max);margin-inline:auto">
+    <textarea id="wtNotes" rows="3" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:#2b2a32;background:transparent;font-size:90%" placeholder="Her kan du notere."></textarea>
+<div id="wtNotesGrip" role="separator" aria-orientation="vertical" title="Dra for å endre høyde"></div>
   </div>
 </div>
 
-<div class="footer">
-  &copy; 2025 Meeting Timer
+</section>
+<section id="spSection" class="collapsible collapsed">
+  <h2 id="speechTimerTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="false">Talertimer <span class="caret" aria-hidden="true"></span></h2>
+  <div id="spSectionBody" class="section-body">
+
+  <section id="timerSection">
+    <div class="card" style="max-width:var(--content-max);margin-inline:auto">
+      <div class="h1 hide-in-card">Talertimer</div>
+      <div id="spInputs">
+        <div class="preset-row">
+          <button class="preset" data-sec="0">0</button>
+          <button class="preset" data-sec="300">5</button>
+          <button class="preset" data-sec="600">10</button>
+          <button class="preset" data-sec="900">15</button>
+          <button class="preset" data-sec="1800">30</button>
+        </div>
+        <div class="target-row">
+          <button id="decSP" class="round small" aria-label="Minus ett minutt">–</button>
+          <div id="spTarget" class="target-box"><span id="spTargetDisplay">10:00</span></div>
+          <button id="incSP" class="round small" aria-label="Pluss ett minutt">+</button>
+        </div>
+      </div>
+      <div class="timeline-wrap">
+        <div id="timelineSP" class="timeline">
+          <div id="elapsedSP" class="elapsed"></div>
+          <div id="cursorSP" class="cursor"></div>
+          <div id="ticksSP"></div>
+        </div>
+      </div>
+      <div class="big-clock" id="clockSP">00:00</div>
+      <img id="msImg" class="milestone-img" alt="Milestone" src="./img/pick-milestone.png"/>
+      <div class="controls">
+        <button id="playSP" class="round play"><span id="playSPIcon">▶</span></button>
+        <button id="pauseSP" class="round pause" disabled>❚❚</button>
+        <button id="stopSP" class="round stop" disabled>■</button>
+      </div>
+    </div>
+  </section>
+
+  
+  </div>
+</section>
+<div class="footer">Meeting Timer © 2025</div>
 </div>
 
-<script src="./index_addon__1_.js"></script>
 <script>
-(function(){
-  const NO_2025 = [{"week_start":"2025-09-08","title":"Hjelp den du studerer med, til å tjene Jehova","groups":"","frames":[],"reads":[],"para_lengths":[100,108,86,79,140,159,128,96,168,207,108,148,94,100,86,100,167,141,120,189,248],"images":[]},{"week_start":"2025-09-15","title":"Ta imot gode råd!","groups":"","frames":[],"reads":[1,7,9,16],"para_lengths":[42,78,79,106,135,128,157,101,134,65,82,160,88,225,113,158,214,70,189],"images":[]},{"week_start":"2025-09-22","title":"Hvordan gi råd","groups":"4-5,10-12","frames":[2,"3b"],"reads":["3a",9,16,17],"para_lengths":[92,208,223,89,81,115,83,86,184,80,134,166,77,136,152,94,128],"images":[]},{"week_start":"2025-09-29","title":"Kan du fortsatt lære noe av de grunnleggende sannhetene i Bibelen?","groups":"","frames":[16],"reads":[2,5,13],"para_lengths":[110,127,176,93,100,163,162,127,134,110,182,74,178,199,239,185,219],"images":[6,15]},{"week_start":"2025-10-06","title":"Har du «lært hemmeligheten» med å være fornøyd?","groups":"","frames":[],"reads":[3,4,9,12],"para_lengths":[112,150,149,142,209,139,135,110,187,111,176,129,253,191,110,137,142],"images":[5,9]},{"week_start":"2025-10-13","title":"Hvordan Jehova hjelper deg til å holde ut","groups":"","frames":[],"reads":[1,5,12,15],"para_lengths":[76,94,126,128,190,195,118,120,109,145,102,129,102,175,141,81,181,203,150],"images":[6,14,17]},{"week_start":"2025-10-20","title":"Du kan være sikker på at Jehova elsker deg!","groups":"2-3,7-8","frames":[16],"reads":[3,9,10,14,15],"para_lengths":[165,101,189,182,136,153,224,82,150,165,61,87,154,193,130,225,86,201],"images":[1,14]},{"week_start":"2025-10-27","title":"Du kan være sikker på at Jehova har tilgitt deg!","groups":"1-2,3-4,7-8,10-11,12-13","frames":["14b"],"reads":[7,9,10,12,"14a"],"para_lengths":[70,119,125,81,170,153,99,107,144,181,56,57,161,252,138,210,98,180],"images":["1-2",16]},{"week_start":"2025-11-03","title":"Du kan vinne kampen mot gale ønsker","groups":"6-7,9-10,13-14","frames":[],"reads":[8,11,17,18],"para_lengths":[78,167,107,193,122,132,54,56,125,156,140,112,135,58,135,139,137,169,180,209],"images":[2,9,17]},{"week_start":"2025-11-10","title":"Snakk med de eldste når du trenger hjelp","groups":"","frames":[],"reads":[2,4,9,14],"para_lengths":[84,88,104,212,282,94,169,151,158,109,147,173,210,228,190,121,207],"images":[4,"13-14"]},{"week_start":"2025-11-17","title":"Ha riktig fokus når du eller andre blir urettferdig behandlet","groups":"","frames":[],"reads":[3,8,10,14],"para_lengths":[76,167,124,140,110,135,114,91,210,165,187,154,158,81,142,132,186],"images":[]},{"week_start":"2025-11-24","title":"Vis andre respekt","groups":"","frames":[],"reads":[1,8,12,16],"para_lengths":[59,86,60,127,100,219,147,126,293,217,85,168,140,246,111,140,185,148],"images":[]},{"week_start":"2025-12-01","title":"De som har «den rette innstillingen», vil reagere positivt","groups":"","frames":[],"reads":[1,3,7,8,13],"para_lengths":[84,181,72,135,178,165,135,218,166,138,124,182,259,46,210,99,125],"images":[]},{"week_start":"2025-12-08","title":"Jehova er vår «største glede»","groups":"","frames":[],"reads":[4,9,17],"para_lengths":[87,40,144,138,77,50,249,133,192,123,146,119,262,128,97,290,156],"images":[]},{"week_start":"2025-12-15","title":"Jehovas kjærlighet varer evig","groups":"","frames":[],"reads":[3,9,14,15],"para_lengths":[50,135,195,176,156,157,183,97,71,261,209,66,129,258,84,149],"images":[]},{"week_start":"2025-12-22","title":"Åpne deg for Jehova i bønn","groups":"","frames":[],"reads":[4,13,15,16,17,18],"para_lengths":[108,56,89,123,154,45,143,109,94,209,216,89,197,138,160,252,150,118,82,94,208],"images":[]},{"week_start":"2025-12-29","title":"Husk å be for andre","groups":"","frames":[],"reads":[4,7,16],"para_lengths":[66,111,105,135,84,154,221,115,168,89,57,113,107,98,149,167,149,137],"images":[]}];
+window.addEventListener('DOMContentLoaded', () => {
+/* ===== Logo animasjon ===== */
+(function(){ const logo=document.getElementById('logoImg'); if(!logo) return; logo.addEventListener('click',()=>{ logo.classList.remove('logo-spin','logo-shake'); void logo.offsetWidth; logo.classList.add('logo-spin'); setTimeout(()=>{ logo.classList.remove('logo-spin'); logo.classList.add('logo-shake'); setTimeout(()=>logo.classList.remove('logo-shake'),450); },2000); });})();
 
-  window.ITEMS = NO_2025.map(x=>({...x, items:x}));
-  window.currentItem = window.ITEMS[0];
-  window.ITEM = window.currentItem;
+/* ===== Hjelpere ===== */
+const $=s=>document.querySelector(s);
+const fmt=s=>{s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function isoMondayLocal(d=new Date()){
+  const day=d.getDay(); const diff=(day===0?-6:1-day);
+  const monday=new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
+  const y=monday.getFullYear(), m=String(monday.getMonth()+1).padStart(2,'0'), dd=String(monday.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 
-  const sel = document.getElementById('weekSel');
-  window.ITEMS.forEach((item, idx)=>{
-    const opt = document.createElement('option');
-    opt.value = String(idx);
-    opt.textContent = `${item.week_start} – ${item.title}`;
-    sel.appendChild(opt);
-  });
-  sel.addEventListener('change', ()=>{
-    const idx = Number(sel.value);
-    window.currentItem = window.ITEMS[idx];
-    window.ITEM = window.currentItem;
-    updateArticleDetails();
-  });
+/* ===== WT konfig/modus ===== */
+const WT_MODE_KEY='meetingTimer.wtMode'; // '60' | '30'
+function getMode(){ return localStorage.getItem(WT_MODE_KEY) || '60'; }
+function setMode(m){ localStorage.setItem(WT_MODE_KEY, m); }
+function slots(){
+  const total = (getMode()==='30') ? 1800 : 3600;
+  const intro=90, review=90, outro=90; // 90s i begge moduser
+  return { total, intro, review, outro, content: total - (intro+review+outro) };
+}
 
-  function updateArticleDetails(){
-    const it = window.currentItem;
-    const pl = it.para_lengths || [];
-    document.getElementById('pillParaValue').textContent = String(pl.length);
-    document.getElementById('pillReadsValue').textContent = String((it.reads||[]).length);
-    updateImagesCount();
-    buildTimeline();
+/* ===== WT state ===== */
+let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
+let reads=0, readSet=new Set();
+let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
+let wtShownWarn=false; let wtMsgHoldTimer=null, wtMsgHoldUntil=0, wtLastE=0;
+
+/* ===== Laste artikkeldata ===== */
+async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
+async function loadYear(y){ for(const p of [`data/no-${y}.json`,`Data/no-${y}.json`,`data/no-${y}`,`Data/no-${y}`]){ try{ return await fetchJSON(p+`?v=${Date.now().toString().slice(7)}`);}catch{} } throw 0; }
+async function hydrateOptions(){
+  const year=(new Date()).getFullYear();
+  let items=[];
+  try{
+    const bundles=[];
+    for(const yy of [year-1,year,year+1]){ try{ bundles.push(await loadYear(yy)); }catch{} }
+    items=bundles.flatMap(p=>Array.isArray(p)?p:(p?.items||[])).filter(Boolean);
+  }catch{ items=[]; }
+
+  const curMon=isoMondayLocal(new Date());
+  const parse=(s)=> new Date(s+"T00:00:00");
+  const sorted=[...items].filter(it=>it.week_start).sort((a,b)=>parse(a.week_start)-parse(b.week_start));
+  let current = sorted.find(it=>it.week_start===curMon);
+  if(!current){
+    const past = sorted.filter(it=>parse(it.week_start) <= parse(curMon));
+    if(past.length){ current=past[past.length-1]; }
+    else if(sorted.length){ current=sorted[0]; }
   }
 
-  function expandWithOrder(arr){
-    if(!arr || !arr.length) return {set:new Set(), ord:new Map()};
+  const sel=$('#weekSel'); sel.innerHTML='';
+  let idx = sorted.indexOf(current);
+  const start=Math.max(0, idx-6), end=Math.min(sorted.length, idx+6);
+  const window=sorted.slice(start,end);
+  window.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
+  sel.selectedIndex = window.indexOf(current);
+  useItem(current);
+
+  sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
+}
+function useItem(it){
+// VT 1.48 backfill & mapping
+try{
+  if (Array.isArray(it.para_lengths) && (!Array.isArray(it.words) || !it.words.length)) {
+    it.words = it.para_lengths.slice();
+  }
+  // parse groups
+  window.__VT_GROUPS_RAW = (typeof it.groups === 'string') ? it.groups : "";
+  // parse reads/frames with a/b
+  (function(){
+    function parse(e){ const m=String(e).match(/^(\d+)([ab])?$/i); return m? {n:Number(m[1]), o:(m[2]? (m[2].toLowerCase()==='a'?1:2): null)} : null; }
+    const FR = Array.isArray(it.frames) ? it.frames.map(parse).filter(Boolean) : [];
+    const RD = Array.isArray(it.reads)  ? it.reads.map(parse).filter(Boolean)  : [];
+    window.__VT_FRAME_SET = new Set(FR.map(x=>x.n));
+    window.__VT_READ_SET2 = new Set(RD.map(x=>x.n));
+    if (!Array.isArray(it.readParas) && !Array.isArray(it.read_paras) && RD.length){
+      it.readParas = Array.from(new Set(RD.map(x=>x.n)));
+    }
+    const ORD = new Map();
+    RD.forEach(x=>{ const m = ORD.get(x)||{}; if (x.o!=null) m.read = x.o; ORD.set(x.n,m); });
+    FR.forEach(x=>{ const m = ORD.get(x)||{}; if (x.o!=null) m.frame = x.o; ORD.set(x.n,m); });
+    window.__VT_ORD = ORD;
+    window.__VT_GROUPS = (function(str){
+      if (!str || typeof str!=='string') return [];
+      return str.split(',').map(s=>s.trim()).flatMap(token=>{
+        const m = token.match(/^(\d+)(?:-(\d+))?$/); if(!m) return [];
+        const a = Number(m[1]), b = m[2] ? Number(m[2]) : a;
+        const g=[]; for(let k=a;k<=b;k++) g.push(k); return [g];
+      });
+    })(window.__VT_GROUPS_RAW);
+  })();
+}catch(e){}
+
+  window.currentItem = it;
+  window.ITEM = it;
+
+  $('#articleTitle').textContent=it.title||'—';
+  totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
+  reads = it.reads|0;
+  const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
+  readSet = new Set(rp || ((Number.isFinite(reads) && reads>0) ? Array.from({length:reads},(_,i)=>i+1) : []));
+  paras=(it.words||[]).map((w,i)=>({num:i+1,words:w|0,q:1,les:0,hasAB:false}));
+  if(paras.length!==totalParagraphs){ paras=Array.from({length:totalParagraphs},(_,i)=>({num:i+1,words:0,q:1,les:0,hasAB:false})); }
+  const setPillValue = (id, value)=>{ const el=document.getElementById(id); if(el) el.textContent=String(value); };
+  setPillValue('pillParasValue', totalParagraphs);
+  setPillValue('pillReadsValue', readSet.size);
+  (function(){
+    let el=document.getElementById('pillFrames');
+    if(!el){
+      const anchor=document.getElementById('pillImages')||document.getElementById('pillReads')||document.querySelector('[id*=pillReads]');
+      el=document.createElement('div');
+      el.id='pillFrames';
+      el.className='pill';
+      el.innerHTML='<img class="pill-icon" src="./img/box-icon.png" alt="" aria-hidden="true"><span class="pill-label">Rammer:</span><span class="pill-value" id="pillFramesValue">0</span>';
+      if(anchor && anchor.parentElement){ anchor.insertAdjacentElement('afterend', el); }
+      else { document.body.appendChild(el); }
+    } else if (!document.getElementById('pillFramesValue')){
+      el.innerHTML='<img class="pill-icon" src="./img/box-icon.png" alt="" aria-hidden="true"><span class="pill-label">Rammer:</span><span class="pill-value" id="pillFramesValue">0</span>';
+    }
+    setPillValue('pillFramesValue', (window.__VT_FRAME_SET instanceof Set) ? window.__VT_FRAME_SET.size : 0);
+  })();
+  computeAllocation(); drawTimeline(); resetWTUI();
+  if (typeof window.__VT_APPLY_IMAGES === 'function'){
+    try{ window.__VT_APPLY_IMAGES(); }catch(e){}
+  }
+}
+
+/* ===== Fordele tid (WT) ===== */
+const WPM=150, SEC_PER_Q=10, SEC_PER_READ=30, AB_BONUS=30;
+function computeAllocation(){
+  const S=slots();
+  if(totalParagraphs<=0){perParagraph=[];cumulative=[];return;}
+  const wps=WPM/60;
+  const raw=Array.from({length:totalParagraphs},(_,i)=>{
+    const p=paras[i]||{words:0,q:1,les:0,hasAB:false};
+    let s=(p.words||0)/wps + (p.q||0)*SEC_PER_Q + (p.les||0)*SEC_PER_READ + (p.hasAB?AB_BONUS:0);
+    s=Math.max(5,s);
+    // +10% for de siste 5 avsnittene
+    const lastN=Math.min(5,totalParagraphs);
+    if(i>=totalParagraphs-lastN) s*=1.10;
+    return s;
+  });
+  const scale=S.content/((raw.reduce((a,b)=>a+b,0))||1);
+  perParagraph=raw.map(x=>x*scale);
+  cumulative=[]; let acc=S.intro; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
+}
+
+/* ===== Tegn WT-tidslinje ===== */
+function drawTimeline(){
+  const S=slots();
+  const t=$('#timeline'); if(!t) return;
+  Array.from(t.querySelectorAll('.para-slot')).forEach(n=>n.remove());
+  const pct=v=> (v/S.total*100).toFixed(4)+'%';
+  $('#introSlot').style.left='0%'; $('#introSlot').style.width=pct(S.intro);
+  $('#outroSlot').style.right='0%'; $('#outroSlot').style.width=pct(S.outro);
+  $('#reviewSlot').style.right=pct(S.outro); $('#reviewSlot').style.width=pct(S.review);
+  if(totalParagraphs<=0){$('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; return;}
+  const tlWidth=t.clientWidth||t.getBoundingClientRect().width||1; const pxPerSec=tlWidth/S.total;
+  for(let i=1;i<=totalParagraphs;i++){
+    const leftP=(cumulative[i-1]/S.total)*100, widthP=(perParagraph[i-1]/S.total)*100;
+    const slot=document.createElement('div'); slot.className='para-slot'+(i%2===0?' alt':''); slot.style.left=leftP+'%'; slot.style.width=widthP+'%';
+    const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec; const fs=Math.max(9,Math.min(14,Math.floor(slotPx*0.33)));
+    lbl.style.fontSize=fs+'px'; lbl.textContent=String(i); slot.appendChild(lbl);
+    if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
+    // Klikk for å hoppe (når ikke spiller)
+    slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent=`Avsnitt ${i}${readSet.has(i)?' + Les-skriftsted':''}`; });
+    t.insertBefore(slot,$('#elapsed'));
+  }
+  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+
+  // VT 1.48 enhance: group colors and ordered pins (frame/read with a/b)
+  try{
+    const t = document.getElementById('timeline'); if(t){
+      // map para -> group id
+      const groups = window.__VT_GROUPS || [];
+      const paraToGroupId = new Map(); groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
+      const slots = Array.from(t.querySelectorAll('.para-slot'));
+      // define color function
+      function groupColor(gid){ if(gid===null || gid===undefined) return null; const baseHue=150; const l=66 - (gid % 3) * 8; return `hsl(${baseHue} 40% ${l}%)`; }
+      const ord = window.__VT_ORD || new Map();
+      const frameSet = window.__VT_FRAME_SET || new Set();
+      const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
+      slots.forEach((slot, idx)=>{
+        const p = idx+1;
+        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
+        const col = groupColor(gid);
+        if (col) slot.style.background = col;
+        // rebuild pins in correct order
+        slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
+        const hasRead = numericReads.has ? numericReads.has(p) : false;
+        const hasFrame = frameSet.has ? frameSet.has(p) : false;
+        if (!hasRead && !hasFrame) return;
+        const items = [];
+        if (hasFrame) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
+        if (hasRead)  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
+        items.sort((a,b)=>(a.order??99)-(b.order??99));
+        const gap=12, base = -((items.length-1)/2)*gap;
+        items.forEach((it, j)=>{
+          const pin = document.createElement('i');
+          pin.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
+          pin.style.left = `calc(50% + ${base + j*gap}px)`;
+          slot.appendChild(pin);
+        });
+      });
+    }
+  }catch(e){}
+}
+// Klikk på introfeltet: hopp til 00:00 når ikke spiller (eller pauset)
+(function(){
+  const intro = document.getElementById('introSlot');
+  if(intro){
+    intro.style.cursor = 'pointer';
+    intro.addEventListener('click', ()=>{
+      if(!started || paused){
+        accum = 0;
+        document.getElementById('elapsed').style.width = '0%';
+        document.getElementById('cursor').style.left = '0%';
+        document.getElementById('clockWT').textContent = '00:00';
+        document.getElementById('clockWT').classList.remove('over');
+        document.getElementById('message').textContent = 'Tilbake til start (00:00)';
+      }
+    });
+  }
+})();
+
+let _rAF=null; function relayout(){ drawTimeline(); drawTimelineSP(); }
+['resize','orientationchange'].forEach(ev=>{ window.addEventListener(ev, ()=>{ if(_rAF) cancelAnimationFrame(_rAF); _rAF=requestAnimationFrame(relayout); }); });
+
+/* ===== WT klokke og meldinger ===== */
+function lockWTControls(){
+  const card = document.getElementById('wtControlsCard');
+  const sel = document.getElementById('weekSel');
+  const m60 = document.getElementById('mode60');
+  const m30 = document.getElementById('mode30');
+  if(card){
+    card.classList.add('locked');
+    card.classList.add('collapsed'); // skjuler infofeltet under avspilling
+  }
+  if(sel){ sel.setAttribute('disabled','disabled'); }
+  if(m60){ m60.setAttribute('disabled','disabled'); }
+  if(m30){ m30.setAttribute('disabled','disabled'); }
+}
+function unlockWTControls(){
+  const card = document.getElementById('wtControlsCard');
+  const sel = document.getElementById('weekSel');
+  const m60 = document.getElementById('mode60');
+  const m30 = document.getElementById('mode30');
+  if(card){
+    card.classList.remove('locked');
+    card.classList.remove('collapsed');
+  }
+  if(sel){ sel.removeAttribute('disabled'); }
+  if(m60){ m60.removeAttribute('disabled'); }
+  if(m30){ m30.removeAttribute('disabled'); }
+}
+
+function resetWTUI(){
+  if(tickHandle)clearInterval(tickHandle);
+  $('#clockWT').textContent='00:00'; $('#clockWT').classList.remove('over');
+  $('#message').textContent='Klar til start. Trykk ▶ når du er klar.';
+  started=false; paused=false; startTs=null; accum=0; wtLastE=0; wtMsgHoldUntil=0; wtShownWarn=false;
+  $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true;
+  unlockWTControls();
+}
+function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setInterval(tickWT,250) }
+function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
+function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
+function setWTMessage(txt){ $('#message').textContent=txt }
+function wtFlash(msg,ms=10000){ setWTMessage(msg); wtMsgHoldUntil=Date.now()+ms; if(wtMsgHoldTimer) clearTimeout(wtMsgHoldTimer); wtMsgHoldTimer=setTimeout(()=>{ wtMsgHoldTimer=null },ms) }
+function tickWT(){
+  const S=slots();
+  const e=nowElapsed(), remaining=S.total-e;
+  $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=S.total);
+  const p=Math.min(e/S.total*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`;
+  const warnAt = (getMode()==='30') ? 300 : 600;
+  if(!wtShownWarn && remaining<=warnAt && remaining>0){ wtShownWarn=true; wtFlash((warnAt/60)+' min igjen – dette klarer du! 😎', 15000) }
+  if(wtMsgHoldTimer && Date.now()<wtMsgHoldUntil){ return }
+  if(e<S.intro) setWTMessage('Introduksjon');
+  else if(e>=S.total) setWTMessage('Tiden er brukt – teller over');
+  else if(e>=S.total-S.outro) setWTMessage('Avslutning');
+  else if(e>=S.total-S.outro-S.review) setWTMessage('Repetisjonsspørsmål');
+  else{
+    let idx=0;
+    for(let i=0;i<totalParagraphs;i++){
+      const s=cumulative[i], end=(i===totalParagraphs-1)?(S.total-S.outro-S.review):cumulative[i+1];
+      if(e>=s&&e<end){idx=i;break}
+    }
+    let msg=`Avsnitt ${idx+1}${readSet.has(idx+1)?' + Les-skriftsted':''}`;
+    if(e>=Math.floor(S.total/2) && e<Math.floor(S.total/2)+60) msg+=' – du er halvveis';
+    setWTMessage(msg);
+  }
+}
+function setPressedWT(id){ ['playWT','pauseWT','stopWT'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
+$('#playWT').addEventListener('click',()=>{
+  if(started && paused){ paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); return }
+  if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Introduksjon'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); }
+});
+$('#pauseWT').addEventListener('click',()=>{
+  if(!started||paused) return;
+  accum+=Math.floor((Date.now()-startTs)/1000); paused=true; stopClock(); setWTMessage('Pause');
+  $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=false; setPressedWT('pauseWT');
+});
+$('#stopWT').addEventListener('click',()=>{
+  if(started&&!paused) accum+=Math.floor((Date.now()-startTs)/1000);
+  started=false; paused=false; stopClock();
+  const e=accum;
+  setWTMessage(`Ferdig – totalt ${fmt(e)}`);
+  $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true;
+  accum=0; $('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; setPressedWT('stopWT'); unlockWTControls();
+});
+
+/* ===== WT modus-bryter ===== */
+(function(){
+  const m60=$('#mode60'), m30=$('#mode30');
+  // Marker UI for gjeldende modus (default 60 dersom ikke satt)
+  const cur=getMode();
+  if(cur==='60'){ m60.classList.add('active'); m30.classList.remove('active'); }
+  else { m30.classList.add('active'); m60.classList.remove('active'); }
+  m60.addEventListener('click',()=>{ if(getMode()==='60') return; setMode('60'); m60.classList.add('active'); m30.classList.remove('active'); computeAllocation(); drawTimeline(); resetWTUI(); });
+  m30.addEventListener('click',()=>{ if(getMode()==='30') return; setMode('30'); m30.classList.add('active'); m60.classList.remove('active'); computeAllocation(); drawTimeline(); resetWTUI(); setWTMessage('Klar for å starte et forkortet vakttårnstudium.'); });
+})();
+
+/* ===== TIMER (SP) ===== */
+const PRESET_KEY='meetingTimer.annetSeconds';
+const spPresets=[...document.querySelectorAll('#spInputs .preset')];
+let spRunning=false, spPaused=false, spStart=null, spAccum=0, spTick=null;
+let SP_TOTAL=parseInt(localStorage.getItem(PRESET_KEY),10); if(isNaN(SP_TOTAL)) SP_TOTAL=600; // default 10 min
+function isCountUp(){ return SP_TOTAL===0 }
+function spFmt(s){s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function spElapsed(){ if(!spRunning) return spAccum; if(spPaused) return spAccum; return spAccum+Math.floor((Date.now()-spStart)/1000) }
+function markPreset(s){ spPresets.forEach(b=>b.classList.toggle('active',parseInt(b.dataset.sec,10)===s)) }
+function updatePlayIcon(){ const iconEl=document.getElementById('playSPIcon'); if(iconEl) iconEl.textContent=isCountUp()?'⏱️':'▶' }
+function applyIdleClock(){ const el=$('#clockSP'); if(!el) return; el.classList.remove('over'); el.textContent=isCountUp()?'00:00':spFmt(SP_TOTAL) }
+function drawTimelineSP(){
+  const totalScale=isCountUp()?Math.max(1800,spElapsed()+1):SP_TOTAL;
+  const e=spElapsed();
+  const progress=Math.min(1, totalScale ? (e/totalScale) : 0);
+  $('#elapsedSP').style.width=(progress*100)+'%'; $('#cursorSP').style.left=`calc(${progress*100}% - 1px)`;
+  // Minuttstreker (1 / 5 / 10)
+  const ticksC = $('#ticksSP'); if(!ticksC) return;
+  ticksC.innerHTML='';
+  const minutes = Math.floor(totalScale/60);
+  for(let m=0; m<=minutes; m++){
+    const x = (m*60/totalScale)*100;
+    const i = document.createElement('i');
+    i.className = 'tick' + (m%10===0 ? ' xmajor' : (m%5===0 ? ' major' : ''));
+    i.style.left = x+'%';
+    ticksC.appendChild(i);
+  }
+}
+function showMilestone(name){ const el=$('#msImg'); if(!el) return; if(!name){ el.style.display='none'; el.removeAttribute('src'); return } el.style.display='block'; el.src=name }
+function updateSP(){
+  const e=spElapsed();
+  if(isCountUp()){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(e) }
+  else { const remain=SP_TOTAL-e; if(remain>=0){ $('#clockSP').classList.remove('over'); $('#clockSP').textContent=spFmt(remain) } else { $('#clockSP').classList.add('over'); $('#clockSP').textContent=spFmt(-remain) } }
+  drawTimelineSP();
+}
+function setPressedSP(id){ ['playSP','pauseSP','stopSP'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
+function spStartFn(){
+  if(spRunning && spPaused){
+    spPaused=false; spStart=Date.now(); spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250);
+    $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; setPressedSP('playSP'); return;
+  }
+  if(!spRunning){
+    spRunning=true; spPaused=false; spStart=Date.now(); spAccum=0;
+    spTick&&clearInterval(spTick); spTick=setInterval(updateSP,250);
+    $('#playSP').disabled=true; $('#pauseSP').disabled=false; $('#stopSP').disabled=false; setPressedSP('playSP');
+    // LÅS milestone ved start (bytter ikke underveis)
+    if(!isCountUp()){
+      if(SP_TOTAL===1800) showMilestone('./img/milestone-30.png');
+      else if(SP_TOTAL===900) showMilestone('./img/milestone-15.png');
+      else if(SP_TOTAL===600) showMilestone('./img/milestone-10.png');
+      else if(SP_TOTAL===300) showMilestone('./img/milestone-5.png');
+      else showMilestone('./img/milestone-other.png');
+    }else{
+      showMilestone('./img/start-stopwatch.png');
+    }
+    updateSP();
+  }
+}
+function spPauseFn(){ if(!spRunning||spPaused) return; spAccum+=Math.floor((Date.now()-spStart)/1000); spPaused=true; spTick&&clearInterval(spTick); spTick=null; $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=false; setPressedSP('pauseSP'); updateSP() }
+function spStopFn(){ if(spRunning&&!spPaused) spAccum+=Math.floor((Date.now()-spStart)/1000); spRunning=false; spPaused=false; spStart=null; spAccum=0; spTick&&clearInterval(spTick); spTick=null; showMilestone('./img/milestone-stop.png'); $('#playSP').disabled=false; $('#pauseSP').disabled=true; $('#stopSP').disabled=true; $('#clockSP').classList.remove('over'); setPressedSP('stopSP'); drawTimelineSP(); applyIdleClock(); }
+$('#playSP').addEventListener('click',spStartFn); $('#pauseSP').addEventListener('click',spPauseFn); $('#stopSP').addEventListener('click',spStopFn);
+
+/* Preset clicks */
+spPresets.forEach(btn=>btn.addEventListener('click',()=>{
+  if(spRunning) return;
+  const s=parseInt(btn.dataset.sec,10)||0;
+  localStorage.setItem(PRESET_KEY,String(s));
+  SP_TOTAL=s;
+  markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1);
+  applyIdleClock(); updatePlayIcon(); showMilestone('./img/pick-milestone.png'); drawTimelineSP(); updateSP(); updateTargetBox();
+}));
+
+/* +/- justering av mål-tid */
+function clampTarget(v){ return Math.max(0, Math.min(3600, v)); }
+function setTargetSeconds(sec){
+  if(spRunning) return;
+  SP_TOTAL=clampTarget(sec);
+  localStorage.setItem(PRESET_KEY,String(SP_TOTAL));
+  markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1);
+  applyIdleClock(); updatePlayIcon(); drawTimelineSP(); updateSP(); updateTargetBox();
+}
+function updateTargetBox(){ const box=document.getElementById('spTargetDisplay'); if(box) box.textContent= isCountUp() ? '00:00' : fmt(SP_TOTAL); }
+document.getElementById('decSP').addEventListener('click',()=> setTargetSeconds(SP_TOTAL - 60));
+document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(SP_TOTAL + 60));
+
+/* ===== Init ===== */
+(async function init(){
+  // Sett default til 60 min dersom ikke satt
+  try{ if(!localStorage.getItem('meetingTimer.wtMode')) localStorage.setItem('meetingTimer.wtMode','60'); }catch(e){}
+  // Presets/klokker
+  markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1);
+  applyIdleClock(); updatePlayIcon(); drawTimelineSP(); updateTargetBox();
+
+  // Hydrate article list
+  try{ await hydrateOptions(); }catch(e){ console.warn('hydrate failed', e); const sel=document.getElementById('weekSel'); if(sel){ sel.innerHTML='<option>Ingen data</option>'; } }
+
+  // Deaktiver høyreklikk på alle bilder
+  document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
+})();
+
+}); // DOMContentLoaded
+</script>
+
+  
+  <!-- Add-on med trygge UI-tilpasninger -->
+  <script src="./index_addon.js"></script>
+
+<script>
+(function(){
+  // Utility: parse images array (supports numbers and "12a"/"5b"/"3c")
+  function expandWithOrder(refs){
     const set = new Set(), ord = new Map();
-    const pri = x=>(x?(x.toLowerCase()==='a'?1:x.toLowerCase()==='b'?2:3):3);
-    const addRange = (a,b,o)=>{ for(let i=Number(a); i<=Number(b); i++){ set.add(i); if(o!=null)ord.set(i,o); } };
-    for(const v of arr){
-      if(typeof v==='number'){ set.add(v); continue; }
+    if (!Array.isArray(refs)) return {set, ord};
+    const pri = c => c ? ({a:1,b:2,c:3}[String(c).toLowerCase()]||null) : null;
+    const addRange = (from, to, order)=>{
+      const a = Number(from), b = Number(to);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+      const lo = Math.min(a,b), hi = Math.max(a,b);
+      for (let i=lo; i<=hi; i++){ set.add(i); if(order!=null) ord.set(i, order); }
+    };
+    for (const v of refs){
+      if (typeof v === 'number'){ set.add(v); continue; }
       const s = String(v).trim();
       const range = s.match(/^(\d+)\s*[\-–]\s*(\d+)([abc])?$/i);
-      if(range){ addRange(range[1],range[2],pri(range[3])); continue; }
+      if (range){ addRange(range[1], range[2], pri(range[3])); continue; }
       const pair = s.match(/^(\d+)\s*&\s*(\d+)([abc])?$/i);
-      if(pair){ addRange(pair[1],pair[1],pri(pair[3])); addRange(pair[2],pair[2],pri(pair[3])); continue; }
+      if (pair){ addRange(pair[1], pair[1], pri(pair[3])); addRange(pair[2], pair[2], pri(pair[3])); continue; }
       const single = s.match(/^(\d+)([abc])?$/i);
-      if(single){ const n=Number(single[1]), o=pri(single[2]); set.add(n); if(o!=null)ord.set(n,o); }
+      if (single){ const n=Number(single[1]), o=pri(single[2]); set.add(n); if(o!=null) ord.set(n,o); }
     }
     return {set, ord};
   }
 
+  // Update counters from globals or current item
   function updateImagesCount(){
     const valueEl = document.getElementById('pillImagesValue');
-    if(!valueEl) return;
-    let count=0;
-    if(window.__VT_IMAGE_SET instanceof Set){
+    if (!valueEl) return;
+    let count = 0;
+    if (window.__VT_IMAGE_SET instanceof Set){
       count = window.__VT_IMAGE_SET.size;
-    }else{
-      const it = window.currentItem||window.ITEM||null;
-      const {set} = expandWithOrder(it&&it.images?it.images:[]);
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const {set} = expandWithOrder(it && it.images ? it.images : []);
       count = set.size;
     }
     valueEl.textContent = String(count);
   }
 
-  function buildTimeline(){
-    const it = window.currentItem;
-    if(!it) return;
-    const tl = document.getElementById('timeline');
-    if(!tl) return;
-    const pl = it.para_lengths||[];
-    const total = pl.reduce((a,b)=>a+b,0);
-    tl.querySelectorAll('.para-slot').forEach(s=>s.remove());
-
-    let left=0;
-    pl.forEach((len,idx)=>{
-      const w = (len/total)*100;
-      const div = document.createElement('div');
-      div.className = 'para-slot'+(idx%2===0?' alt':'');
-      div.style.left = left+'%';
-      div.style.width = w+'%';
-      const inner = document.createElement('div');
-      inner.textContent = String(idx+1);
-      div.appendChild(inner);
-      tl.appendChild(div);
-      left += w;
-    });
-
-    applyReadPins();
-    applyFramePins();
-    applyImagePins();
-  }
-
-  function applyReadPins(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
-    const it = window.currentItem||window.ITEM||null;
-    const {set,ord} = expandWithOrder(it&&it.reads?it.reads:[]);
-    slots.forEach((slot,idx)=>{
-      const p = idx+1;
-      slot.querySelectorAll('.read-pin').forEach(n=>n.remove());
-      if(!set.has(p)) return;
-      const el = document.createElement('i');
-      el.className='read-pin';
-      slot.appendChild(el);
-    });
-  }
-
-  function applyFramePins(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
-    const it = window.currentItem||window.ITEM||null;
-    const {set,ord} = expandWithOrder(it&&it.frames?it.frames:[]);
-    slots.forEach((slot,idx)=>{
-      const p = idx+1;
-      slot.querySelectorAll('.frame-pin').forEach(n=>n.remove());
-      if(!set.has(p)) return;
-      const el = document.createElement('i');
-      el.className='frame-pin';
-      slot.appendChild(el);
-    });
-  }
-
+  // Add image pins under the timeline slots
   function applyImagePins(){
-    const tl = document.getElementById('timeline'); if(!tl) return;
-    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
-    let set=new Set(), ord=new Map();
-    if(window.__VT_IMAGE_SET instanceof Set){
+    const tl = document.getElementById('timeline'); if (!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if (!slots.length) return;
+
+    // Determine images set + order
+    let set = new Set(), ord = new Map();
+    if (window.__VT_IMAGE_SET instanceof Set){
       set = window.__VT_IMAGE_SET;
+      // order is usually in window.__VT_ORD.image
       const O = window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
-      for(const p of set){
+      for (const p of set){
         const o = O.get(p)||{};
-        if(o.image!=null) ord.set(p,o.image);
+        if (o.image != null) ord.set(p, o.image);
       }
-    }else{
-      const it = window.currentItem||window.ITEM||null;
-      const e = expandWithOrder(it&&it.images?it.images:[]);
+    } else {
+      const it = window.currentItem || window.ITEM || null;
+      const e = expandWithOrder(it && it.images ? it.images : []);
       set = e.set; ord = e.ord;
     }
-    slots.forEach((slot,idx)=>{
+
+    slots.forEach((slot, idx)=>{
       const p = idx+1;
       slot.querySelectorAll('.image-pin').forEach(n=>n.remove());
-      if(!set.has(p)) return;
+      if (!set.has(p)) return;
       const el = document.createElement('i');
-      el.className='image-pin';
+      el.className = 'image-pin';
+      // sitte sammen med read/frame i orden: A(1) nærmest boksen, så B, så C
+      const order = ord.get(p) ?? 3;
+      el.style.zIndex = String(100 - order);
       slot.appendChild(el);
     });
   }
@@ -581,70 +898,76 @@ textarea{resize:vertical;}
     applyImagePins();
   }
 
+  // Observe timeline changes so pins re-render
   const tl = document.getElementById('timeline');
-  if(tl){
-    const mo = new MutationObserver(()=>requestAnimationFrame(applyAll));
-    mo.observe(tl,{childList:true,subtree:true});
+  if (tl){
+    const mo = new MutationObserver(()=> requestAnimationFrame(applyAll));
+    mo.observe(tl, {childList:true, subtree:true});
   }
-  if(sel){ sel.addEventListener('change',()=>setTimeout(applyAll,0)); }
+  // Also update when selection changes if select exists
+  const sel = document.getElementById('weekSel');
+  if (sel){ sel.addEventListener('change', ()=> setTimeout(applyAll, 0)); }
 
-  document.addEventListener('DOMContentLoaded',()=>{
-    updateArticleDetails();
-    applyAll();
-  });
+  // Initial run – kjør én gang, ikke både DOMContentLoaded og load
+  document.addEventListener('DOMContentLoaded', applyAll);
+  // Expose manual trigger if needed
   window.__VT_APPLY_IMAGES = applyAll;
 })();
 </script>
 <script src="./index_article_window_1.0.js"></script>
 <script>
+// --- Touch/mus-resize for wtNotes nedover ---
 (function(){
   const ta = document.getElementById('wtNotes');
   const grip = document.getElementById('wtNotesGrip');
   if(!ta || !grip) return;
-  let startY=0, startH=0, active=false;
+  let startY = 0, startH = 0, active = false;
   function px(v){ return Number(String(v).replace('px',''))||0; }
   const cs = getComputedStyle(ta);
   const minH = Math.max(72, px(cs.minHeight));
   function maxH(){
-    return Math.max(ta.offsetHeight, Math.round(window.innerHeight*0.75));
+    // 75vh som øvre grense, men aldri mindre enn nåværende høyde
+    return Math.max(ta.offsetHeight, Math.round(window.innerHeight * 0.75));
   }
   function down(e){
-    active=true;
-    startY = (e.touches?e.touches[0].clientY:e.clientY);
+    active = true;
+    startY = (e.touches ? e.touches[0].clientY : e.clientY);
     startH = ta.offsetHeight;
-    document.addEventListener('mousemove',move,{passive:false});
-    document.addEventListener('touchmove',move,{passive:false});
-    document.addEventListener('mouseup',up,{passive:false});
-    document.addEventListener('touchend',up,{passive:false});
+    document.addEventListener('mousemove', move, {passive:false});
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('mouseup', up, {passive:false});
+    document.addEventListener('touchend', up, {passive:false});
     e.preventDefault();
   }
   function move(e){
     if(!active) return;
-    const y = (e.touches?e.touches[0].clientY:e.clientY);
+    const y = (e.touches ? e.touches[0].clientY : e.clientY);
     const dy = y - startY;
-    let h = Math.min(Math.max(startH+dy,minH),maxH());
-    ta.style.height = h+'px';
+    let h = Math.min(Math.max(startH + dy, minH), maxH());
+    ta.style.height = h + 'px';
     e.preventDefault();
   }
   function up(e){
-    active=false;
-    document.removeEventListener('mousemove',move);
-    document.removeEventListener('touchmove',move);
-    document.removeEventListener('mouseup',up);
-    document.removeEventListener('touchend',up);
+    active = false;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchend', up);
   }
-  grip.addEventListener('mousedown',down);
-  grip.addEventListener('touchstart',down,{passive:false});
+  grip.addEventListener('mousedown', down);
+  grip.addEventListener('touchstart', down, {passive:false});
 })();
 </script>
 <script>
 (function(){
-  function setup(sectionId,storageKey,defaultCollapsed){
+  function setup(sectionId, storageKey, defaultCollapsed){
     const sec = document.getElementById(sectionId);
     if(!sec) return;
     const title = sec.querySelector('.section-title');
     const body = sec.querySelector('.section-body');
-    if(!title||!body) return;
+    if(!title || !body) return;
+
+    // initial state: localStorage if present, else defaultCollapsed
     try{
       const saved = localStorage.getItem(storageKey);
       if(saved!==null){
@@ -653,23 +976,29 @@ textarea{resize:vertical;}
         if(defaultCollapsed) sec.classList.add('collapsed'); else sec.classList.remove('collapsed');
       }
     }catch(e){ if(defaultCollapsed) sec.classList.add('collapsed'); }
+
     function syncAria(){
       const collapsed = sec.classList.contains('collapsed');
-      title.setAttribute('aria-expanded', collapsed?'false':'true');
+      title.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     }
     syncAria();
+
     function toggle(){
       sec.classList.toggle('collapsed');
       syncAria();
-      try{ localStorage.setItem(storageKey, sec.classList.contains('collapsed')?'1':'0'); }catch(e){}
+      try{ localStorage.setItem(storageKey, sec.classList.contains('collapsed') ? '1' : '0'); }catch(e){}
     }
-    title.addEventListener('click',toggle);
-    title.addEventListener('keydown',(e)=>{
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); }
+
+    title.addEventListener('click', toggle);
+    title.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggle(); }
     });
   }
-  setup('wtSection','meetingTimer.section.wt',false);
-  setup('spSection','meetingTimer.section.sp',true);
+
+  // WT: default åpen (defaultCollapsed=false)
+  setup('wtSection', 'meetingTimer.section.wt', false);
+  // SP: default kollapset (defaultCollapsed=true)
+  setup('spSection', 'meetingTimer.section.sp', true);
 })();
 </script>
 </body>
