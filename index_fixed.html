@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Meeting Timer</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f8f7f5">
+<link rel="icon" href="./img/favicon.png">
+<!-- Cloudflare Web Analytics -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "9e80768d4f6c41f69cb40367aebcc56b"}'></script>
+<!-- End Cloudflare Web Analytics -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f7f5; --ink:#2b3432; --muted:#8b827a;
+  --card:#fff; --border:rgba(40,30,20,.10);
+  --green:#6ecf9e; /* Play */
+  --phase-intro:#87b9ff; /* Pause */
+  --phase-review:#ffb766; /* Stop */
+  --phase-outro:#87b9ff; /* blå avslutning (samme som intro) */
+  --press:#cfc7bd; --pill:#fffefb; --radius:16px;
+  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
+  --content-max:min(640px, 94vw);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  color:var(--ink);
+  font-family:"Nunito",ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  letter-spacing:.01em; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; min-height:100%;
+  background-color:var(--bg);
+  background-image: linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)), url('./img/paper-texture.png');
+  background-size: auto, 300px 300px; background-repeat: repeat, repeat; background-attachment: fixed, fixed;
+}
+.container{flex:1 0 auto;max-width:980px;margin:0 auto;padding:16px 16px 28px;min-width:320px}
+.footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:.9rem;padding:10px 0 14px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 18px;min-height:72px}
+.brand{display:flex;align-items:center;gap:12px;position:relative}
+.brand img{height:160px;width:auto;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 8px 24px rgba(70,50,30,.08));transition:transform .25s,filter .25s}
+@media (min-width:768px){ .brand img{height:200px} }
+@media (max-width:400px){ .brand img{height:120px} }
+
+@keyframes spin2s{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-2px)}40%{transform:translateX(2px)}60%{transform:translateX(-1px)}80%{transform:translateX(1px)}}
+.logo-spin{animation:spin2s 2s linear}
+.logo-shake{animation:shake .4s ease-in-out}
+
+.card{background:var(--card);background-image:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)), url('./img/paper-texture.png'); background-size:auto,300px 300px; background-repeat:repeat; border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(70,50,30,.06);padding:14px}
+
+.h1{font-size:clamp(1.1rem, 2.8vw, 1.38rem);font-weight:900;margin:18px auto 10px;max-width:var(--content-max);text-transform:uppercase}
+.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:56px;box-shadow:0 8px 24px rgba(70,50,30,.05);margin:0 auto 20px;max-width:var(--content-max);color:#4a5552;font-size:clamp(1.1rem, 3.2vw, 1.62rem);line-height:1.3;display:flex;align-items:center}
+
+/* Timeline */
+.timeline-wrap{margin-top:22px; margin-bottom:40px; max-width:var(--content-max); margin-inline:auto; position:relative}
+.timeline{position:relative;height:56px;border-radius:14px;overflow:visible;background:linear-gradient(180deg,var(--tl-green-1) 0%,#edf5f0 100%);border:1px solid var(--border)}
+.slot{position:absolute;top:0;height:100%;opacity:.22}
+#introSlot{background:var(--phase-intro)}
+#reviewSlot{background:var(--phase-review)}
+#outroSlot{background:var(--phase-outro)}
+.para-slot{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(50,35,25,.06);border-right:1px solid rgba(255,255,255,.55);font-weight:900;color:#2f3b34;text-shadow:0 1px 0 rgba(255,255,255,.55);cursor:pointer;box-sizing:border-box;min-width:14px;background:var(--tl-green-1)}
+.para-slot.alt{background:var(--tl-green-2)}
+.para-slot>div{pointer-events:none;white-space:nowrap;overflow:hidden;line-height:1}
+
+/* FIXED: Stacking pins vertically with proper spacing */
+.read-pin{
+  position:absolute; 
+  left:50%; 
+  transform:translateX(-50%); 
+  bottom:-24px;  /* First row - closest to timeline */
+  width:18px; 
+  height:18px; 
+  background:url('./img/read-icon.png') center/contain no-repeat; 
+  pointer-events:none; 
+  opacity:0.95;
+}
+.image-pin{
+  position:absolute; 
+  left:50%; 
+  transform:translateX(-50%); 
+  bottom:-46px;  /* Second row - middle position */
+  width:18px; 
+  height:18px; 
+  background:url('./img/image-icon.png') center/contain no-repeat; 
+  pointer-events:none; 
+  opacity:0.95;
+}
+.frame-pin{
+  position:absolute; 
+  left:50%; 
+  transform:translateX(-50%); 
+  bottom:-68px;  /* Third row - furthest from timeline */
+  width:18px; 
+  height:18px; 
+  background:url('./img/box-icon.png') center/contain no-repeat; 
+  pointer-events:none; 
+  opacity:0.95;
+}
+
+.elapsed{position:absolute;top:0;left:0;height:100%;background:rgba(58,111,82,.22);width:0%;transition:width .25s linear;z-index:2;pointer-events:none}
+/* Rød tone for SP sin elapsed */
+#elapsedSP{background:rgba(210,60,60,.28)}
+.cursor{position:absolute;top:-10px;width:2px;height:76px;background:#2f3f49;left:0%;z-index:3}
+/* Minuttstreker for SP */
+#ticksSP{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none}
+.tick{position:absolute;bottom:6px;width:2px;height:8px;background:rgba(30,40,35,.45);transform:translateX(-1px);}
+.tick.major{height:12px;background:rgba(30,40,35,.65);}
+.tick.xmajor{height:16px;background:rgba(30,40,35,.85);}
+
+.big-clock,.clock{margin-top:16px;font-size:clamp(1.6rem, 9vw, 2.75rem);font-weight:900;color:#2f3b34;max-width:var(--content-max);margin-inline:auto;word-wrap:break-word}
+#clockWT{margin-top:40px}
+#clockSP{margin-top:40px}
+
+.controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
+.round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08);transition:box-shadow .15s ease, filter .15s ease, transform .05s ease}
+.round.pressed, .round.pressed:disabled{filter:brightness(.92) saturate(1.05); box-shadow:inset 0 4px 12px rgba(0,0,0,.22),0 6px 18px rgba(70,50,30,.12)}
+.play{background:var(--green)}
+.pause{background:var(--phase-intro); color:#ffffff}
+.stop{background:var(--phase-review); color:#ffffff}
+.round:active{transform:translateY(1px); box-shadow:inset 0 4px 10px rgba(0,0,0,.2),0 6px 18px rgba(70,50,30,.1)}
+
+/* Presets */
+.preset-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;margin-top:22px}
+.preset{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(70,50,30,.06);color:#2f3b34;font-size:1.05rem}
+.preset.active{background:#2f3b34;color:#fff}
+
+/* Target time adjuster */
+.target-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px auto 8px; max-width:var(--content-max)}
+.round.small{width:42px;height:42px;font-size:1.25rem; color:#2b3432; background:#ffffff; border:1px solid var(--border)}
+.target-box{min-width:140px; text-align:center; font-weight:900; border-radius:999px; padding:8px 16px; border:1px solid var(--border);
+  background:linear-gradient(180deg,var(--tl-green-1) 0%, #edf5f0 100%); color:#2f3b34; box-shadow:0 8px 20px rgba(70,50,30,.06)}
+
+/* Milestone-bilde */
+.milestone-img{max-width:56%;height:auto;margin:10px auto 0;display:block;opacity:1}
+
+img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
+#wtControlsCard{max-width:var(--content-max);margin-inline:auto}
+.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:#2f3b4;box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
+textarea{resize:vertical;}
+
+/* Top row (select only) */
+.wt-toprow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:nowrap}
+.select-article{flex:1 1 auto; max-width:100%; height:42px; line-height:42px; padding:0 12px; margin:0}
+@media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
+
+/* Stats row: avsnitt/les/bilder + studietid */
+.stats-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.stats-row .pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--pill);
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-weight:800;
+  font-size:.95rem;
+  color:#2f3b34;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+  min-height:46px;
+  text-align:center;
+  line-height:1.25;
+  flex-wrap:wrap;
+}
+.stats-row .pill .pill-icon{width:16px; height:16px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12));}
+.stats-row .pill .pill-label{white-space:normal;}
+.stats-row .pill .pill-value{font-weight:900; white-space:nowrap;}
+
+.stats-row .modepill{
+  display:flex;
+  gap:6px;
+  background:var(--pill);
+  border:1px solid var(--border);
+  border-radius:999px;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+  padding:4px;
+  min-height:46px;
+}
+.stats-row .modepill button{
+  flex:1 1 50%;
+  min-width:0;
+  height:38px;
+  line-height:38px;
+  padding:0 12px;
+  background:transparent;
+  color:#2f3b34;
+  border:0;
+  border-radius:999px;
+  font-weight:800;
+  font-size:.95rem;
+  transition:background .2s ease, color .2s ease;
+}
+.stats-row .modepill button:hover{background:rgba(0,0,0,.05);}
+.stats-row .modepill button:focus-visible{
+  outline:2px solid #2f3b34;
+  outline-offset:2px;
+}
+.stats-row .modepill button.active{
+  background:#2f3b34;
+  color:#fff;
+}
+
+/* Section-based layout for WT / SP */
+.section{
+  margin-bottom:24px;
+  transition:margin-bottom .25s ease;
+}
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  padding:14px 18px;
+  border-radius:var(--radius) var(--radius) 0 0;
+  background:linear-gradient(180deg,#2f3b34 0%,#24302e 100%);
+  color:#fff;
+  font-weight:900;
+  font-size:1.1rem;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.section-title:hover{filter:brightness(1.08);}
+.section-title:active{filter:brightness(.96);}
+.section-title .icon-chevron{
+  width:20px;
+  height:20px;
+  transition:transform .25s ease;
+}
+.section.collapsed .icon-chevron{
+  transform:rotate(180deg);
+}
+.section-body{
+  overflow:hidden;
+  max-height:9999px;
+  opacity:1;
+  transition:max-height .35s ease, opacity .25s ease, padding .25s ease;
+  padding:16px 0 0;
+}
+.section.collapsed .section-body{
+  max-height:0;
+  opacity:0;
+  padding:0;
+}
+
+/* Notater-textarea */
+#wtNotes{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+  background:var(--pill);
+  font-family:inherit;
+  font-weight:600;
+  font-size:.95rem;
+  color:#2f3b34;
+  box-shadow:0 6px 16px rgba(70,50,30,.06);
+  min-height:72px;
+  max-height:75vh;
+  resize:none;
+  overflow-y:auto;
+  scrollbar-width:thin;
+}
+#wtNotes:focus-visible{
+  outline:2px solid #2f3b34;
+  outline-offset:2px;
+}
+#wtNotes::placeholder{
+  color:#8b827a;
+}
+
+/* Resize-grip under wtNotes */
+#wtNotesGrip{
+  width:60px;
+  height:6px;
+  margin:6px auto 0;
+  background:#c0bdb8;
+  border-radius:999px;
+  cursor:ns-resize;
+  user-select:none;
+  -webkit-user-drag:none;
+  touch-action:none;
+}
+#wtNotesGrip:hover{background:#9f9c97;}
+#wtNotesGrip:active{background:#7a7770;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">
+      <img src="./img/logo.png" alt="Logo" id="logo"/>
+    </div>
+  </div>
+
+  <!-- WT SECTION -->
+  <div id="wtSection" class="section">
+    <div class="section-title" role="button" tabindex="0" aria-expanded="true">
+      <span>Vaktårn-studiet</span>
+      <svg class="icon-chevron" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+      </svg>
+    </div>
+    <div class="section-body">
+      <div class="card" id="wtControlsCard">
+        <!-- Week + Stats Row -->
+        <div style="margin-bottom:16px;">
+          <!-- Top row with only the select -->
+          <div class="wt-toprow">
+            <select class="select select-article" id="weekSel" aria-label="Velg uke">
+              <!-- JS adds options -->
+            </select>
+          </div>
+
+          <!-- Stats row: separate line -->
+          <div class="stats-row" style="margin-top:12px;">
+            <div class="pill">
+              <img src="./img/para-icon.png" class="pill-icon" alt="Avsnitt"/>
+              <span class="pill-label">Avsnitt:</span>
+              <span class="pill-value" id="pillParaValue">0</span>
+            </div>
+            <div class="pill">
+              <img src="./img/read-icon.png" class="pill-icon" alt="Les"/>
+              <span class="pill-label">Les:</span>
+              <span class="pill-value" id="pillReadsValue">0</span>
+            </div>
+            <div class="pill">
+              <img src="./img/image-icon.png" class="pill-icon" alt="Bilder"/>
+              <span class="pill-label">Bilder:</span>
+              <span class="pill-value" id="pillImagesValue">0</span>
+            </div>
+            <div class="modepill">
+              <button id="btnModeGroups" class="active">Grupper</button>
+              <button id="btnModeTimer">Tidstyrt</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="studyTimeDisplay" class="h1" style="margin:0;text-align:center;margin-bottom:12px;"></div>
+        <div class="timeline-wrap">
+          <div class="timeline" id="timeline">
+            <div id="introSlot" class="slot"></div>
+            <div id="reviewSlot" class="slot"></div>
+            <div id="outroSlot" class="slot"></div>
+            <div id="elapsed" class="elapsed"></div>
+            <div id="cursor" class="cursor"></div>
+          </div>
+        </div>
+
+        <div class="big-clock" id="clockWT">0:00</div>
+        <div class="controls">
+          <button class="round play" data-action="play" aria-label="Spill av">▶</button>
+          <button class="round pause" data-action="pause" aria-label="Pause">❚❚</button>
+          <button class="round stop" data-action="stop" aria-label="Stopp">■</button>
+        </div>
+
+        <div class="preset-row">
+          <div class="preset" data-minutes="25">25 min</div>
+          <div class="preset" data-minutes="30">30 min</div>
+          <div class="preset" data-minutes="35">35 min</div>
+          <div class="preset" data-minutes="40">40 min</div>
+          <div class="preset" data-minutes="45">45 min</div>
+        </div>
+
+        <div class="target-row" id="adjustRow">
+          <button class="round small" id="btnMinus" aria-label="Reduser tid">−</button>
+          <div class="target-box" id="targetTimeBox">
+            <div id="targetTimeDisplay">30:00</div>
+          </div>
+          <button class="round small" id="btnPlus" aria-label="Øk tid">+</button>
+        </div>
+      </div>
+
+      <img id="milestoneWT" class="milestone-img" alt="Milepæl" style="display:none;"/>
+
+      <div class="card" style="max-width:var(--content-max);margin-inline:auto;margin-top:20px;">
+        <textarea id="wtNotes" placeholder="Skriv notater her..."></textarea>
+        <div id="wtNotesGrip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SP SECTION -->
+  <div id="spSection" class="section collapsed">
+    <div class="section-title" role="button" tabindex="0" aria-expanded="false">
+      <span>Service Meeting</span>
+      <svg class="icon-chevron" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+      </svg>
+    </div>
+    <div class="section-body">
+      <div class="card" style="max-width:var(--content-max);margin-inline:auto;">
+        <div class="h1" style="margin:0 0 10px;text-align:center;">Service Meeting</div>
+        <div class="timeline-wrap">
+          <div class="timeline" id="timelineSP">
+            <div id="elapsedSP" class="elapsed"></div>
+            <div id="ticksSP"></div>
+          </div>
+        </div>
+        <div class="big-clock" id="clockSP">0:00</div>
+        <div class="controls">
+          <button class="round play" id="spPlay" aria-label="Spill av">▶</button>
+          <button class="round pause" id="spPause" aria-label="Pause">❚❚</button>
+          <button class="round stop" id="spStop" aria-label="Stopp">■</button>
+        </div>
+        <div class="preset-row">
+          <div class="preset" id="spPreset30" data-minutes="30">30 min</div>
+          <div class="preset" id="spPreset45" data-minutes="45">45 min</div>
+        </div>
+      </div>
+      <img id="milestoneSP" class="milestone-img" alt="Milepæl" style="display:none;"/>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  &copy; 2025 Meeting Timer
+</div>
+
+<script src="./index_addon__1_.js"></script>
+<script>
+(function(){
+  const NO_2025 = [{"week_start":"2025-09-08","title":"Hjelp den du studerer med, til å tjene Jehova","groups":"","frames":[],"reads":[],"para_lengths":[100,108,86,79,140,159,128,96,168,207,108,148,94,100,86,100,167,141,120,189,248],"images":[]},{"week_start":"2025-09-15","title":"Ta imot gode råd!","groups":"","frames":[],"reads":[1,7,9,16],"para_lengths":[42,78,79,106,135,128,157,101,134,65,82,160,88,225,113,158,214,70,189],"images":[]},{"week_start":"2025-09-22","title":"Hvordan gi råd","groups":"4-5,10-12","frames":[2,"3b"],"reads":["3a",9,16,17],"para_lengths":[92,208,223,89,81,115,83,86,184,80,134,166,77,136,152,94,128],"images":[]},{"week_start":"2025-09-29","title":"Kan du fortsatt lære noe av de grunnleggende sannhetene i Bibelen?","groups":"","frames":[16],"reads":[2,5,13],"para_lengths":[110,127,176,93,100,163,162,127,134,110,182,74,178,199,239,185,219],"images":[6,15]},{"week_start":"2025-10-06","title":"Har du «lært hemmeligheten» med å være fornøyd?","groups":"","frames":[],"reads":[3,4,9,12],"para_lengths":[112,150,149,142,209,139,135,110,187,111,176,129,253,191,110,137,142],"images":[5,9]},{"week_start":"2025-10-13","title":"Hvordan Jehova hjelper deg til å holde ut","groups":"","frames":[],"reads":[1,5,12,15],"para_lengths":[76,94,126,128,190,195,118,120,109,145,102,129,102,175,141,81,181,203,150],"images":[6,14,17]},{"week_start":"2025-10-20","title":"Du kan være sikker på at Jehova elsker deg!","groups":"2-3,7-8","frames":[16],"reads":[3,9,10,14,15],"para_lengths":[165,101,189,182,136,153,224,82,150,165,61,87,154,193,130,225,86,201],"images":[1,14]},{"week_start":"2025-10-27","title":"Du kan være sikker på at Jehova har tilgitt deg!","groups":"1-2,3-4,7-8,10-11,12-13","frames":["14b"],"reads":[7,9,10,12,"14a"],"para_lengths":[70,119,125,81,170,153,99,107,144,181,56,57,161,252,138,210,98,180],"images":["1-2",16]},{"week_start":"2025-11-03","title":"Du kan vinne kampen mot gale ønsker","groups":"6-7,9-10,13-14","frames":[],"reads":[8,11,17,18],"para_lengths":[78,167,107,193,122,132,54,56,125,156,140,112,135,58,135,139,137,169,180,209],"images":[2,9,17]},{"week_start":"2025-11-10","title":"Snakk med de eldste når du trenger hjelp","groups":"","frames":[],"reads":[2,4,9,14],"para_lengths":[84,88,104,212,282,94,169,151,158,109,147,173,210,228,190,121,207],"images":[4,"13-14"]},{"week_start":"2025-11-17","title":"Ha riktig fokus når du eller andre blir urettferdig behandlet","groups":"","frames":[],"reads":[3,8,10,14],"para_lengths":[76,167,124,140,110,135,114,91,210,165,187,154,158,81,142,132,186],"images":[]},{"week_start":"2025-11-24","title":"Vis andre respekt","groups":"","frames":[],"reads":[1,8,12,16],"para_lengths":[59,86,60,127,100,219,147,126,293,217,85,168,140,246,111,140,185,148],"images":[]},{"week_start":"2025-12-01","title":"De som har «den rette innstillingen», vil reagere positivt","groups":"","frames":[],"reads":[1,3,7,8,13],"para_lengths":[84,181,72,135,178,165,135,218,166,138,124,182,259,46,210,99,125],"images":[]},{"week_start":"2025-12-08","title":"Jehova er vår «største glede»","groups":"","frames":[],"reads":[4,9,17],"para_lengths":[87,40,144,138,77,50,249,133,192,123,146,119,262,128,97,290,156],"images":[]},{"week_start":"2025-12-15","title":"Jehovas kjærlighet varer evig","groups":"","frames":[],"reads":[3,9,14,15],"para_lengths":[50,135,195,176,156,157,183,97,71,261,209,66,129,258,84,149],"images":[]},{"week_start":"2025-12-22","title":"Åpne deg for Jehova i bønn","groups":"","frames":[],"reads":[4,13,15,16,17,18],"para_lengths":[108,56,89,123,154,45,143,109,94,209,216,89,197,138,160,252,150,118,82,94,208],"images":[]},{"week_start":"2025-12-29","title":"Husk å be for andre","groups":"","frames":[],"reads":[4,7,16],"para_lengths":[66,111,105,135,84,154,221,115,168,89,57,113,107,98,149,167,149,137],"images":[]}];
+
+  window.ITEMS = NO_2025.map(x=>({...x, items:x}));
+  window.currentItem = window.ITEMS[0];
+  window.ITEM = window.currentItem;
+
+  const sel = document.getElementById('weekSel');
+  window.ITEMS.forEach((item, idx)=>{
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = `${item.week_start} – ${item.title}`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', ()=>{
+    const idx = Number(sel.value);
+    window.currentItem = window.ITEMS[idx];
+    window.ITEM = window.currentItem;
+    updateArticleDetails();
+  });
+
+  function updateArticleDetails(){
+    const it = window.currentItem;
+    const pl = it.para_lengths || [];
+    document.getElementById('pillParaValue').textContent = String(pl.length);
+    document.getElementById('pillReadsValue').textContent = String((it.reads||[]).length);
+    updateImagesCount();
+    buildTimeline();
+  }
+
+  function expandWithOrder(arr){
+    if(!arr || !arr.length) return {set:new Set(), ord:new Map()};
+    const set = new Set(), ord = new Map();
+    const pri = x=>(x?(x.toLowerCase()==='a'?1:x.toLowerCase()==='b'?2:3):3);
+    const addRange = (a,b,o)=>{ for(let i=Number(a); i<=Number(b); i++){ set.add(i); if(o!=null)ord.set(i,o); } };
+    for(const v of arr){
+      if(typeof v==='number'){ set.add(v); continue; }
+      const s = String(v).trim();
+      const range = s.match(/^(\d+)\s*[\-–]\s*(\d+)([abc])?$/i);
+      if(range){ addRange(range[1],range[2],pri(range[3])); continue; }
+      const pair = s.match(/^(\d+)\s*&\s*(\d+)([abc])?$/i);
+      if(pair){ addRange(pair[1],pair[1],pri(pair[3])); addRange(pair[2],pair[2],pri(pair[3])); continue; }
+      const single = s.match(/^(\d+)([abc])?$/i);
+      if(single){ const n=Number(single[1]), o=pri(single[2]); set.add(n); if(o!=null)ord.set(n,o); }
+    }
+    return {set, ord};
+  }
+
+  function updateImagesCount(){
+    const valueEl = document.getElementById('pillImagesValue');
+    if(!valueEl) return;
+    let count=0;
+    if(window.__VT_IMAGE_SET instanceof Set){
+      count = window.__VT_IMAGE_SET.size;
+    }else{
+      const it = window.currentItem||window.ITEM||null;
+      const {set} = expandWithOrder(it&&it.images?it.images:[]);
+      count = set.size;
+    }
+    valueEl.textContent = String(count);
+  }
+
+  function buildTimeline(){
+    const it = window.currentItem;
+    if(!it) return;
+    const tl = document.getElementById('timeline');
+    if(!tl) return;
+    const pl = it.para_lengths||[];
+    const total = pl.reduce((a,b)=>a+b,0);
+    tl.querySelectorAll('.para-slot').forEach(s=>s.remove());
+
+    let left=0;
+    pl.forEach((len,idx)=>{
+      const w = (len/total)*100;
+      const div = document.createElement('div');
+      div.className = 'para-slot'+(idx%2===0?' alt':'');
+      div.style.left = left+'%';
+      div.style.width = w+'%';
+      const inner = document.createElement('div');
+      inner.textContent = String(idx+1);
+      div.appendChild(inner);
+      tl.appendChild(div);
+      left += w;
+    });
+
+    applyReadPins();
+    applyFramePins();
+    applyImagePins();
+  }
+
+  function applyReadPins(){
+    const tl = document.getElementById('timeline'); if(!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
+    const it = window.currentItem||window.ITEM||null;
+    const {set,ord} = expandWithOrder(it&&it.reads?it.reads:[]);
+    slots.forEach((slot,idx)=>{
+      const p = idx+1;
+      slot.querySelectorAll('.read-pin').forEach(n=>n.remove());
+      if(!set.has(p)) return;
+      const el = document.createElement('i');
+      el.className='read-pin';
+      slot.appendChild(el);
+    });
+  }
+
+  function applyFramePins(){
+    const tl = document.getElementById('timeline'); if(!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
+    const it = window.currentItem||window.ITEM||null;
+    const {set,ord} = expandWithOrder(it&&it.frames?it.frames:[]);
+    slots.forEach((slot,idx)=>{
+      const p = idx+1;
+      slot.querySelectorAll('.frame-pin').forEach(n=>n.remove());
+      if(!set.has(p)) return;
+      const el = document.createElement('i');
+      el.className='frame-pin';
+      slot.appendChild(el);
+    });
+  }
+
+  function applyImagePins(){
+    const tl = document.getElementById('timeline'); if(!tl) return;
+    const slots = tl.querySelectorAll('.para-slot'); if(!slots.length) return;
+    let set=new Set(), ord=new Map();
+    if(window.__VT_IMAGE_SET instanceof Set){
+      set = window.__VT_IMAGE_SET;
+      const O = window.__VT_ORD instanceof Map ? window.__VT_ORD : new Map();
+      for(const p of set){
+        const o = O.get(p)||{};
+        if(o.image!=null) ord.set(p,o.image);
+      }
+    }else{
+      const it = window.currentItem||window.ITEM||null;
+      const e = expandWithOrder(it&&it.images?it.images:[]);
+      set = e.set; ord = e.ord;
+    }
+    slots.forEach((slot,idx)=>{
+      const p = idx+1;
+      slot.querySelectorAll('.image-pin').forEach(n=>n.remove());
+      if(!set.has(p)) return;
+      const el = document.createElement('i');
+      el.className='image-pin';
+      slot.appendChild(el);
+    });
+  }
+
+  function applyAll(){
+    updateImagesCount();
+    applyImagePins();
+  }
+
+  const tl = document.getElementById('timeline');
+  if(tl){
+    const mo = new MutationObserver(()=>requestAnimationFrame(applyAll));
+    mo.observe(tl,{childList:true,subtree:true});
+  }
+  if(sel){ sel.addEventListener('change',()=>setTimeout(applyAll,0)); }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    updateArticleDetails();
+    applyAll();
+  });
+  window.__VT_APPLY_IMAGES = applyAll;
+})();
+</script>
+<script src="./index_article_window_1.0.js"></script>
+<script>
+(function(){
+  const ta = document.getElementById('wtNotes');
+  const grip = document.getElementById('wtNotesGrip');
+  if(!ta || !grip) return;
+  let startY=0, startH=0, active=false;
+  function px(v){ return Number(String(v).replace('px',''))||0; }
+  const cs = getComputedStyle(ta);
+  const minH = Math.max(72, px(cs.minHeight));
+  function maxH(){
+    return Math.max(ta.offsetHeight, Math.round(window.innerHeight*0.75));
+  }
+  function down(e){
+    active=true;
+    startY = (e.touches?e.touches[0].clientY:e.clientY);
+    startH = ta.offsetHeight;
+    document.addEventListener('mousemove',move,{passive:false});
+    document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('mouseup',up,{passive:false});
+    document.addEventListener('touchend',up,{passive:false});
+    e.preventDefault();
+  }
+  function move(e){
+    if(!active) return;
+    const y = (e.touches?e.touches[0].clientY:e.clientY);
+    const dy = y - startY;
+    let h = Math.min(Math.max(startH+dy,minH),maxH());
+    ta.style.height = h+'px';
+    e.preventDefault();
+  }
+  function up(e){
+    active=false;
+    document.removeEventListener('mousemove',move);
+    document.removeEventListener('touchmove',move);
+    document.removeEventListener('mouseup',up);
+    document.removeEventListener('touchend',up);
+  }
+  grip.addEventListener('mousedown',down);
+  grip.addEventListener('touchstart',down,{passive:false});
+})();
+</script>
+<script>
+(function(){
+  function setup(sectionId,storageKey,defaultCollapsed){
+    const sec = document.getElementById(sectionId);
+    if(!sec) return;
+    const title = sec.querySelector('.section-title');
+    const body = sec.querySelector('.section-body');
+    if(!title||!body) return;
+    try{
+      const saved = localStorage.getItem(storageKey);
+      if(saved!==null){
+        if(saved==='1') sec.classList.add('collapsed'); else sec.classList.remove('collapsed');
+      }else{
+        if(defaultCollapsed) sec.classList.add('collapsed'); else sec.classList.remove('collapsed');
+      }
+    }catch(e){ if(defaultCollapsed) sec.classList.add('collapsed'); }
+    function syncAria(){
+      const collapsed = sec.classList.contains('collapsed');
+      title.setAttribute('aria-expanded', collapsed?'false':'true');
+    }
+    syncAria();
+    function toggle(){
+      sec.classList.toggle('collapsed');
+      syncAria();
+      try{ localStorage.setItem(storageKey, sec.classList.contains('collapsed')?'1':'0'); }catch(e){}
+    }
+    title.addEventListener('click',toggle);
+    title.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); }
+    });
+  }
+  setup('wtSection','meetingTimer.section.wt',false);
+  setup('spSection','meetingTimer.section.sp',true);
+})();
+</script>
+</body>
+</html>
