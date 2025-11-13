@@ -84,7 +84,18 @@ body{
 
 .controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08);transition:box-shadow .15s ease, filter .15s ease, transform .05s ease}
-.round.pressed, .round.pressed:disabled{filter:brightness(.92) saturate(1.05); box-shadow:inset 0 4px 12px rgba(0,0,0,.22),0 6px 18px rgba(70,50,30,.12)}
+.round.pressed, .round.pressed:disabled{
+  filter:brightness(.92) saturate(1.05);
+  box-shadow:inset 0 4px 12px rgba(0,0,0,.22),0 6px 18px rgba(70,50,30,.12);
+}
+
+
+.play{background:var(--green)}
+.pause{background:var(--phase-intro); color:#ffffff}
+.stop{background:var(--phase-review); color:#ffffff}
+.round:active{transform:translateY(1px); box-shadow:inset 0 4px 10px rgba(0,0,0,.2),0 6px 18px rgba(70,50,30,.1)}
+
+
 
 
 /* Presets */
@@ -202,11 +213,11 @@ textarea{resize:vertical;}
 
 <style>
 /* --- Kollaps av informasjonsvinduet når avspilling pågår --- */
-#wtControlsCard.collapsed { display:none; }                         /* skjul hele kortet når kollapset */
-#wtControlsCard.collapsed .wt-toprow { display:none; }              /* skjul uke-velger (uansett) */
-#wtControlsCard.collapsed .pill { display:none; }                   /* skjul Avsnitt/Les/Bilder/Rammer */
-#wtControlsCard.collapsed .stats-row { justify-content:flex-start; }/* juster layout om noe er igjen */
-#wtControlsCard.collapsed .modepill { display:none; }               /* skjul 60/30-modusknapper */
+#wtControlsCard.collapsed { display:none; }                           /* skjul hele kortet når kollapset */
+#wtControlsCard.collapsed .wt-toprow { display:none; }                /* skjul uke-velger */
+#wtControlsCard.collapsed .pill { display:none; }                     /* skjul Avsnitt/Les/Bilder/Rammer */
+#wtControlsCard.collapsed .stats-row { justify-content:flex-start; }  /* juster layout når skjult */
+#wtControlsCard.collapsed .modepill { display:none; }                 /* skjul 60/30-modusknapper i kollapset visning */
 </style>
 <style>
 /* --- Touch-vennlig nedover-resize for notatfelt --- */
