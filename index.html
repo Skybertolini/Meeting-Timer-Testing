@@ -114,9 +114,7 @@ body{
 
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 #wtControlsCard{max-width:var(--content-max);margin-inline:auto}
-.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:#2f3b34;box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
-.select option{color:#2f3b34;}
-
+.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:#2f3b4;box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
 textarea{resize:vertical;}
 
 /* Top row (select only) */
@@ -169,7 +167,7 @@ textarea{resize:vertical;}
   line-height:38px;
   padding:0 12px;
   background:transparent;
-  color:#2b3432;
+  color:#2f3b34;
   border:0;
   border-radius:999px;
   font-weight:800;
@@ -182,8 +180,8 @@ textarea{resize:vertical;}
   outline-offset:2px;
 }
 .stats-row .modepill button.active{
-  background:#2b3432;
-  color:#ffffff;
+  background:#2f3b34;
+  color:#fff;
 }
 .stats-row 
 
@@ -233,6 +231,7 @@ textarea{resize:vertical;}
 .theme-toggle:hover{
   opacity:1;
 }
+
 body.dark{
   --bg:#25292d;
   --ink:#f5f5f6;
@@ -248,19 +247,30 @@ body.dark{
   color:var(--ink);
 }
 .dark .cursor{ background:#f5f5f6; }
-.dark .elapsed{ background:rgba(142, 214, 170, 0.38); }
+.dark .elapsed{ background:rgba(142,214,170,0.38); }
 .dark #elapsedSP{ background:rgba(240,120,120,0.42); }
+
+.dark .para-slot{ color:#f9fafb; text-shadow:0 1px 0 rgba(0,0,0,.6); }
+
 .dark .message{ color:var(--ink); }
+.dark #message{ color:var(--ink); }
+
 .dark .clock,
 .dark .big-clock{ color:#f9fafb; }
-.dark .preset{ background:var(--pill); color:var(--ink); }
+
+.dark .select{ background:var(--pill); color:var(--ink); }
+.dark .select option{ color:#f5f5f6; }
+
+.dark #wtControlsCard,
+.dark #wtControlsCard *{ color:var(--ink); }
+
 .dark .stats-row .modepill{ background:var(--pill); }
 .dark .stats-row .modepill button{ color:var(--ink); }
 .dark .stats-row .modepill button.active{ background:#111827; color:#f9fafb; }
+
 .dark .round.small{ background:#1f2933; color:#f9fafb; }
-.dark .select{ background:var(--pill); color:var(--ink); }
-.dark .select option{ color:#f5f5f6; }
-.dark #wtNotes{ background:rgba(0,0,0,0.08); color:var(--ink); }
+.dark #wtNotes{ background:rgba(0,0,0,0.16); color:var(--ink); }
+
 .dark .section-title{ background:#111827; color:#f9fafb; }
 .dark .card{ box-shadow:0 10px 32px rgba(0,0,0,.6); }
 </style>
@@ -486,16 +496,20 @@ window.addEventListener('DOMContentLoaded', () => {
 const THEME_KEY='meetingTimer.theme';
 function applyTheme(mode){
   const body=document.body;
+  const btn=document.getElementById('themeToggle');
   if(mode==='dark'){
     body.classList.add('dark');
+    if(btn) btn.textContent='☀️';
   }else{
     body.classList.remove('dark');
+    if(btn) btn.textContent='🌙';
   }
 }
 try{
   const savedTheme = localStorage.getItem(THEME_KEY);
   if(savedTheme){ applyTheme(savedTheme); }
 }catch(e){ applyTheme('light'); }
+
 
 /* ===== Logo animasjon ===== */
 (function(){ const logo=document.getElementById('logoImg'); if(!logo) return; logo.addEventListener('click',()=>{ logo.classList.remove('logo-spin','logo-shake'); void logo.offsetWidth; logo.classList.add('logo-spin'); setTimeout(()=>{ logo.classList.remove('logo-spin'); logo.classList.add('logo-shake'); setTimeout(()=>logo.classList.remove('logo-shake'),450); },2000); });})();
@@ -689,66 +703,32 @@ function drawTimeline(){
   }
   $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
 
-  // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
+  // VT 1.48 enhance: group colors and ordered pins (frame/read with a/b)
   try{
     const t = document.getElementById('timeline'); if(t){
+      // map para -> group id
       const groups = window.__VT_GROUPS || [];
+      const paraToGroupId = new Map(); groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
       const slots = Array.from(t.querySelectorAll('.para-slot'));
-
-      const paraToGroupId = new Map();
-      groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
-
-      const blockIndexByPara = new Map();
-      const seen = new Set();
-      let block = 0;
-
-      for(let p=1; p<=slots.length; p++){
-        if(seen.has(p)) continue;
-        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
-        const members = [];
-        if(gid !== null && gid !== undefined){
-          const g = groups[gid] || [];
-          g.forEach(q=>{
-            if(q>=1 && q<=slots.length){
-              members.push(q);
-            }
-          });
-        }else{
-          members.push(p);
-        }
-        block++;
-        members.forEach(q=>{
-          seen.add(q);
-          blockIndexByPara.set(q, block);
-        });
-      }
-
-      function blockColor(b){
-        if(!b) return null;
-        return (b % 2 === 1) ? 'var(--tl-green-1)' : 'var(--tl-green-2)';
-      }
-
+      // define color function
+      function groupColor(gid){ if(gid===null || gid===undefined) return null; const baseHue=150; const l=66 - (gid % 3) * 8; return `hsl(${baseHue} 40% ${l}%)`; }
       const ord = window.__VT_ORD || new Map();
       const frameSet = window.__VT_FRAME_SET || new Set();
       const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
-
       slots.forEach((slot, idx)=>{
         const p = idx+1;
-
-        const b = blockIndexByPara.get(p);
-        const col = blockColor(b);
+        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
+        const col = groupColor(gid);
         if (col) slot.style.background = col;
-
+        // rebuild pins in correct order
         slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
         const hasRead = numericReads.has ? numericReads.has(p) : false;
         const hasFrame = frameSet.has ? frameSet.has(p) : false;
         if (!hasRead && !hasFrame) return;
-
         const items = [];
         if (hasFrame) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
         if (hasRead)  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
         items.sort((a,b)=>(a.order??99)-(b.order??99));
-
         items.forEach((it, j)=>{
           const pin = document.createElement('i');
           pin.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
@@ -801,7 +781,7 @@ function unlockWTControls(){
   const m30 = document.getElementById('mode30');
   if(card){
     card.classList.remove('locked');
-    // Ikke rør 'collapsed' her – brukeren styrer det med tannhjulet
+    // Ikke åpne/lukke her – bruker styrer 'collapsed' med tannhjulet
   }
   if(sel){ sel.removeAttribute('disabled'); }
   if(m60){ m60.removeAttribute('disabled'); }
