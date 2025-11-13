@@ -954,6 +954,17 @@ function updateTargetBox(){ const box=document.getElementById('spTargetDisplay')
 document.getElementById('decSP').addEventListener('click',()=> setTargetSeconds(SP_TOTAL - 60));
 document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(SP_TOTAL + 60));
 
+
+  const themeBtn = document.getElementById('themeToggle');
+  if(themeBtn){
+    themeBtn.addEventListener('click', ()=>{
+      const body = document.body;
+      const nowDark = !body.classList.contains('dark');
+      applyTheme(nowDark ? 'dark' : 'light');
+      try{ localStorage.setItem(THEME_KEY, nowDark ? 'dark' : 'light'); }catch(e){}
+    });
+  }
+
 /* ===== Init ===== */
 (async function init(){
   // Sett default til 60 min dersom ikke satt
