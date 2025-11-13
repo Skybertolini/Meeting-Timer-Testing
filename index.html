@@ -634,7 +634,7 @@ function drawTimeline(){
         items.forEach((it, j)=>{
           const pin = document.createElement('i');
           pin.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
-          pin.style.bottom = `${-24 - j*8}px`;
+          pin.style.bottom = `${-24 - j*12}px`;
           slot.appendChild(pin);
         });
       });
@@ -984,7 +984,7 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
       const el = document.createElement('i');
       el.className = 'image-pin';
       // Position below any existing pins
-      el.style.bottom = `${-24 - existingPins*8}px`;
+      el.style.bottom = `${-24 - existingPins*12}px`;
       slot.appendChild(el);
     });
   }
