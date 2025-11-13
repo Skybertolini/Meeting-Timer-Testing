@@ -452,7 +452,7 @@ function slots(){
 let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
 let reads=0, readSet=new Set();
 let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
-
+let wtShownWarn=false; let wtMsgHoldTimer=null, wtMsgHoldUntil=0, wtLastE=0;
 
 /* ===== Laste artikkeldata ===== */
 async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
@@ -706,7 +706,7 @@ function resetWTUI(){
   if(tickHandle)clearInterval(tickHandle);
   $('#clockWT').textContent='00:00'; $('#clockWT').classList.remove('over');
   $('#message').textContent='Klar til start. Trykk ▶ når du er klar.';
-  started=false; paused=false; startTs=null; accum=0;
+  started=false; paused=false; startTs=null; accum=0; wtLastE=0; wtMsgHoldUntil=0; wtShownWarn=false;
   $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true;
   unlockWTControls();
 }
@@ -714,11 +714,15 @@ function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setIn
 function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
 function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
 function setWTMessage(txt){ $('#message').textContent=txt }
+function wtFlash(msg,ms=10000){ setWTMessage(msg); wtMsgHoldUntil=Date.now()+ms; if(wtMsgHoldTimer) clearTimeout(wtMsgHoldTimer); wtMsgHoldTimer=setTimeout(()=>{ wtMsgHoldTimer=null },ms) }
 function tickWT(){
   const S=slots();
-  const e=nowElapsed();
+  const e=nowElapsed(), remaining=S.total-e;
   $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=S.total);
   const p=Math.min(e/S.total*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`;
+  const warnAt = (getMode()==='30') ? 300 : 600;
+  if(!wtShownWarn && remaining<=warnAt && remaining>0){ wtShownWarn=true; wtFlash((warnAt/60)+' min igjen – dette klarer du! 😎', 15000) }
+  if(wtMsgHoldTimer && Date.now()<wtMsgHoldUntil){ return }
   if(e<S.intro) setWTMessage('Introduksjon');
   else if(e>=S.total) setWTMessage('Tiden er brukt – teller over');
   else if(e>=S.total-S.outro) setWTMessage('Avslutning');
@@ -730,6 +734,7 @@ function tickWT(){
       if(e>=s&&e<end){idx=i;break}
     }
     let msg = formatGroupMessage(idx+1);
+    if(e>=Math.floor(S.total/2) && e<Math.floor(S.total/2)+60) msg+=' – du er halvveis';
     setWTMessage(msg);
   }
 }
