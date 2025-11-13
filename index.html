@@ -53,7 +53,7 @@ body{
 .card{background:var(--card);background-image:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)), url('./img/paper-texture.png'); background-size:auto,300px 300px; background-repeat:repeat; border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(70,50,30,.06);padding:14px}
 
 .h1{font-size:clamp(1.1rem, 2.8vw, 1.38rem);font-weight:900;margin:18px auto 10px;max-width:var(--content-max);text-transform:uppercase}
-.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:56px;box-shadow:0 8px 24px rgba(70,50,30,.05);margin:0 auto 20px;max-width:var(--content-max);color:#4a5552;font-size:clamp(1.1rem, 3.2vw, 1.62rem);line-height:1.3;display:flex;align-items:center;font-weight:700}
+.message{background:var(--pill);border:2px solid var(--border);border-radius:12px;padding:20px 22px;min-height:56px;box-shadow:0 8px 24px rgba(70,50,30,.05);margin:0 auto 20px;max-width:var(--content-max);color:#4a5552;font-size:clamp(1.1rem, 3.2vw, 1.62rem);line-height:1.3;display:flex;align-items:center}
 
 /* Timeline */
 .timeline-wrap{margin-top:22px; margin-bottom:40px; max-width:var(--content-max); margin-inline:auto; position:relative}
@@ -582,18 +582,6 @@ function computeAllocation(){
   cumulative=[]; let acc=S.intro; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
 }
 
-function formatGroupMessage(p){
-  const groups = window.__VT_GROUPS || [];
-  for(const g of groups){
-    if(g.includes(p)){
-      if(g.length === 1) return `Avsnitt ${p}`;
-      if(g.length === 2) return `Avsnittene ${g[0]} og ${g[1]}`;
-      return `Avsnittene ${g[0]}–${g[g.length-1]}`;
-    }
-  }
-  return `Avsnitt ${p}`;
-}
-
 /* ===== Tegn WT-tidslinje ===== */
 function drawTimeline(){
   const S=slots();
@@ -612,7 +600,7 @@ function drawTimeline(){
     lbl.style.fontSize=fs+'px'; lbl.textContent=String(i); slot.appendChild(lbl);
     if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
     // Klikk for å hoppe (når ikke spiller)
-    slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
+    slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent=`Avsnitt ${i}${readSet.has(i)?' + Les-skriftsted':''}`; });
     t.insertBefore(slot,$('#elapsed'));
   }
   $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
@@ -733,7 +721,7 @@ function tickWT(){
       const s=cumulative[i], end=(i===totalParagraphs-1)?(S.total-S.outro-S.review):cumulative[i+1];
       if(e>=s&&e<end){idx=i;break}
     }
-    let msg = formatGroupMessage(idx+1);
+    let msg=`Avsnitt ${idx+1}${readSet.has(idx+1)?' + Les-skriftsted':''}`;
     if(e>=Math.floor(S.total/2) && e<Math.floor(S.total/2)+60) msg+=' – du er halvveis';
     setWTMessage(msg);
   }
