@@ -114,7 +114,9 @@ body{
 
 img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 #wtControlsCard{max-width:var(--content-max);margin-inline:auto}
-.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:#2f3b4;box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
+.select{appearance:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--pill);font-weight:900;color:#2f3b34;box-shadow:0 4px 14px rgba(70,50,30,.05);min-width:180px;max-width:100%}
+.select option{color:#2f3b34;}
+
 textarea{resize:vertical;}
 
 /* Top row (select only) */
@@ -167,7 +169,7 @@ textarea{resize:vertical;}
   line-height:38px;
   padding:0 12px;
   background:transparent;
-  color:#2f3b34;
+  color:#2b3432;
   border:0;
   border-radius:999px;
   font-weight:800;
@@ -180,8 +182,8 @@ textarea{resize:vertical;}
   outline-offset:2px;
 }
 .stats-row .modepill button.active{
-  background:#2f3b34;
-  color:#fff;
+  background:#2b3432;
+  color:#ffffff;
 }
 .stats-row 
 
@@ -729,7 +731,7 @@ function unlockWTControls(){
   const m30 = document.getElementById('mode30');
   if(card){
     card.classList.remove('locked');
-    card.classList.remove('collapsed');
+    // Ikke rør 'collapsed' her – brukeren styrer det med tannhjulet
   }
   if(sel){ sel.removeAttribute('disabled'); }
   if(m60){ m60.removeAttribute('disabled'); }
