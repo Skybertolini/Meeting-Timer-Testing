@@ -115,6 +115,16 @@ body.dark .lang-popover li:hover{background:rgba(255,255,255,0.04);}
 .preset-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;margin-top:22px}
 .preset{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(70,50,30,.06);color:#2f3b34;font-size:1.05rem}
 .preset.active{background:#2f3b34;color:#fff}
+/* Taler-timer presets i mørk modus */
+body.dark .preset{
+  color:#f9fafb !important;
+}
+body.dark .preset.active{
+  background:#ffffff !important;
+  color:#111827 !important;
+  border-color:#ffffff !important;
+}
+
 
 /* Target time adjuster */
 .target-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px auto 8px; max-width:var(--content-max)}
