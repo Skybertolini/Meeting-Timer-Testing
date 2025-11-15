@@ -561,7 +561,6 @@ try{
 }catch(e){ applyTheme('light'); }
 
 /* ===== Språk (language) ===== */
-  await loadLanguages();
 const LANG_KEY='meetingTimer.lang';
 const DEFAULT_LANG='no';
 let LANGS={
@@ -588,6 +587,8 @@ async function loadLanguages(){
 }
 function getLang(){ try{return localStorage.getItem(LANG_KEY) || DEFAULT_LANG;}catch(e){return DEFAULT_LANG;} }
 function setLang(code){ try{localStorage.setItem(LANG_KEY,code);}catch(e){} }
+
+await loadLanguages();
 
 window.currentLang=getLang();
 window.L=LANGS[window.currentLang] || LANGS[DEFAULT_LANG];
@@ -667,6 +668,8 @@ function slots(){
   return { total, intro, review, outro, content: total - (intro+review+outro) };
 }
 
+let TITLE_OVERRIDES = {};
+
 /* ===== WT state ===== */
 let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
 let reads=0, readSet=new Set();
@@ -674,24 +677,66 @@ let started=false, paused=false, startTs=null, accum=0, tickHandle=null;
 
 
 /* ===== Laste artikkeldata ===== */
-async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; return r.json();}
-async function loadYear(y){ for(const p of [`data/no-${y}.json`,`Data/no-${y}.json`,`data/no-${y}`,`Data/no-${y}`]){ try{ return await fetchJSON(p+`?v=${Date.now().toString().slice(7)}`);}catch{} } throw 0; }
-async function hydrateOptions(){
-  const year=(new Date()).getFullYear();
-  let items=[];
-  try{
-    const bundles=[];
-    for(const yy of [year-1,year,year+1]){ try{ bundles.push(await loadYear(yy)); }catch{} }
-    items=bundles.flatMap(p=>Array.isArray(p)?p:(p?.items||[])).filter(Boolean);
-  }catch{ items=[]; }
+async function fetchJSON(u){
+  const r = await fetch(u,{cache:'no-store'});
+  if(!r.ok) throw 0;
+  return r.json();
+}
 
-  const curMon=isoMondayLocal(new Date());
-  const parse=(s)=> new Date(s+"T00:00:00");
+// Felles artikkeldatasett for alle språk
+async function loadArticles(){
+  try{
+    const raw = await fetchJSON('data/articles-data.json?v=' + Date.now().toString().slice(7));
+    return Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
+  }catch(e){
+    console.warn('Kunne ikke laste articles-data.json', e);
+    return [];
+  }
+}
+
+// Titles-override per språk (f.eks. data/titles-en.json)
+async function loadTitlesFor(lang){
+  if(lang === 'no'){
+    TITLE_OVERRIDES = {};
+    return;
+  }
+  try{
+    const res = await fetch('data/titles-' + lang + '.json?v=' + Date.now().toString().slice(7));
+    if(!res.ok){
+      TITLE_OVERRIDES = {};
+      return;
+    }
+    const obj = await res.json();
+    TITLE_OVERRIDES = (obj && typeof obj === 'object') ? obj : {};
+  }catch(e){
+    console.warn('Kunne ikke laste titles for', lang, e);
+    TITLE_OVERRIDES = {};
+  }
+}
+
+function getOverrideTitleFor(item){
+  if(!item || !item.week_start) return null;
+  const map = TITLE_OVERRIDES || {};
+  return map[item.week_start] || null;
+}
+
+async function hydrateOptions(){
+  let items = [];
+  try{
+    items = await loadArticles();
+  }catch(e){
+    console.warn('loadArticles feilet', e);
+    items = [];
+  }
+
+  const curMon = isoMondayLocal(new Date());
+  const parse = (s)=> new Date(s + "T00:00:00");
 
   // Filtrer bort artikler som er eldre enn to uker fra i dag
   const today = new Date();
   const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
-  let sorted=[...items].filter(it=>it.week_start).sort((a,b)=>parse(a.week_start)-parse(b.week_start));
+
+  let sorted = [...items].filter(it=>it.week_start).sort((a,b)=>parse(a.week_start)-parse(b.week_start));
   const recent = sorted.filter(it=>parse(it.week_start) >= cutoff);
   if (recent.length) {
     sorted = recent;
@@ -704,16 +749,50 @@ async function hydrateOptions(){
     else if(sorted.length){ current=sorted[0]; }
   }
 
-  const sel=$('#weekSel'); sel.innerHTML='';
+  const sel = $('#weekSel');
+  if(!sel) return;
+  sel.innerHTML='';
+
   let idx = sorted.indexOf(current);
-  const start=Math.max(0, idx-6), end=Math.min(sorted.length, idx+6);
-  const window=sorted.slice(start,end);
-  window.forEach(it=>{ const o=document.createElement('option'); o.value=JSON.stringify(it); o.textContent=it.title||'(uten tittel)'; sel.appendChild(o); });
-  sel.selectedIndex = window.indexOf(current);
+  const start = Math.max(0, idx-6), end = Math.min(sorted.length, idx+6);
+  const windowItems = sorted.slice(start,end);
+
+  const overrides = TITLE_OVERRIDES || {};
+  windowItems.forEach(it=>{
+    const o = document.createElement('option');
+    o.value = JSON.stringify(it);
+    const overrideTitle = overrides[it.week_start];
+    o.textContent = overrideTitle || it.title || '(uten tittel)';
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = windowItems.indexOf(current);
+
+  // Sørg for at valgt artikkel også får titteloverride
+  const overrideCurrent = overrides[current.week_start];
+  if(overrideCurrent){
+    current = Object.assign({}, current, { title: overrideCurrent });
+  }
   useItem(current);
 
-  sel.addEventListener('change', (e)=>{ try{ useItem(JSON.parse(e.target.value)); }catch(err){} });
+  sel.addEventListener('change', (e)=>{
+    try{
+      const obj = JSON.parse(e.target.value);
+      const overrideTitle = getOverrideTitleFor(obj);
+      if(overrideTitle){
+        obj.title = overrideTitle;
+      }
+      useItem(obj);
+    }catch(err){}
+  });
 }
+
+
+window.refreshArticlesForLang = async function(){
+  const lang = (window.currentLang || DEFAULT_LANG);
+  await loadTitlesFor(lang);
+  await hydrateOptions();
+};
+
 function useItem(it){
 // VT 1.48 backfill & mapping
 try{
@@ -750,7 +829,8 @@ try{
   window.currentItem = it;
   window.ITEM = it;
 
-  $('#articleTitle').textContent=it.title||'—';
+    const overrideTitle = getOverrideTitleFor(it);
+  $('#articleTitle').textContent = (overrideTitle || it.title || '—');
   totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
   reads = it.reads|0;
   const rp = Array.isArray(it.readParas) ? it.readParas : (Array.isArray(it.read_paras) ? it.read_paras : null);
@@ -1125,10 +1205,17 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
   markPreset([0,300,600,900,1800].includes(SP_TOTAL)?SP_TOTAL:-1);
   applyIdleClock(); updatePlayIcon(); drawTimelineSP(); updateTargetBox();
 
-  // Hydrate article list
-  try{ await hydrateOptions(); }catch(e){ console.warn('hydrate failed', e); const sel=document.getElementById('weekSel'); if(sel){ sel.innerHTML='<option>Ingen data</option>'; } }
+  // Last inn titteloversettelser og artikkelliste
+  try{
+    await loadTitlesFor(window.currentLang || DEFAULT_LANG);
+    await hydrateOptions();
+  }catch(e){
+    console.warn('hydrate / titles feilet', e);
+    const sel=document.getElementById('weekSel');
+    if(sel){ sel.innerHTML='<option>Ingen data</option>'; }
+  }
 
-  // Deaktiver høyreklikk på alle bilder
+// Deaktiver høyreklikk på alle bilder
   document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
 
   // Legg til tannhjul for å vise/skjule artikkelvalg og info
