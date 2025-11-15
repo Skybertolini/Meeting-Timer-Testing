@@ -11,19 +11,36 @@
     "Paragraph": "Paragraph",
     "Paragraphs": "Paragraphs",
     "And": "and"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "no": {
     "code": "no",
     "label": "Norsk",
     "WTStudy": "Vakttårnstudiet",
-    "SpeakerTimer": "Taler-Timer",
+    "SpeakerTimer": "Talertimer",
     "Intro": "Introduksjon",
-    "TimeUsed": "Tiden er brukt – vi er på overtid",
+    "TimeUsed": "Tiden er brukt – teller over",
     "Conclusion": "Avslutning",
     "Review": "Repetisjonsspørsmål",
     "Paragraph": "Avsnitt",
     "Paragraphs": "Avsnittene",
-    "And": "og"
+    "And": "og",
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
+  }
+}
+
   },
   "sv": {
     "code": "sv",
@@ -37,6 +54,13 @@
     "Paragraph": "Paragraf",
     "Paragraphs": "Paragraferna",
     "And": "och"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "da": {
     "code": "da",
@@ -50,6 +74,13 @@
     "Paragraph": "Paragraf",
     "Paragraphs": "Paragrafferne",
     "And": "og"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "de": {
     "code": "de",
@@ -63,6 +94,13 @@
     "Paragraph": "Absatz",
     "Paragraphs": "Die Absätze",
     "And": "und"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "es": {
     "code": "es",
@@ -76,6 +114,13 @@
     "Paragraph": "Párrafo",
     "Paragraphs": "Párrafos",
     "And": "y"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "fr": {
     "code": "fr",
@@ -89,6 +134,13 @@
     "Paragraph": "Paragraphe",
     "Paragraphs": "Paragraphes",
     "And": "et"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   },
   "it": {
     "code": "it",
@@ -102,5 +154,12 @@
     "Paragraph": "Paragrafo",
     "Paragraphs": "Paragrafi",
     "And": "e"
+    "Min": "min",
+    "Info_Paragraph": "Avsnitt",
+    "Info_Reads": "Les-skriftsteder",
+    "Info_Images": "Bilder",
+    "Info_Frames": "Rammer",
+    "Info_Notes": "Her kan du notere.",
+    "Ready": "Klar til start. Trykk ▶ når du er klar."
   }
 }
