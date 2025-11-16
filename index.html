@@ -1106,15 +1106,19 @@ $('#stopWT').addEventListener('click',()=>{
 });
 
 /* ===== WT modus-bryter ===== */
-(function(){
-  const m60=$('#mode60'), m30=$('#mode30');
-  // Marker UI for gjeldende modus (default 60 dersom ikke satt)
-  const cur=getMode();
-  if(cur==='60'){ m60.classList.add('active'); m30.classList.remove('active'); }
-  else { m30.classList.add('active'); m60.classList.remove('active'); }
-  m60.addEventListener('click',()=>{ if(getMode()==='60') return; setMode('60'); m60.classList.add('active'); m30.classList.remove('active'); computeAllocation(); drawTimeline(); resetWTUI(); });
-  m30.addEventListener('click',()=>{ if(getMode()==='30') return; setMode('30'); m30.classList.add('active'); m60.classList.remove('active'); computeAllocation(); drawTimeline(); resetWTUI(); setWTMessage('Klar for å starte et forkortet vakttårnstudium.'); });
-})();
+$('#stopWT').addEventListener('click',()=>{
+  if(started && !paused) {
+    accum += Math.floor((Date.now() - startTs) / 1000);
+  }
+  started = false;
+  paused = false;
+  stopClock();
+
+  // Gå rett tilbake til klar-for-start-tilstanden
+  resetWTUI();
+  setPressedWT('stopWT');
+});
+
 
 /* ===== TIMER (SP) ===== */
 const PRESET_KEY='meetingTimer.annetSeconds';
