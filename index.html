@@ -41,7 +41,17 @@ body{
 
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 18px;min-height:72px;position:relative}
 .lang-switcher{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:48px}
-.lang-btn{border-radius:999px;border:1px solid var(--border);background:var(--pill);padding:4px 10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.18);}
+.lang-btn{
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#ffffff;
+  padding:6px 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,0.18);
+}
 .lang-btn img{width:18px;height:18px;display:block;}
 .lang-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.22);}
 .lang-popover{position:absolute;top:56px;right:0;min-width:220px;border-radius:16px;border:1px solid rgba(0,0,0,0.06);background:rgba(248,247,245,0.94);backdrop-filter:blur(18px);box-shadow:0 18px 45px rgba(0,0,0,0.18);padding:6px 0;z-index:900;display:none;}
@@ -259,7 +269,7 @@ textarea{resize:vertical;}
 }
 
 body.dark{
-  --bg:#25292d;
+  --bg:#3c3f38;
   --ink:#f5f5f6;
   --muted:#a2aab3;
   --card:#2f3439;
@@ -268,7 +278,7 @@ body.dark{
   --pill:#383e45;
   --tl-green-1:#32463a;
   --tl-green-2:#293a32;
-  background-color:#25292d;
+  background-color:#3c3f38;
   background-image:none;
   color:var(--ink);
 }
@@ -356,7 +366,7 @@ body.dark{
   user-select:none;
   padding:10px 16px;
   border-radius:18px;
-  background:#4b4039; /* brungrå ramme inspirert av logoen */
+  background:#a29d5d; /* varm lys oliveton fra CMYK 34/36/62/4 */
   color:#fdfaf6;
   box-shadow:0 10px 26px rgba(40,30,20,.18);
 }
@@ -551,7 +561,7 @@ function applyTheme(mode){
   if(mode==='dark'){
     body.classList.add('dark');
     if(btn) btn.textContent='☀️';
-    if(langImg) langImg.src='./img/language-icon-dark.png';
+    if(langImg) langImg.src='./img/language-icon.png';
   }else{
     body.classList.remove('dark');
     if(btn) btn.textContent='🌙';
@@ -565,7 +575,7 @@ try{
 
 /* ===== Språk (language) ===== */
 const LANG_KEY='meetingTimer.lang';
-const DEFAULT_LANG='no';
+const DEFAULT_LANG='en';
 let LANGS={
   en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and'},
   no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og'},
