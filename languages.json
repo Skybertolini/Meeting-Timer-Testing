@@ -10,14 +10,14 @@
     "Review": "Review questions",
     "Paragraph": "Paragraph",
     "Paragraphs": "Paragraphs",
-    "And": "and"
+    "And": "and",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
-    "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Paragraph": "Paragraph",
+    "Info_Reads": "Read scriptures",
+    "Info_Images": "Images",
+    "Info_Frames": "Boxes",
+    "Info_Notes": "You can take notes here.",
+    "Ready": "Ready to start. Press ▶ when you’re ready."
   },
   "no": {
     "code": "no",
@@ -38,9 +38,6 @@
     "Info_Frames": "Rammer",
     "Info_Notes": "Her kan du notere.",
     "Ready": "Klar til start. Trykk ▶ når du er klar."
-  }
-}
-
   },
   "sv": {
     "code": "sv",
@@ -53,54 +50,54 @@
     "Review": "Repetitionsfrågor",
     "Paragraph": "Paragraf",
     "Paragraphs": "Paragraferna",
-    "And": "och"
+    "And": "och",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
+    "Info_Paragraph": "Paragrafer",
+    "Info_Reads": "Läs‑skriftställen",
     "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Frames": "Rutor",
+    "Info_Notes": "Här kan du anteckna.",
+    "Ready": "Klar att starta. Tryck ▶ när du är redo."
   },
   "da": {
     "code": "da",
     "label": "Dansk",
     "WTStudy": "Vagttårnsstudiet",
-    "SpeakerTimer": "Taler-Timer",
+    "SpeakerTimer": "Taler‑timer",
     "Intro": "Introduktion",
     "TimeUsed": "Tiden er brugt – overtid",
     "Conclusion": "Afslutning",
     "Review": "Repetitionsspørgsmål",
     "Paragraph": "Paragraf",
     "Paragraphs": "Paragrafferne",
-    "And": "og"
+    "And": "og",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
-    "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
+    "Info_Paragraph": "Paragraffer",
+    "Info_Reads": "Læse‑skriftsteder",
+    "Info_Images": "Billeder",
+    "Info_Frames": "Bokse",
     "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Ready": "Klar til start. Tryk ▶ når du er klar."
   },
   "de": {
     "code": "de",
     "label": "Deutsch",
-    "WTStudy": "Wachtturm-Studium",
-    "SpeakerTimer": "Redner-Timer",
+    "WTStudy": "Wachtturm‑Studium",
+    "SpeakerTimer": "Redner‑Timer",
     "Intro": "Einleitung",
     "TimeUsed": "Die Zeit ist aufgebraucht – Überzeit",
     "Conclusion": "Schlussfolgerung",
     "Review": "Wiederholungsfragen",
     "Paragraph": "Absatz",
-    "Paragraphs": "Die Absätze",
-    "And": "und"
+    "Paragraphs": "Absätze",
+    "And": "und",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
+    "Info_Paragraph": "Absätze",
+    "Info_Reads": "Lesestellen",
     "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Frames": "Kästen",
+    "Info_Notes": "Hier können Sie Notizen machen.",
+    "Ready": "Bereit zum Start. Drücken Sie ▶ wenn Sie bereit sind."
   },
   "es": {
     "code": "es",
@@ -108,19 +105,19 @@
     "WTStudy": "Estudio de La Atalaya",
     "SpeakerTimer": "Temporizador de discurso",
     "Intro": "Introducción",
-    "TimeUsed": "Se ha usado todo el tiempo",
+    "TimeUsed": "Se ha usado todo el tiempo – tiempo extra",
     "Conclusion": "Conclusión",
     "Review": "Preguntas de repaso",
     "Paragraph": "Párrafo",
     "Paragraphs": "Párrafos",
-    "And": "y"
+    "And": "y",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
-    "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Paragraph": "Párrafo",
+    "Info_Reads": "Textos bíblicos",
+    "Info_Images": "Imágenes",
+    "Info_Frames": "Recuadros",
+    "Info_Notes": "Aquí puedes tomar notas.",
+    "Ready": "Listo para comenzar. Pulsa ▶ cuando estés listo."
   },
   "fr": {
     "code": "fr",
@@ -133,14 +130,14 @@
     "Review": "Questions de révision",
     "Paragraph": "Paragraphe",
     "Paragraphs": "Paragraphes",
-    "And": "et"
+    "And": "et",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
-    "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Paragraph": "Paragraphe",
+    "Info_Reads": "Textes bibliques",
+    "Info_Images": "Images",
+    "Info_Frames": "Encadrés",
+    "Info_Notes": "Vous pouvez prendre des notes ici.",
+    "Ready": "Prêt à commencer. Appuyez sur ▶ quand vous êtes prêt."
   },
   "it": {
     "code": "it",
@@ -153,13 +150,13 @@
     "Review": "Domande di ripasso",
     "Paragraph": "Paragrafo",
     "Paragraphs": "Paragrafi",
-    "And": "e"
+    "And": "e",
     "Min": "min",
-    "Info_Paragraph": "Avsnitt",
-    "Info_Reads": "Les-skriftsteder",
-    "Info_Images": "Bilder",
-    "Info_Frames": "Rammer",
-    "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Info_Paragraph": "Paragrafo",
+    "Info_Reads": "Scritture",
+    "Info_Images": "Immagini",
+    "Info_Frames": "Riquadri",
+    "Info_Notes": "Qui puoi prendere appunti.",
+    "Ready": "Pronto per iniziare. Premi ▶ quando sei pronto."
   }
 }
