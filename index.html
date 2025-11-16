@@ -583,16 +583,7 @@ try{
 /* ===== Språk (language) ===== */
 const LANG_KEY='meetingTimer.lang';
 const DEFAULT_LANG='en';
-let LANGS={
-  en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and',BackToStart:'Back to start'},
-  no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og',BackToStart:'Tilbake til start'},
-  sv:{code:'sv',label:'Svenska',WTStudy:'Vakttorns-studiet',SpeakerTimer:'Talartimer',Intro:'Introduktion',TimeUsed:'Tiden är använd – övertid',Conclusion:'Avslutning',Review:'Repetitionsfrågor',Paragraph:'Stycke',Paragraphs:'Styckena',And:'och',BackToStart:'Tillbaka till start'},
-  da:{code:'da',label:'Dansk',WTStudy:'Vagttårnsstudiet',SpeakerTimer:'Talertimer',Intro:'Introduktion',TimeUsed:'Tiden er brugt – overtid',Conclusion:'Afslutning',Review:'Repetitionsspørgsmål',Paragraph:'Afsnit',Paragraphs:'Afsnittene',And:'og',BackToStart:'Tilbake til start'},
-  de:{code:'de',label:'Deutsch',WTStudy:'Wachtturm-Studium',SpeakerTimer:'Redner-Timer',Intro:'Einleitung',TimeUsed:'Die Zeit ist aufgebraucht – Überzeit',Conclusion:'Schlussfolgerung',Review:'Wiederholungsfragen',Paragraph:'Abschnitt',Paragraphs:'Abschnitte',And:'und',BackToStart:'Zurück zum Anfang'},
-  es:{code:'es',label:'Español',WTStudy:'Estudio de La Atalaya',SpeakerTimer:'Temporizador de discurso',Intro:'Introducción',TimeUsed:'Se ha usado todo el tiempo',Conclusion:'Conclusión',Review:'Preguntas de repaso',Paragraph:'Párrafo',Paragraphs:'Párrafos',And:'y',BackToStart:'Volver al inicio'},
-  fr:{code:'fr',label:'Français',WTStudy:'Étude de la Tour de Garde',SpeakerTimer:'Minuteur de discours',Intro:'Introduction',TimeUsed:'Le temps est écoulé – dépassement',Conclusion:'Conclusion',Review:'Questions de révision',Paragraph:'Paragraphe',Paragraphs:'Paragraphes',And:'et',BackToStart:'Retour au début'},
-  it:{code:'it',label:'Italiano',WTStudy:'Studio della Torre di Guardia',SpeakerTimer:'Timer del discorso',Intro:'Introduzione',TimeUsed:'Il tempo è stato usato – oltre il limite',Conclusion:'Conclusione',Review:'Domande di ripasso',Paragraph:'Paragrafo',Paragraphs:'Paragrafi',And:'e',BackToStart:'Torna all’inizio'}
-};
+let LANGS={};
 
 async function loadLanguages(){
   try{
@@ -611,13 +602,13 @@ function setLang(code){ try{localStorage.setItem(LANG_KEY,code);}catch(e){} }
 await loadLanguages();
 
 window.currentLang=getLang();
-window.L=LANGS[window.currentLang] || LANGS[DEFAULT_LANG];
+window.L=LANGS[window.currentLang] || LANGS[DEFAULT_LANG] || {};
 
 function updateStaticTexts(){
   const wtTitle=document.getElementById('wtStudyTitle');
-  if(wtTitle && window.L){ wtTitle.textContent=window.L.WTStudy; }
+  if(wtTitle && window.L && window.L.WTStudy){ wtTitle.textContent=window.L.WTStudy; }
   const spTitle=document.getElementById('speechTimerTitle');
-  if(spTitle && window.L){
+  if(spTitle && window.L && window.L.SpeakerTimer){
     const caret=spTitle.querySelector('.caret');
     if(caret){ spTitle.innerHTML=window.L.SpeakerTimer+' '+caret.outerHTML; }
     else{ spTitle.textContent=window.L.SpeakerTimer; }
@@ -1069,7 +1060,8 @@ function resetWTUI(){
   $('#cursor').style.left = '0%';
 
   // standardmelding etter reset
-  $('#message').textContent = 'Klar for å starte. Trykk ▶ når du er klar.';
+  const L = window.L || {};
+  $('#message').textContent = L.Ready || 'Klar for å starte. Trykk ▶ når du er klar.';
 
   started = false;
   paused = false;
