@@ -315,6 +315,8 @@ body.dark{
   border-color:rgba(0,0,0,0.55);
   box-shadow:0 8px 24px rgba(0,0,0,0.55);
 }
+
+#spSectionBody .card{background:#3c3f38 !important;}
 </style>
 
 <style>
@@ -572,10 +574,10 @@ try{
 const LANG_KEY='meetingTimer.lang';
 const DEFAULT_LANG='en';
 let LANGS={
-  en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and'},
-  no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og'},
+  en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and',BackToStart:'Back to start'},
+  no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og',BackToStart:'Tilbake til start'},
   sv:{code:'sv',label:'Svenska',WTStudy:'Vakttorns-studiet',SpeakerTimer:'Talartimer',Intro:'Introduktion',TimeUsed:'Tiden är använd – övertid',Conclusion:'Avslutning',Review:'Repetitionsfrågor',Paragraph:'Stycke',Paragraphs:'Styckena',And:'och'},
-  da:{code:'da',label:'Dansk',WTStudy:'Vagttårnsstudiet',SpeakerTimer:'Talertimer',Intro:'Introduktion',TimeUsed:'Tiden er brugt – overtid',Conclusion:'Afslutning',Review:'Repetitionsspørgsmål',Paragraph:'Afsnit',Paragraphs:'Afsnittene',And:'og'},
+  da:{code:'da',label:'Dansk',WTStudy:'Vagttårnsstudiet',SpeakerTimer:'Talertimer',Intro:'Introduktion',TimeUsed:'Tiden er brugt – overtid',Conclusion:'Afslutning',Review:'Repetitionsspørgsmål',Paragraph:'Afsnit',Paragraphs:'Afsnittene',And:'og',BackToStart:'Tilbake til start'},
   de:{code:'de',label:'Deutsch',WTStudy:'Wachtturm-Studium',SpeakerTimer:'Redner-Timer',Intro:'Einleitung',TimeUsed:'Die Zeit ist aufgebraucht – Überzeit',Conclusion:'Schlussfolgerung',Review:'Wiederholungsfragen',Paragraph:'Abschnitt',Paragraphs:'Abschnitte',And:'und'},
   es:{code:'es',label:'Español',WTStudy:'Estudio de La Atalaya',SpeakerTimer:'Temporizador de discurso',Intro:'Introducción',TimeUsed:'Se ha usado todo el tiempo',Conclusion:'Conclusión',Review:'Preguntas de repaso',Paragraph:'Párrafo',Paragraphs:'Párrafos',And:'y'},
   fr:{code:'fr',label:'Français',WTStudy:'Étude de la Tour de Garde',SpeakerTimer:'Minuteur de discours',Intro:'Introduction',TimeUsed:'Le temps est écoulé – dépassement',Conclusion:'Conclusion',Review:'Questions de révision',Paragraph:'Paragraphe',Paragraphs:'Paragraphes',And:'et'},
@@ -1010,7 +1012,7 @@ function drawTimeline(){
         document.getElementById('cursor').style.left = '0%';
         document.getElementById('clockWT').textContent = '00:00';
         document.getElementById('clockWT').classList.remove('over');
-        document.getElementById('message').textContent = 'Tilbake til start (00:00)';
+        document.getElementById('message').textContent = ''+(window.L.BackToStart || "Tilbake til start")+' (00:00)';
       }
     });
   }
