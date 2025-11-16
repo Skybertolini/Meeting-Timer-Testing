@@ -1040,11 +1040,26 @@ function unlockWTControls(){
 }
 
 function resetWTUI(){
-  if(tickHandle)clearInterval(tickHandle);
-  $('#clockWT').textContent='00:00'; $('#clockWT').classList.remove('over');
-  $('#message').textContent='Klar til start. Trykk ▶ når du er klar.';
-  started=false; paused=false; startTs=null; accum=0;
-  $('#playWT').disabled=false; $('#pauseWT').disabled=true; $('#stopWT').disabled=true;
+  if(tickHandle) clearInterval(tickHandle);
+  $('#clockWT').textContent='00:00';
+  $('#clockWT').classList.remove('over');
+
+  // nullstill tidslinjen visuelt
+  $('#elapsed').style.width = '0%';
+  $('#cursor').style.left = '0%';
+
+  // standardmelding etter reset
+  $('#message').textContent = 'Klar for å starte. Trykk ▶ når du er klar.';
+
+  started = false;
+  paused = false;
+  startTs = null;
+  accum = 0;
+
+  $('#playWT').disabled = false;
+  $('#pauseWT').disabled = true;
+  $('#stopWT').disabled = true;
+
   unlockWTControls();
 }
 function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setInterval(tickWT,250) }
