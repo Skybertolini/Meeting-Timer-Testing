@@ -61,6 +61,8 @@ body{
 .lang-popover li:hover{background:rgba(0,0,0,0.04);}
 .lang-popover li.active::after{content:'✓';font-size:.9rem;opacity:.9;}
 body.dark .lang-popover{background:rgba(31,35,39,0.96);border-color:rgba(0,0,0,0.6);box-shadow:0 22px 50px rgba(0,0,0,0.7);}
+.dark #spSectionBody .card{background:#3c3f38 !important;}
+
 /* Lighten VT timeline in dark mode */
 .dark #timeline{background:linear-gradient(180deg,#3e5643 0%, #465f4c 100%);}
 .dark #timeline .slot{opacity:.16;}
@@ -310,13 +312,7 @@ body.dark{
 .dark .card{ box-shadow:0 10px 32px rgba(0,0,0,.6); }
 
 /* Mørkere kortbakgrunn for Taler-timer i mørk modus */
-.dark #spSectionBody .card{
-  background:#1f2225;
-  border-color:rgba(0,0,0,0.55);
-  box-shadow:0 8px 24px rgba(0,0,0,0.55);
-}
-
-#spSectionBody .card{background:#3c3f38 !important;}
+.dark 
 </style>
 
 <style>
@@ -574,10 +570,10 @@ try{
 const LANG_KEY='meetingTimer.lang';
 const DEFAULT_LANG='en';
 let LANGS={
-  en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and',BackToStart:'Back to start'},
-  no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og',BackToStart:'Tilbake til start'},
+  en:{code:'en',label:'English',WTStudy:'Watchtower Study',SpeakerTimer:'Speaker Timer',Intro:'Introduction',TimeUsed:'Time used – overtime',Conclusion:'Conclusion',Review:'Review questions',Paragraph:'Paragraph',Paragraphs:'Paragraphs',And:'and'},
+  no:{code:'no',label:'Norsk',WTStudy:'Vakttårnstudiet',SpeakerTimer:'Talertimer',Intro:'Introduksjon',TimeUsed:'Tiden er brukt – teller over',Conclusion:'Avslutning',Review:'Repetisjonsspørsmål',Paragraph:'Avsnitt',Paragraphs:'Avsnittene',And:'og'},
   sv:{code:'sv',label:'Svenska',WTStudy:'Vakttorns-studiet',SpeakerTimer:'Talartimer',Intro:'Introduktion',TimeUsed:'Tiden är använd – övertid',Conclusion:'Avslutning',Review:'Repetitionsfrågor',Paragraph:'Stycke',Paragraphs:'Styckena',And:'och'},
-  da:{code:'da',label:'Dansk',WTStudy:'Vagttårnsstudiet',SpeakerTimer:'Talertimer',Intro:'Introduktion',TimeUsed:'Tiden er brugt – overtid',Conclusion:'Afslutning',Review:'Repetitionsspørgsmål',Paragraph:'Afsnit',Paragraphs:'Afsnittene',And:'og',BackToStart:'Tilbake til start'},
+  da:{code:'da',label:'Dansk',WTStudy:'Vagttårnsstudiet',SpeakerTimer:'Talertimer',Intro:'Introduktion',TimeUsed:'Tiden er brugt – overtid',Conclusion:'Afslutning',Review:'Repetitionsspørgsmål',Paragraph:'Afsnit',Paragraphs:'Afsnittene',And:'og'},
   de:{code:'de',label:'Deutsch',WTStudy:'Wachtturm-Studium',SpeakerTimer:'Redner-Timer',Intro:'Einleitung',TimeUsed:'Die Zeit ist aufgebraucht – Überzeit',Conclusion:'Schlussfolgerung',Review:'Wiederholungsfragen',Paragraph:'Abschnitt',Paragraphs:'Abschnitte',And:'und'},
   es:{code:'es',label:'Español',WTStudy:'Estudio de La Atalaya',SpeakerTimer:'Temporizador de discurso',Intro:'Introducción',TimeUsed:'Se ha usado todo el tiempo',Conclusion:'Conclusión',Review:'Preguntas de repaso',Paragraph:'Párrafo',Paragraphs:'Párrafos',And:'y'},
   fr:{code:'fr',label:'Français',WTStudy:'Étude de la Tour de Garde',SpeakerTimer:'Minuteur de discours',Intro:'Introduction',TimeUsed:'Le temps est écoulé – dépassement',Conclusion:'Conclusion',Review:'Questions de révision',Paragraph:'Paragraphe',Paragraphs:'Paragraphes',And:'et'},
@@ -1012,7 +1008,7 @@ function drawTimeline(){
         document.getElementById('cursor').style.left = '0%';
         document.getElementById('clockWT').textContent = '00:00';
         document.getElementById('clockWT').classList.remove('over');
-        document.getElementById('message').textContent = ''+(window.L.BackToStart || "Tilbake til start")+' (00:00)';
+        document.getElementById('message').textContent = 'Tilbake til start (00:00)';
       }
     });
   }
