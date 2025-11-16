@@ -247,6 +247,13 @@ textarea{resize:vertical;}
   .stats-row .modepill{width:100%;}
 }
 
+@media (max-width:640px){
+  .stats-row{align-items:stretch;}
+  .stats-row .pill,
+  .stats-row .modepill{flex:1 1 100%;}
+  .stats-row .modepill{margin-left:0;}
+}
+
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
 #wtControlsCard.locked .select, 
