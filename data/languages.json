@@ -17,7 +17,8 @@
     "Info_Images": "Images",
     "Info_Frames": "Boxes",
     "Info_Notes": "You can take notes here.",
-    "Ready": "Ready to start. Press ▶ when you’re ready."
+    "Ready": "Ready to start. Press ▶ when you’re ready.",
+    "BackToStart": "Back to start"
   },
   "no": {
     "code": "no",
@@ -37,7 +38,8 @@
     "Info_Images": "Bilder",
     "Info_Frames": "Rammer",
     "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Trykk ▶ når du er klar."
+    "Ready": "Klar til start. Trykk ▶ når du er klar.",
+    "BackToStart": "Tilbake til start"
   },
   "sv": {
     "code": "sv",
@@ -53,17 +55,18 @@
     "And": "och",
     "Min": "min",
     "Info_Paragraph": "Paragrafer",
-    "Info_Reads": "Läs‑skriftställen",
+    "Info_Reads": "Läs-skriftställen",
     "Info_Images": "Bilder",
     "Info_Frames": "Rutor",
     "Info_Notes": "Här kan du anteckna.",
-    "Ready": "Klar att starta. Tryck ▶ när du är redo."
+    "Ready": "Klar att starta. Tryck ▶ när du är redo.",
+    "BackToStart": "Tillbaka till start"
   },
   "da": {
     "code": "da",
     "label": "Dansk",
     "WTStudy": "Vagttårnsstudiet",
-    "SpeakerTimer": "Taler‑timer",
+    "SpeakerTimer": "Taler-timer",
     "Intro": "Introduktion",
     "TimeUsed": "Tiden er brugt – overtid",
     "Conclusion": "Afslutning",
@@ -73,17 +76,18 @@
     "And": "og",
     "Min": "min",
     "Info_Paragraph": "Paragraffer",
-    "Info_Reads": "Læse‑skriftsteder",
+    "Info_Reads": "Læse-skriftsteder",
     "Info_Images": "Billeder",
     "Info_Frames": "Bokse",
     "Info_Notes": "Her kan du notere.",
-    "Ready": "Klar til start. Tryk ▶ når du er klar."
+    "Ready": "Klar til start. Tryk ▶ når du er klar.",
+    "BackToStart": "Tilbage til start"
   },
   "de": {
     "code": "de",
     "label": "Deutsch",
-    "WTStudy": "Wachtturm‑Studium",
-    "SpeakerTimer": "Redner‑Timer",
+    "WTStudy": "Wachtturm-Studium",
+    "SpeakerTimer": "Redner-Timer",
     "Intro": "Einleitung",
     "TimeUsed": "Die Zeit ist aufgebraucht – Überzeit",
     "Conclusion": "Schlussfolgerung",
@@ -97,7 +101,8 @@
     "Info_Images": "Bilder",
     "Info_Frames": "Kästen",
     "Info_Notes": "Hier können Sie Notizen machen.",
-    "Ready": "Bereit zum Start. Drücken Sie ▶ wenn Sie bereit sind."
+    "Ready": "Bereit zum Start. Drücken Sie ▶ wenn Sie bereit sind.",
+    "BackToStart": "Zurück zum Anfang"
   },
   "es": {
     "code": "es",
@@ -117,7 +122,8 @@
     "Info_Images": "Imágenes",
     "Info_Frames": "Recuadros",
     "Info_Notes": "Aquí puedes tomar notas.",
-    "Ready": "Listo para comenzar. Pulsa ▶ cuando estés listo."
+    "Ready": "Listo para comenzar. Pulsa ▶ cuando estés listo.",
+    "BackToStart": "Volver al inicio"
   },
   "fr": {
     "code": "fr",
@@ -137,7 +143,8 @@
     "Info_Images": "Images",
     "Info_Frames": "Encadrés",
     "Info_Notes": "Vous pouvez prendre des notes ici.",
-    "Ready": "Prêt à commencer. Appuyez sur ▶ quand vous êtes prêt."
+    "Ready": "Prêt à commencer. Appuyez sur ▶ quand vous êtes prêt.",
+    "BackToStart": "Retour au début"
   },
   "it": {
     "code": "it",
@@ -157,6 +164,7 @@
     "Info_Images": "Immagini",
     "Info_Frames": "Riquadri",
     "Info_Notes": "Qui puoi prendere appunti.",
-    "Ready": "Pronto per iniziare. Premi ▶ quando sei pronto."
+    "Ready": "Pronto per iniziare. Premi ▶ quando sei pronto.",
+    "BackToStart": "Torna all’inizio"
   }
 }
