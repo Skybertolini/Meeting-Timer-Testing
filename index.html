@@ -225,6 +225,7 @@ textarea{resize:vertical;}
   border-radius:999px;
   font-weight:800;
   font-size:.95rem;
+  white-space:nowrap;
   transition:background .2s ease, color .2s ease;
 }
 .stats-row .modepill button:hover{background:rgba(0,0,0,.05);}
@@ -404,13 +405,6 @@ body.dark{
 
 /* Skjul den gamle h1-tittelen inne i SP-kortet (vi har ny seksjonstittel) */
 .hide-in-card { display:none !important; }
-.section-title .wt-menu-icon {
-  font-size: 1.4rem;
-  opacity: .95;
-  margin-right: 6px;
-  display: inline-block;
-}
-
 </style>
 <style>
 #timeline .para-slot .pin-stack{
@@ -466,10 +460,7 @@ body.dark{
 
   <section id="wtSection" class="collapsible">
 <!-- VAKTTÅRN -->
-  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true">
-  <span class="wt-menu-icon">≡</span>
-  <span class="wt-title-text">Vakttårnstudiet</span>
-</h2>
+  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true" class="timerTitle">Vakttårnstudiet</h2>
 <div class="section-body" id="wtSectionBody">
 <div id="wtControlsCard" class="card" style="max-width:var(--content-max);margin-inline:auto">
     <div class="wt-toprow">
@@ -622,6 +613,10 @@ function updateStaticTexts(){
     const caret=spTitle.querySelector('.caret');
     if(caret){ spTitle.innerHTML=window.L.SpeakerTimer+' '+caret.outerHTML; }
     else{ spTitle.textContent=window.L.SpeakerTimer; }
+  }
+  const wtNotes=document.getElementById('wtNotes');
+  if(wtNotes && window.L && window.L.NotesPlaceholder){
+    wtNotes.placeholder = window.L.NotesPlaceholder;
   }
 }
 
@@ -1284,13 +1279,13 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
 // Deaktiver høyreklikk på alle bilder
   document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
 
-  // Legg til tannhjul for å vise/skjule artikkelvalg og info
+  // Legg til meny-ikon (tre streker) og tannhjul for å vise/skjule artikkelvalg og info
   (function(){
     const card = document.getElementById('wtControlsCard');
     const title = document.getElementById('articleTitle');
     if(!card || !title) return;
 
-    // Pakk tittel og tannhjul i en wrapper
+    // Pakk tre-streksikon, tittel og tannhjul i en wrapper
     let wrapper = document.createElement('div');
     wrapper.id = 'wtArticleHeader';
     wrapper.style.maxWidth = getComputedStyle(card).maxWidth || 'var(--content-max)';
@@ -1298,38 +1293,65 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
     wrapper.style.display = 'flex';
     wrapper.style.alignItems = 'center';
     wrapper.style.justifyContent = 'space-between';
-    // Flytt tittel inn i wrapper
+
+    // Sett inn wrapper før tittelen, og flytt tittelen inn
     title.parentNode.insertBefore(wrapper, title);
     wrapper.appendChild(title);
 
-    const btn = document.createElement('button');
-    btn.id = 'wtGearBtn';
-    btn.type = 'button';
-    btn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
-    btn.style.border = '0';
-    btn.style.borderRadius = '999px';
-    btn.style.width = '34px';
-    btn.style.height = '34px';
-    btn.style.marginLeft = '10px';
-    btn.style.display = 'flex';
-    btn.style.alignItems = 'center';
-    btn.style.justifyContent = 'center';
-    btn.style.background = 'var(--pill)';
-    btn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
-    btn.style.cursor = 'pointer';
-    btn.style.flex = '0 0 auto';
-    btn.innerHTML = '⚙️';
-    btn.style.fontSize = '1.6rem';
+    // Tre streker til venstre for tittelen (meny-ikon)
+    const menuBtn = document.createElement('button');
+    menuBtn.id = 'wtMenuBtn';
+    menuBtn.type = 'button';
+    menuBtn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
+    menuBtn.textContent = '≡';
+    menuBtn.style.border = '0';
+    menuBtn.style.borderRadius = '999px';
+    menuBtn.style.width = '34px';
+    menuBtn.style.height = '34px';
+    menuBtn.style.marginRight = '10px';
+    menuBtn.style.display = 'flex';
+    menuBtn.style.alignItems = 'center';
+    menuBtn.style.justifyContent = 'center';
+    menuBtn.style.background = 'var(--pill)';
+    menuBtn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
+    menuBtn.style.cursor = 'pointer';
+    menuBtn.style.fontSize = '1.6rem';
 
-    wrapper.appendChild(btn);
+    // Flytt menyknapp til venstre for tittelen
+    wrapper.insertBefore(menuBtn, title);
+
+    // Tannhjul til høyre
+    const gearBtn = document.createElement('button');
+    gearBtn.id = 'wtGearBtn';
+    gearBtn.type = 'button';
+    gearBtn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
+    gearBtn.style.border = '0';
+    gearBtn.style.borderRadius = '999px';
+    gearBtn.style.width = '34px';
+    gearBtn.style.height = '34px';
+    gearBtn.style.marginLeft = '10px';
+    gearBtn.style.display = 'flex';
+    gearBtn.style.alignItems = 'center';
+    gearBtn.style.justifyContent = 'center';
+    gearBtn.style.background = 'var(--pill)';
+    gearBtn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
+    gearBtn.style.cursor = 'pointer';
+    gearBtn.style.flex = '0 0 auto';
+    gearBtn.innerHTML = '⚙️';
+    gearBtn.style.fontSize = '1.6rem';
+
+    wrapper.appendChild(gearBtn);
 
     // Start med artikkelinformasjon skjult
     card.classList.add('collapsed');
 
-    btn.addEventListener('click', ()=>{
+    function toggleCard(){
       if(card.classList.contains('locked')) return; // ikke åpne mens timeren er låst
       card.classList.toggle('collapsed');
-    });
+    }
+
+    menuBtn.addEventListener('click', toggleCard);
+    gearBtn.addEventListener('click', toggleCard);
   })();
 })();
 
