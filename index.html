@@ -225,6 +225,7 @@ textarea{resize:vertical;}
   border-radius:999px;
   font-weight:800;
   font-size:.95rem;
+  white-space:nowrap;
   transition:background .2s ease, color .2s ease;
 }
 .stats-row .modepill button:hover{background:rgba(0,0,0,.05);}
@@ -279,16 +280,16 @@ textarea{resize:vertical;}
 }
 
 body.dark{
-  --bg:#3c3f38;
+  --bg:#4c4c54;
   --ink:#f5f5f6;
   --muted:#a2aab3;
-  --card:#2f3439;
+  --card:#2c2d31;
   --border:rgba(0,0,0,.6);
-  --press:#3b4147;
-  --pill:#383e45;
+  --press:#2c2d31;
+  --pill:#ffffff;
   --tl-green-1:#32463a;
   --tl-green-2:#293a32;
-  background-color:#3c3f38;
+  background-color:#4c4c54;
   background-image:none;
   color:var(--ink);
 }
@@ -605,43 +606,13 @@ window.currentLang=getLang();
 window.L=LANGS[window.currentLang] || LANGS[DEFAULT_LANG] || {};
 
 function updateStaticTexts(){
-  const L = window.L || {};
-
   const wtTitle=document.getElementById('wtStudyTitle');
-  if(wtTitle && L.WTStudy){ wtTitle.textContent=L.WTStudy; }
-
+  if(wtTitle && window.L && window.L.WTStudy){ wtTitle.textContent=window.L.WTStudy; }
   const spTitle=document.getElementById('speechTimerTitle');
-  if(spTitle && L.SpeakerTimer){
+  if(spTitle && window.L && window.L.SpeakerTimer){
     const caret=spTitle.querySelector('.caret');
-    if(caret){ spTitle.innerHTML=L.SpeakerTimer+' '+caret.outerHTML; }
-    else{ spTitle.textContent=L.SpeakerTimer; }
-  }
-
-  // Stats-piller i informasjonsrammen
-  const lblParas = document.querySelector('#pillParas .pill-label');
-  if(lblParas && L.ParasLabel){ lblParas.textContent = L.ParasLabel; }
-
-  const lblReads = document.querySelector('#pillReads .pill-label');
-  if(lblReads && L.ReadsLabel){ lblReads.textContent = L.ReadsLabel; }
-
-  const lblImages = document.querySelector('#pillImages .pill-label');
-  if(lblImages && L.ImagesLabel){ lblImages.textContent = L.ImagesLabel; }
-
-  const lblFrames = document.querySelector('#pillFrames .pill-label');
-  if(lblFrames && L.FramesLabel){ lblFrames.textContent = L.FramesLabel; }
-
-  // "60 min" / "30 min"
-  if(L.MinutesShort){
-    const m60 = document.getElementById('mode60');
-    const m30 = document.getElementById('mode30');
-    if(m60){ m60.textContent = '60 ' + L.MinutesShort; }
-    if(m30){ m30.textContent = '30 ' + L.MinutesShort; }
-  }
-
-  // Notatfelt
-  const wtNotes=document.getElementById('wtNotes');
-  if(wtNotes && L.NotesPlaceholder){
-    wtNotes.placeholder = L.NotesPlaceholder;
+    if(caret){ spTitle.innerHTML=window.L.SpeakerTimer+' '+caret.outerHTML; }
+    else{ spTitle.textContent=window.L.SpeakerTimer; }
   }
 }
 
