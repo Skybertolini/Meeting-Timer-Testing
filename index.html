@@ -171,6 +171,19 @@ img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
 textarea{resize:vertical;}
 
 /* Top row (select only) */
+
+.wt-article-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.wt-menu-icon{
+  font-size:1.2rem;
+  line-height:1;
+  opacity:.95;
+  display:inline-block;
+}
 .wt-toprow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:nowrap}
 .select-article{flex:1 1 auto; max-width:100%; height:42px; line-height:42px; padding:0 12px; margin:0}
 @media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
@@ -464,7 +477,10 @@ body.dark{
 <div class="section-body" id="wtSectionBody">
 <div id="wtControlsCard" class="card" style="max-width:var(--content-max);margin-inline:auto">
     <div class="wt-toprow">
-      <select id="weekSel" class="select select-article" aria-label="Artikkel"><option>Laster …</option></select>
+      <div class="wt-article-row">
+        <span class="wt-menu-icon" aria-hidden="true">≡</span>
+        <select id="weekSel" class="select select-article" aria-label="Artikkel"><option>Laster …</option></select>
+      </div>
     </div>
 
     <div class="stats-row" style="margin-top:10px">
@@ -1279,13 +1295,13 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
 // Deaktiver høyreklikk på alle bilder
   document.addEventListener('contextmenu', (e)=>{ if(e.target && e.target.closest('img')) { e.preventDefault(); } }, {capture:true});
 
-  // Legg til meny-ikon (tre streker) og tannhjul for å vise/skjule artikkelvalg og info
+  // Legg til tannhjul for å vise/skjule artikkelvalg og info
   (function(){
     const card = document.getElementById('wtControlsCard');
     const title = document.getElementById('articleTitle');
     if(!card || !title) return;
 
-    // Pakk tre-streksikon, tittel og tannhjul i en wrapper
+    // Pakk tittel og tannhjul i en wrapper
     let wrapper = document.createElement('div');
     wrapper.id = 'wtArticleHeader';
     wrapper.style.maxWidth = getComputedStyle(card).maxWidth || 'var(--content-max)';
@@ -1293,65 +1309,38 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
     wrapper.style.display = 'flex';
     wrapper.style.alignItems = 'center';
     wrapper.style.justifyContent = 'space-between';
-
-    // Sett inn wrapper før tittelen, og flytt tittelen inn
+    // Flytt tittel inn i wrapper
     title.parentNode.insertBefore(wrapper, title);
     wrapper.appendChild(title);
 
-    // Tre streker til venstre for tittelen (meny-ikon)
-    const menuBtn = document.createElement('button');
-    menuBtn.id = 'wtMenuBtn';
-    menuBtn.type = 'button';
-    menuBtn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
-    menuBtn.textContent = '≡';
-    menuBtn.style.border = '0';
-    menuBtn.style.borderRadius = '999px';
-    menuBtn.style.width = '34px';
-    menuBtn.style.height = '34px';
-    menuBtn.style.marginRight = '10px';
-    menuBtn.style.display = 'flex';
-    menuBtn.style.alignItems = 'center';
-    menuBtn.style.justifyContent = 'center';
-    menuBtn.style.background = 'var(--pill)';
-    menuBtn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
-    menuBtn.style.cursor = 'pointer';
-    menuBtn.style.fontSize = '1.6rem';
+    const btn = document.createElement('button');
+    btn.id = 'wtGearBtn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
+    btn.style.border = '0';
+    btn.style.borderRadius = '999px';
+    btn.style.width = '34px';
+    btn.style.height = '34px';
+    btn.style.marginLeft = '10px';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.background = 'var(--pill)';
+    btn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
+    btn.style.cursor = 'pointer';
+    btn.style.flex = '0 0 auto';
+    btn.innerHTML = '⚙️';
+    btn.style.fontSize = '1.6rem';
 
-    // Flytt menyknapp til venstre for tittelen
-    wrapper.insertBefore(menuBtn, title);
-
-    // Tannhjul til høyre
-    const gearBtn = document.createElement('button');
-    gearBtn.id = 'wtGearBtn';
-    gearBtn.type = 'button';
-    gearBtn.setAttribute('aria-label','Vis eller skjul artikkelinnstillinger');
-    gearBtn.style.border = '0';
-    gearBtn.style.borderRadius = '999px';
-    gearBtn.style.width = '34px';
-    gearBtn.style.height = '34px';
-    gearBtn.style.marginLeft = '10px';
-    gearBtn.style.display = 'flex';
-    gearBtn.style.alignItems = 'center';
-    gearBtn.style.justifyContent = 'center';
-    gearBtn.style.background = 'var(--pill)';
-    gearBtn.style.boxShadow = '0 6px 18px rgba(70,50,30,.12)';
-    gearBtn.style.cursor = 'pointer';
-    gearBtn.style.flex = '0 0 auto';
-    gearBtn.innerHTML = '⚙️';
-    gearBtn.style.fontSize = '1.6rem';
-
-    wrapper.appendChild(gearBtn);
+    wrapper.appendChild(btn);
 
     // Start med artikkelinformasjon skjult
     card.classList.add('collapsed');
 
-    function toggleCard(){
+    btn.addEventListener('click', ()=>{
       if(card.classList.contains('locked')) return; // ikke åpne mens timeren er låst
       card.classList.toggle('collapsed');
-    }
-
-    menuBtn.addEventListener('click', toggleCard);
-    gearBtn.addEventListener('click', toggleCard);
+    });
   })();
 })();
 
