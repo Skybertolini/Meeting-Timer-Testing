@@ -1,7 +1,4 @@
 // index_addon.js
-// Varm "pære"-glød bak ikonene for play/pause/stop
-// (Krever ingen endring i index.html)
-
 (function () {
   const SELECTORS = {
     play:  ['[data-action="play"]',  '.btn--play',  '#btnPlay'],
