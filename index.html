@@ -35,7 +35,7 @@ body{
   background-color:var(--bg);
   background-image: linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)), url('./img/paper-texture.png');
   background-size: auto, 300px 300px; background-repeat: repeat, repeat; background-attachment: fixed, fixed;
-  transition:background-color .35s ease;
+  transition:background-color .55s ease;
 }
 .container{flex:1 0 auto;max-width:980px;margin:0 auto;padding:16px 16px 28px;min-width:320px}
 .footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:.9rem;padding:10px 0 14px;display:flex;align-items:center;justify-content:center;gap:12px}
@@ -80,7 +80,7 @@ body{
 .lang-popover li.active::after{content:'✓';font-size:.9rem;opacity:.9;}
 body.dark .lang-popover{background:rgba(31,35,39,0.96);border-color:rgba(0,0,0,0.6);box-shadow:0 22px 50px rgba(0,0,0,0.7);}
 /* Lighten VT timeline in dark mode */
-.dark #timeline{background:linear-gradient(180deg,#3e5643 0%, #465f4c 100%);}
+.dark #timeline{background:#212121;}
 .dark #timeline .slot{opacity:.16;}
 
 body.dark .lang-popover li:hover{background:rgba(255,255,255,0.04);}
@@ -295,11 +295,15 @@ body.dark{
 }
 
 body.dark #spSection .card{
-  background:var(--bg);
+  background:#212121;
   background-image:none;
 }
+
+body.dark #wtControlsCard{
+  background:#2c2d31;
+}
 .dark .cursor{ background:#f5f5f6; }
-.dark .elapsed{ background:rgba(142,214,170,0.38); }
+.dark .elapsed{ background:rgba(255,255,255,0.28); }
 .dark #elapsedSP{ background:rgba(240,120,120,0.42); }
 
 .dark .para-slot{ color:#f9fafb; text-shadow:0 1px 0 rgba(0,0,0,.6); }
