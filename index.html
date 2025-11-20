@@ -116,7 +116,7 @@ body.dark .lang-popover li:hover{background:rgba(255,255,255,0.04);}
 .big-clock,.clock{margin-top:16px;font-size:clamp(1.6rem, 9vw, 2.75rem);font-weight:900;color:#2f3b34;max-width:var(--content-max);margin-inline:auto;word-wrap:break-word}
 #clockWT{margin-top:40px}
 #clockSP{margin-top:40px}
-.controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:center;flex-wrap:wrap}
+.controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08);transition:box-shadow .15s ease, filter .15s ease, transform .05s ease}
 .round.pressed, .round.pressed:disabled{
   filter:brightness(.92) saturate(1.05);
@@ -317,7 +317,7 @@ body.dark .message {
 #wtControlsCard.collapsed { display:none; }                           /* skjul hele kortet når kollapset */
 #wtControlsCard.collapsed .wt-toprow { display:none; }                /* skjul uke-velger */
 #wtControlsCard.collapsed .pill { display:none; }                     /* skjul Avsnitt/Les/Bilder/Rammer */
-#wtControlsCard.collapsed .stats-row { justify-content:center; }  /* juster layout når skjult */
+#wtControlsCard.collapsed .stats-row { justify-content:flex-start; }  /* juster layout når skjult */
 #wtControlsCard.collapsed .modepill { display:none; }                 /* skjul 60/30-modusknapper i kollapset visning */
 </style>
 <style>
@@ -352,7 +352,7 @@ body.dark .message {
 .section-title {
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   gap:10px;
   cursor:pointer;
   user-select:none;
@@ -418,21 +418,11 @@ body.dark .message {
   font-size:.9rem;
   padding:10px 0 14px;
   display:flex;
-  flex-direction:column;
   align-items:center;
-  justify-content:center;
-  gap:6px;
-  max-width:var(--content-max);
-  margin:0 auto;
-}
-.footer-buttons{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  justify-content:center;
+  justify-content:space-between;
+  gap:12px;
 }
 .feedback-btn{
-
   display:inline-flex;
   align-items:center;
   gap:6px;
@@ -450,10 +440,9 @@ body.dark .message {
   filter:brightness(0.97);
 }
 .feedback-btn-icon{
-  width:0;
-  height:0;
+  width:20px;
+  height:20px;
   flex:0 0 auto;
-  display:none;
   background-image:url('data:image/png;base64,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');
   background-repeat:no-repeat;
   background-position:center;
@@ -485,42 +474,6 @@ body.dark .message {
   box-shadow:0 18px 48px rgba(0,0,0,0.45);
   z-index:1;
 }
-.about-dialog{
-  padding:20px 22px 16px;
-}
-.about-dialog .feedback-title{
-  text-align:center;
-  font-size:1.2rem;
-  margin:0 0 4px;
-}
-.about-tagline{
-  text-align:center;
-  font-size:.85rem;
-  color:var(--muted);
-  margin:0 0 10px;
-}
-.about-subtitle{
-  margin:10px 0 4px;
-  font-size:.9rem;
-  font-weight:800;
-}
-.about-dialog .feedback-help{
-  margin:0 0 6px;
-  font-size:.9rem;
-  line-height:1.6;
-  max-width:36rem;
-  text-align:left;
-}
-
-  position:relative;
-  max-width:420px;
-  width:90%;
-  background:var(--card);
-  border-radius:18px;
-  padding:16px 18px 14px;
-  box-shadow:0 18px 48px rgba(0,0,0,0.45);
-  z-index:1;
-}
 .feedback-title{
   font-weight:900;
   margin:0 0 6px;
@@ -538,6 +491,24 @@ body.dark .message {
   border-radius:12px;
   border:1px solid var(--border);
   padding:8px 10px;
+  font:inherit;
+}
+.feedback-name-row{
+  margin-top:8px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+}
+.feedback-name-label{
+  font-size:.8rem;
+  color:var(--muted);
+}
+.feedback-name-input{
+  width:100%;
+  border-radius:10px;
+  border:1px solid var(--border);
+  padding:6px 8px;
   font:inherit;
 }
 .feedback-row{
@@ -701,101 +672,33 @@ body.dark .feedback-actions button.primary{
   </div>
 </section>
 <div class="footer">
-  <div class="footer-buttons">
-    <button id="feedbackBtn" class="feedback-btn" type="button">
-      <span class="feedback-btn-icon" aria-hidden="true"></span>
-      <span class="feedback-btn-label">Feedback</span>
-    </button>
-    <button id="aboutBtn" class="feedback-btn" type="button">
-      <span class="feedback-btn-icon" aria-hidden="true"></span>
-      <span class="feedback-btn-label">About</span>
-    </button>
-  </div>
+  <button id="feedbackBtn" class="feedback-btn" type="button">
+    <span class="feedback-btn-icon" aria-hidden="true"></span>
+    <span class="feedback-btn-label">Tilbakemelding</span>
+  </button>
   <span>Meeting Timer © 2025</span>
 </div>
 </div>
 <div id="feedbackModal" class="feedback-modal" aria-hidden="true">
   <div class="feedback-backdrop" id="feedbackBackdrop"></div>
   <div class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
-    <h3 id="feedbackTitle" class="feedback-title">Feedback</h3>
-          <p class="feedback-help" style="font-size:.92rem; line-height:1.45;">
-      The Meeting Timer is made to help Jehovah’s witnesses during the meetings. 
-      The main feature is a timer for the brother conducting the Watchtower Study. 
-      In each study article, the length of each paragraph is measured, and the number 
-      of pictures, boxes, and read-scriptures are counted. When the timer is started at 
-      the beginning of each study (after the song), it can help you portion your time.<br><br>
-
-      The Meeting Timer is of course not perfect. There are good reasons to spend a little 
-      extra time on some paragraphs. Still, it might help you keep the pace and avoid going 
-      over the measured time.<br><br>
-
-      Another feature on this site is the Talk Timer. It can be useful if you are the chairman 
-      at a midweek meeting, or maybe you are giving a talk and want to keep track of your time.<br><br>
-
-      The website is made in my spare time, and it is in no way affiliated with Jehovah’s 
-      Witnesses as an organization. Errors might also occur. If that should happen, I would 
-      appreciate if you let me know through the feedback function. I hope the Meeting Timer 
-      can be useful to you.<br><br>
-
-      Love from a brother from Norway.
-      </p>
-
-    <textarea id="feedbackText" maxlength="400" placeholder="Write your feedback here."></textarea>
+    <h3 id="feedbackTitle" class="feedback-title">Tilbakemelding</h3>
+    <p class="feedback-help">Har du et forslag eller en kommentar til Meeting Timer? Skriv kort her (maks 400 tegn).</p>
+    <textarea id="feedbackText" maxlength="500" placeholder="Skriv tilbakemeldingen din her …"></textarea>
+    <div class="feedback-name-row">
+      <label for="feedbackName" class="feedback-name-label">Name</label>
+      <input id="feedbackName" class="feedback-name-input" type="text" maxlength="100" placeholder="Write your name here (optional)" />
+    </div>
     <div class="feedback-row">
-      <span id="feedbackCount" class="feedback-count">0 / 400</span>
+      <span id="feedbackCount" class="feedback-count">0 / 500</span>
       <div class="feedback-actions">
-        <button type="button" id="feedbackCancel">Cancel</button>
+        <button type="button" id="feedbackCancel">Avbryt</button>
         <button type="button" id="feedbackSend" class="primary">Send</button>
       </div>
     </div>
     <div id="feedbackStatus" class="feedback-status"></div>
   </div>
 </div>
-
-<div id="aboutModal" class="feedback-modal" aria-hidden="true">
-  <div class="feedback-backdrop" id="aboutBackdrop"></div>
-  <div class="feedback-dialog about-dialog" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-    <h3 id="aboutTitle" class="feedback-title">About</h3>
-    <p class="about-tagline">A small helper for the Watchtower Study and other meeting parts.</p>
-
-    <h4 class="about-subtitle">What is the Meeting Timer?</h4>
-    <p class="feedback-help">
-      The Meeting Timer is made to help Jehovah’s witnesses during the meetings.
-      The main feature is a timer for the brother conducting the Watchtower Study.
-      In each study article, the length of each paragraph is measured, and the number
-      of pictures, boxes, and read-scriptures are counted. When the timer is started at
-      the beginning of each study (after the song), it can help you portion your time.
-    </p>
-
-    <h4 class="about-subtitle">How does it help?</h4>
-    <p class="feedback-help">
-      The Meeting Timer is of course not perfect. There are good reasons to spend a little extra
-      time on some paragraphs. Still, it might help you keep the pace and avoid going over the
-      measured time.
-    </p>
-
-    <h4 class="about-subtitle">Talk Timer</h4>
-    <p class="feedback-help">
-      Another feature on this site is the Talk Timer. It can be useful if you are the chairman at
-      a midweek meeting, or maybe you are giving a talk and want to keep track of your time.
-    </p>
-
-    <h4 class="about-subtitle">A personal project</h4>
-    <p class="feedback-help">
-      The website is made in my spare time, and it is in no way affiliated with Jehovah’s witnesses
-      as an organization. Errors might also occur. If that should happen, I would appreciate if you
-      let me know through the feedback function. I hope the Meeting Timer can be useful to you.
-      <br><br>
-      <em>Love from a brother from Norway.</em>
-    </p>
-
-    <div class="feedback-actions">
-      <button type="button" id="aboutClose">Close</button>
-    </div>
-  </div>
-</div>
-/div>
-
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
 /* ===== Tema (lys/mørk) ===== */
@@ -1450,13 +1353,14 @@ document.getElementById('incSP').addEventListener('click',()=> setTargetSeconds(
     });
   }
 
-/* ===== Feedbacksknapp (Discord webhook) ===== */
+/* ===== Tilbakemeldingsknapp (Discord webhook) ===== */
 const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/ClF8r4102SRomjQC8g3pYh4icRGG8TLlKxT3h5TeTizG_OqzQ94S-Y_gNiZ4KaBruSSD";
 (function(){
   const btn = document.getElementById('feedbackBtn');
   const modal = document.getElementById('feedbackModal');
   const backdrop = document.getElementById('feedbackBackdrop');
   const textarea = document.getElementById('feedbackText');
+  const nameInput = document.getElementById('feedbackName');
   const countEl = document.getElementById('feedbackCount');
   const statusEl = document.getElementById('feedbackStatus');
   const cancelBtn = document.getElementById('feedbackCancel');
@@ -1474,12 +1378,13 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden','true');
     textarea.value = '';
+    if(nameInput) nameInput.value = '';
     statusEl.textContent = '';
     updateCount();
   }
   function updateCount(){
     const len = textarea.value.length;
-    countEl.textContent = len + " / 400";
+    countEl.textContent = len + " / 500";
   }
   textarea.addEventListener('input', updateCount);
 
@@ -1494,17 +1399,22 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
   async function sendFeedback(){
     const text = textarea.value.trim();
+    const name = nameInput ? nameInput.value.trim() : "";
     if(!text){
-      statusEl.textContent = "Please write something before sending.";
+      statusEl.textContent = "Skriv noe først før du sender.";
       return;
     }
-    if(text.length > 400){
-      statusEl.textContent = "Feedbacken er for lang.";
+    if(text.length > 500){
+      statusEl.textContent = "Tilbakemeldingen er for lang.";
       return;
     }
     sendBtn.disabled = true;
-    statusEl.textContent = "Sending…";
-    const payload = { content: text };
+    statusEl.textContent = "Sender …";
+    let content = text;
+    if(name){
+      content += "\n\nName: " + name;
+    }
+    const payload = { content };
     try{
       await fetch(FEEDBACK_WEBHOOK, {
         method: "POST",
@@ -1512,49 +1422,19 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
         body: JSON.stringify(payload),
         mode: "no-cors"
       });
-      statusEl.textContent = "Thank you for your feedback!";
+      statusEl.textContent = "Takk for tilbakemeldingen!";
       textarea.value = "";
       updateCount();
       setTimeout(closeModal, 1200);
     }catch(err){
       console.warn("Kunne ikke sende tilbakemelding", err);
-      statusEl.textContent = "Could not send. Please try again later.";
+      statusEl.textContent = "Kunne ikke sende. Prøv igjen senere.";
     }finally{
       sendBtn.disabled = false;
     }
   }
   sendBtn.addEventListener('click', sendFeedback);
 })();
-
-/* ===== About Modal ===== */
-(function(){
-  const btn = document.getElementById('aboutBtn');
-  const modal = document.getElementById('aboutModal');
-  const backdrop = document.getElementById('aboutBackdrop');
-  const closeBtn = document.getElementById('aboutClose');
-
-  if(!btn || !modal) return;
-
-  function openModal(){
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden','false');
-  }
-  function closeModal(){
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden','true');
-  }
-
-  btn.addEventListener('click', openModal);
-  backdrop.addEventListener('click', closeModal);
-  closeBtn.addEventListener('click', closeModal);
-
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape' && modal.classList.contains('open')){
-      closeModal();
-    }
-  });
-})();
-
 /* ===== Init ===== */
 (async function init(){
   // Sett default til 60 min dersom ikke satt
