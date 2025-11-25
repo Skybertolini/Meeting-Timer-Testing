@@ -67,6 +67,11 @@ body{
   cursor:pointer;
   border-right:1px solid rgba(0,0,0,0.08);
 }
+.lang-btn:disabled{
+  opacity:.35;
+  filter:grayscale(100%);
+  cursor:default;
+}
 .lang-btn img{width:18px;height:18px;display:block;}
 .lang-btn:hover{background:rgba(0,0,0,0.03);}
 .lang-popover{position:absolute;top:56px;right:0;min-width:220px;border-radius:16px;border:1px solid rgba(0,0,0,0.06);background:rgba(248,247,245,0.94);backdrop-filter:blur(18px);box-shadow:0 18px 45px rgba(0,0,0,0.18);padding:6px 0;z-index:900;display:none;}
@@ -311,9 +316,6 @@ body.dark #message,
 body.dark .message {
     color: #ffffff !important;
 }
-
-/* Grey out language button when disabled */
-.lang-btn:disabled{opacity:.35 !important; filter:grayscale(100%) !important; cursor:default !important;}
 </style>
 <style>
 /* --- Kollaps av informasjonsvinduet når avspilling pågår --- */
@@ -1230,6 +1232,7 @@ function lockWTControls(){
   const sel = document.getElementById('weekSel');
   const m60 = document.getElementById('mode60');
   const m30 = document.getElementById('mode30');
+  const langBtn = document.getElementById('langBtn');
   if(card){
     card.classList.add('locked');
     card.classList.add('collapsed'); // skjuler infofeltet under avspilling
@@ -1237,12 +1240,14 @@ function lockWTControls(){
   if(sel){ sel.setAttribute('disabled','disabled'); }
   if(m60){ m60.setAttribute('disabled','disabled'); }
   if(m30){ m30.setAttribute('disabled','disabled'); }
+  if(langBtn){ langBtn.setAttribute('disabled','disabled'); }
 }
 function unlockWTControls(){
   const card = document.getElementById('wtControlsCard');
   const sel = document.getElementById('weekSel');
   const m60 = document.getElementById('mode60');
   const m30 = document.getElementById('mode30');
+  const langBtn = document.getElementById('langBtn');
   if(card){
     card.classList.remove('locked');
     // Ikke åpne/lukke her – bruker styrer 'collapsed' med tannhjulet
@@ -1250,6 +1255,7 @@ function unlockWTControls(){
   if(sel){ sel.removeAttribute('disabled'); }
   if(m60){ m60.removeAttribute('disabled'); }
   if(m30){ m30.removeAttribute('disabled'); }
+  if(langBtn){ langBtn.removeAttribute('disabled'); }
 }
 function resetWTUI(){
   if(tickHandle) clearInterval(tickHandle);
@@ -1268,7 +1274,7 @@ function resetWTUI(){
   $('#playWT').disabled = false;
   $('#pauseWT').disabled = true;
   $('#stopWT').disabled = true;
-  unlockWTControls(); document.getElementById('langBtn').disabled=false;
+  unlockWTControls();
 }
 function startClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=setInterval(tickWT,250) }
 function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
@@ -1296,8 +1302,8 @@ function tickWT(){
 }
 function setPressedWT(id){ ['playWT','pauseWT','stopWT'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
 $('#playWT').addEventListener('click',()=>{
-  if(started && paused){ paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); document.getElementById('langBtn').disabled=true; return }
-  if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Introduksjon'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); document.getElementById('langBtn').disabled=true; }
+  if(started && paused){ paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); return }
+  if(!started){ started=true; paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Introduksjon'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); }
 });
 $('#pauseWT').addEventListener('click',()=>{
   if(!started||paused) return;
@@ -1506,10 +1512,9 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       await fetch(FEEDBACK_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        mode: "no-cors"
+        body: JSON.stringify(payload)
       });
-      statusEl.textContent = "Thank you for the feedback!";
+      statusEl.textContent = "Takk for tilbakemeldingen!";
       textarea.value = "";
       updateCount();
       setTimeout(closeModal, 1200);
