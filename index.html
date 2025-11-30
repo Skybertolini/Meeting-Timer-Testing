@@ -23,7 +23,7 @@
   --phase-review:#ffb766; /* Stop */
   --phase-outro:#87b9ff; /* blå avslutning (samme som intro) */
   --press:#cfc7bd; --pill:#fffefb; --radius:16px;
-  --tl-green-1:#e9f3ec; --tl-green-2:#deefe4;
+  --tl-green-1:#e9f3ec; --tl-green-2:#99e0bc;
   --content-max:min(640px, 94vw);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -241,6 +241,12 @@ textarea{resize:vertical;}
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
 #wtControlsCard.locked .select, 
 #wtControlsCard.locked .modepill button{pointer-events:none}
+#wtControlsCard.locked ~ #wtArticleHeader #wtGearBtn{
+  opacity:.45;
+  filter:grayscale(80%) brightness(0.9);
+  cursor:default;
+  pointer-events:none;
+}
 /* Spacing between notes and timer section */
 #timerSection{margin-top:25px}
 /* --- addon: image pin --- */
@@ -285,6 +291,13 @@ body.dark #wtControlsCard .pill-value,
 body.dark #wtControlsCard .wt-article-row,
 body.dark #wtControlsCard .wt-menu-icon{
   color:#fff;
+}
+body.dark #logoImg {
+    /* Mørk skygge under – gir dybde */
+    filter:
+        drop-shadow(0 6px 18px rgba(0, 0, 0, 0.7))
+        /* Lys halo rundt – gir tydeligere omriss */
+        drop-shadow(0 0 10px rgba(255, 255, 255, 0.30));
 }
 .dark .cursor{ background:#f5f5f6; }
 .dark .elapsed{ background:rgba(142,214,170,0.38); }
@@ -730,7 +743,8 @@ body.dark .feedback-actions button.primary{
   <div class="feedback-backdrop" id="feedbackBackdrop"></div>
   <div class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
     <h3 id="feedbackTitle" class="feedback-title">Feedback</h3>
-    <p class="feedback-help">I would love to hear from you if you have any feedback regarding the website. It could be about the translations, functions, technical bugs or other things. Let me know if you have some suggestions to what would be nice to add as well. If you want, you are welcome to write your name and where you are from, it's always nice to know who's using the site.</p>
+    <p class="feedback-help">I would love to hear from you if you have any feedback about the website. It could be related to translations, features, technical issues, or anything else. Feel free to share suggestions for things you think would be nice to add as well.
+If you want, you’re welcome to include your name and where you’re from — it’s always encouraging to know who is using the site.</p>
     <textarea id="feedbackText" maxlength="500" placeholder="Write your feedback here."></textarea>
     <div class="feedback-name-row">
       <label for="feedbackName" class="feedback-name-label">From</label>
@@ -754,31 +768,30 @@ body.dark .feedback-actions button.primary{
    
     <h4 class="about-subtitle">What is the Meeting Timer?</h4>
     <p class="feedback-help">
-      The Meeting Timer is made to help Jehovah’s Witnesses during congregation meetings.
-      The main feature is the Watchtower Timer, made for the brother conducting the Watchtower Study.
-      In each study article, the length of each paragraph is measured, and the number of pictures, boxes,
-      and Scripture readings are counted.
+      The Meeting Timer is designed to help Jehovah’s Witnesses during congregation meetings. 
+            Its main feature is the Watchtower Timer, created for the brother conducting the Watchtower Study. 
+            For each study article, the length of every paragraph is measured, and the number of pictures, boxes, and Scripture readings is counted.
+            All of these factors are combined to estimate how much time each paragraph should ideally receive.
     </p>
 
     <h4 class="about-subtitle">How does it help?</h4>
     <p class="feedback-help">
-      When the timer is started at the beginning of each study (after the song), it can help you portion
-      your time during the study. The Meeting Timer is of course not perfect. There are good reasons to
-      spend a little extra time on some paragraphs. Still, it might help you keep a good pace and avoid
-      going over the measured time.
+     When you start the timer at the beginning of the study (after the song), 
+            it can help you manage your time throughout the discussion. 
+            The Meeting Timer isn’t perfect, of course—there will always be good reasons to spend a little extra time on certain paragraphs. 
+            Still, it can help you maintain a good pace and avoid going beyond the measured time.
     </p>
 
     <h4 class="about-subtitle">Talk Timer</h4>
     <p class="feedback-help">
-      Another feature on this site is the Talk Timer. It can be useful if you are the chairman at a
-      midweek meeting, or maybe you are giving a talk and want to keep track of your time.
+      Another feature on this site is the Talk Timer. It can be useful if you are the chairman at a midweek meeting,
+            or if you are giving a talk and want to keep track of your time.
     </p>
 
     <h4 class="about-subtitle">A personal project</h4>
     <p class="feedback-help">
-      The website is made in my spare time, and it is in no way affiliated with Jehovah’s Witnesses as an
-      organization. Errors might occur. If that should happen, I would appreciate if you let me know through
-      the feedback function. I hope the Meeting Timer can be useful to you.
+      This website is created in my spare time and is not affiliated with Jehovah’s Witnesses as an organization. 
+            Errors might occur. If they do, I would appreciate it if you let me know through the feedback feature. I hope the Meeting Timer proves useful to you.
       <br><br>
       <em>Love from a brother in Norway.</em>
     </p>
@@ -793,17 +806,21 @@ window.addEventListener('DOMContentLoaded', async () => {
 /* ===== Tema (lys/mørk) ===== */
 const THEME_KEY='meetingTimer.theme';
 function applyTheme(mode){
-  const body=document.body;
-  const btn=document.getElementById('themeToggle');
-  const langImg=document.querySelector('#langBtn img');
-  if(mode==='dark'){
+  const body = document.body;
+  const btn = document.getElementById('themeToggle');
+  const langImg = document.querySelector('#langBtn img');
+  const logoImg = document.getElementById('logoImg');
+
+  if (mode === 'dark') {
     body.classList.add('dark');
-    if(btn) btn.textContent='☀️';
-    if(langImg) langImg.src='./img/language-icon.png';
-  }else{
+    if (btn) btn.textContent = '☀️';
+    if (langImg) langImg.src = './img/language-icon.png';
+    if (logoImg) logoImg.src = './img/meeting-timer-logo-dark.png';
+  } else {
     body.classList.remove('dark');
-    if(btn) btn.textContent='🌙';
-    if(langImg) langImg.src='./img/language-icon.png';
+    if (btn) btn.textContent = '🌙';
+    if (langImg) langImg.src = './img/language-icon.png';
+    if (logoImg) logoImg.src = './img/meeting-timer-logo.png';
   }
 }
 try{
@@ -1139,7 +1156,7 @@ function drawTimeline(){
   for(let i=1;i<=totalParagraphs;i++){
     const leftP=(cumulative[i-1]/S.total)*100, widthP=(perParagraph[i-1]/S.total)*100;
     const slot=document.createElement('div'); slot.className='para-slot'+(i%2===0?' alt':''); slot.style.left=leftP+'%'; slot.style.width=widthP+'%';
-    const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec; const fs=Math.max(9,Math.min(14,Math.floor(slotPx*0.33)));
+    const lbl=document.createElement('div'); const slotPx=perParagraph[i-1]*pxPerSec; const fs=11;
     lbl.style.fontSize=fs+'px'; lbl.textContent=String(i); slot.appendChild(lbl);
     if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
     // Klikk for å hoppe (når ikke spiller)
