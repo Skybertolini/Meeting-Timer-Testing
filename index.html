@@ -229,6 +229,34 @@ textarea{resize:vertical;}
   background:#2f3b34;
   color:#fff;
 }
+    /* Avansert-knapp (skiftenøkkel) */
+.stats-row .advanced-pill{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--pill);
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-weight:800;
+  font-size:.9rem;
+  color:#2f3b34;
+  box-shadow:0 4px 12px rgba(70,50,30,.05);
+  cursor:pointer;
+  min-height:46px;
+}
+.stats-row .advanced-pill .adv-icon{
+  font-size:1.1rem;
+}
+.dark .stats-row .advanced-pill{
+  color:var(--ink);
+}
+.stats-row .advanced-pill:disabled{
+  opacity:.55;
+  cursor:default;
+  filter:grayscale(50%);
+}    
 .stats-row 
 @media (min-width:720px){
   .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
@@ -609,6 +637,48 @@ body.dark .feedback-actions button.primary{
   background:#f5f5f6;
   color:#111827;
 }
+   /* WT Advanced dialog */
+.advanced-dialog{
+  max-width:460px;
+  width:90%;
+  max-height:80vh;
+  overflow:auto;
+}
+
+.advanced-body{
+  margin-top:8px;
+  max-height:52vh;
+  overflow:auto;
+  padding-right:4px;
+}
+
+.adv-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:6px;
+  margin-bottom:4px;
+  font-size:.85rem;
+}
+
+.adv-label{
+  justify-self:flex-start;
+}
+
+.adv-input{
+  width:80px;
+  padding:4px 6px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  font:inherit;
+  text-align:right;
+}
+
+.adv-unit{
+  font-size:.8rem;
+  color:var(--muted);
+}
+     
 </style>
 </head>
 <body>
@@ -954,12 +1024,43 @@ function isoMondayLocal(d=new Date()){
 const WT_MODE_KEY='meetingTimer.wtMode'; // '60' | '30'
 function getMode(){ return localStorage.getItem(WT_MODE_KEY) || '60'; }
 function setMode(m){ localStorage.setItem(WT_MODE_KEY, m); }
+
+// Grunnverdier for 60/30-modus
 function slots(){
   const total = (getMode()==='30') ? 1800 : 3600;
-  const intro=90, review=90, outro=90; // 90s i begge moduser
+  const intro=90, review=90, outro=90; // 90s i begge moduser (grunnoppsett)
   return { total, intro, review, outro, content: total - (intro+review+outro) };
 }
+
+// Manuelle overstyringer fra "Avansert"
+//
+// advancedOverrides = {
+//   intro: number,
+//   review: number,
+//   outro: number,
+//   paras: number[]   // sekunder per avsnitt
+// }
+let advancedOverrides = null;
+
+// Gjeldende slots inkludert overstyringer
+function currentSlots(){
+  const base = slots();
+  if(!advancedOverrides) return base;
+  const intro  = Number.isFinite(advancedOverrides.intro)  ? advancedOverrides.intro  : base.intro;
+  const review = Number.isFinite(advancedOverrides.review) ? advancedOverrides.review : base.review;
+  const outro  = Number.isFinite(advancedOverrides.outro)  ? advancedOverrides.outro  : base.outro;
+  const total  = base.total;
+  return {
+    total,
+    intro,
+    review,
+    outro,
+    content: Math.max(0, total - (intro + review + outro))
+  };
+}
+
 let TITLE_OVERRIDES = {};
+
 /* ===== WT state ===== */
 let paras=[], perParagraph=[], cumulative=[], totalParagraphs=0;
 let reads=0, readSet=new Set();
@@ -1126,6 +1227,7 @@ try{
     if (typeof updateStaticTexts==='function'){ updateStaticTexts(); }
     setPillValue('pillFramesValue', (window.__VT_FRAME_SET instanceof Set) ? window.__VT_FRAME_SET.size : 0);
   })();
+   advancedOverrides = null;
   computeAllocation(); drawTimeline(); resetWTUI();
   if (typeof window.__VT_APPLY_IMAGES === 'function'){
     try{ window.__VT_APPLY_IMAGES(); }catch(e){}
@@ -1133,8 +1235,46 @@ try{
 }
 /* ===== Fordele tid (WT) ===== */
 const WPM=150, SEC_PER_Q=10, SEC_PER_READ=30, AB_BONUS=30;
+
+// Bruker advancedOverrides (hvis satt) til å justere perParagraph/cumulative
+function applyAdvancedOverridesToState(){
+  if(!advancedOverrides || totalParagraphs<=0) return;
+  const base = slots();
+  const intro  = Number.isFinite(advancedOverrides.intro)  ? advancedOverrides.intro  : base.intro;
+  const review = Number.isFinite(advancedOverrides.review) ? advancedOverrides.review : base.review;
+  const outro  = Number.isFinite(advancedOverrides.outro)  ? advancedOverrides.outro  : base.outro;
+
+  const srcParas = Array.isArray(advancedOverrides.paras) ? advancedOverrides.paras : [];
+  const fallbackEach = (() => {
+    if(!perParagraph || !perParagraph.length || totalParagraphs===0){
+      return (base.content/Math.max(1,totalParagraphs));
+    }
+    const sum = perParagraph.reduce((a,b)=>a+(Number(b)||0),0);
+    return sum/Math.max(1,perParagraph.length);
+  })();
+
+  const newPer = [];
+  for(let i=0; i<totalParagraphs; i++){
+    let v = Number(srcParas[i]);
+    if(!Number.isFinite(v) || v<=0){
+      v = Number(perParagraph[i]);
+      if(!Number.isFinite(v) || v<=0) v = fallbackEach;
+    }
+    newPer.push(v);
+  }
+  perParagraph = newPer;
+  cumulative=[];
+  let acc = intro;
+  for(let i=0;i<totalParagraphs;i++){
+    cumulative.push(acc);
+    acc += perParagraph[i];
+  }
+  // Renset tilbake
+  advancedOverrides = { intro, review, outro, paras: perParagraph.slice() };
+}
+
 function computeAllocation(){
-  const S=slots();
+  const S = slots(); // grunnlag
   if(totalParagraphs<=0){perParagraph=[];cumulative=[];return;}
   const wps=WPM/60;
   const raw=Array.from({length:totalParagraphs},(_,i)=>{
@@ -1149,7 +1289,11 @@ function computeAllocation(){
   const scale=S.content/((raw.reduce((a,b)=>a+b,0))||1);
   perParagraph=raw.map(x=>x*scale);
   cumulative=[]; let acc=S.intro; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
+
+  // Hvis vi har manuelle overstyringer, gjelder de foran baseline
+  applyAdvancedOverridesToState();
 }
+
 function formatGroupMessage(p){
   const groups = window.__VT_GROUPS || [];
   const L = window.L || {};
@@ -1167,7 +1311,7 @@ function formatGroupMessage(p){
 }
 /* ===== Tegn WT-tidslinje ===== */
 function drawTimeline(){
-  const S=slots();
+  const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
   const t=$('#timeline'); if(!t) return;
   Array.from(t.querySelectorAll('.para-slot')).forEach(n=>n.remove());
   const pct=v=> (v/S.total*100).toFixed(4)+'%';
@@ -1186,6 +1330,67 @@ function drawTimeline(){
     slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
     t.insertBefore(slot,$('#elapsed'));
   }
+  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+  // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
+  try{
+    const t = document.getElementById('timeline'); if(t){
+      const groups = window.__VT_GROUPS || [];
+      const slots = Array.from(t.querySelectorAll('.para-slot'));
+      const paraToGroupId = new Map();
+      groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
+      const blockIndexByPara = new Map();
+      const seen = new Set();
+      let block = 0;
+      for(let p=1; p<=slots.length; p++){
+        if(seen.has(p)) continue;
+        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
+        const members = [];
+        if(gid !== null && gid !== undefined){
+          const g = groups[gid] || [];
+          g.forEach(q=>{
+            if(q>=1 && q<=slots.length){
+              members.push(q);
+            }
+          });
+        }else{
+          members.push(p);
+        }
+        block++;
+        members.forEach(q=>{
+          seen.add(q);
+          blockIndexByPara.set(q, block);
+        });
+      }
+      function blockColor(b){
+        if(!b) return null;
+        return (b % 2 === 1) ? 'var(--tl-green-1)' : 'var(--tl-green-2)';
+      }
+      const ord = window.__VT_ORD || new Map();
+      const frameSet = window.__VT_FRAME_SET || new Set();
+      const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
+      slots.forEach((slot, idx)=>{
+        const p = idx+1;
+        const b = blockIndexByPara.get(p);
+        const col = blockColor(b);
+        if (col) slot.style.background = col;
+        slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
+        const hasRead = numericReads.has ? numericReads.has(p) : false;
+        const hasFrame = frameSet.has ? frameSet.has(p) : false;
+        if (!hasRead && !hasFrame) return;
+        const items = [];
+        if (hasFrame) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
+        if (hasRead)  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
+        items.sort((a,b)=>(a.order??99)-(b.order??99));
+        items.forEach((it, j)=>{
+          const pin = document.createElement('i');
+          pin.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
+          pin.style.bottom = `${-24 - j*12}px`;
+          slot.appendChild(pin);
+        });
+      });
+    }
+  }catch(e){}
+}
   $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
   // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
   try{
@@ -1273,6 +1478,7 @@ function lockWTControls(){
   const m60 = document.getElementById('mode60');
   const m30 = document.getElementById('mode30');
   const langBtn = document.getElementById('langBtn');
+  const advBtn = document.getElementById('wtAdvancedBtn');
   if(card){
     card.classList.add('locked');
     card.classList.add('collapsed'); // skjuler infofeltet under avspilling
@@ -1281,6 +1487,7 @@ function lockWTControls(){
   if(m60){ m60.setAttribute('disabled','disabled'); }
   if(m30){ m30.setAttribute('disabled','disabled'); }
   if(langBtn){ langBtn.setAttribute('disabled','disabled'); }
+  if(advBtn){ advBtn.setAttribute('disabled','disabled'); }
 }
 function unlockWTControls(){
   const card = document.getElementById('wtControlsCard');
@@ -1288,6 +1495,7 @@ function unlockWTControls(){
   const m60 = document.getElementById('mode60');
   const m30 = document.getElementById('mode30');
   const langBtn = document.getElementById('langBtn');
+  const advBtn = document.getElementById('wtAdvancedBtn');
   if(card){
     card.classList.remove('locked');
     // Ikke åpne/lukke her – bruker styrer 'collapsed' med tannhjulet
@@ -1296,6 +1504,7 @@ function unlockWTControls(){
   if(m60){ m60.removeAttribute('disabled'); }
   if(m30){ m30.removeAttribute('disabled'); }
   if(langBtn){ langBtn.removeAttribute('disabled'); }
+  if(advBtn){ advBtn.removeAttribute('disabled'); }
 }
 function resetWTUI(){
   if(tickHandle) clearInterval(tickHandle);
@@ -1321,7 +1530,7 @@ function stopClock(){ if(tickHandle)clearInterval(tickHandle); tickHandle=null }
 function nowElapsed(){ if(!started) return accum; if(paused) return accum; return accum+Math.floor((Date.now()-startTs)/1000)}
 function setWTMessage(txt){ $('#message').textContent=txt }
 function tickWT(){
-  const S=slots();
+  const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
   const e=nowElapsed();
   $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=S.total);
   const p=Math.min(e/S.total*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`;
@@ -1340,6 +1549,7 @@ function tickWT(){
     setWTMessage(msg);
   }
 }
+
 function setPressedWT(id){ ['playWT','pauseWT','stopWT'].forEach(x=>{ const el=document.getElementById(x); if(el) el.classList.toggle('pressed', x===id); }); }
 $('#playWT').addEventListener('click',()=>{
   if(started && paused){ paused=false; startTs=Date.now(); startClock(); tickWT(); setWTMessage('Fortsetter'); $('#playWT').disabled=true; $('#pauseWT').disabled=false; $('#stopWT').disabled=false; setPressedWT('playWT'); lockWTControls(); return }
@@ -1377,10 +1587,11 @@ $('#stopWT').addEventListener('click',()=>{
   // Marker gjeldende modus ved last
   const cur = getMode();
   applyModeToUI(cur);
-  m60.addEventListener('click', () => {
+    m60.addEventListener('click', () => {
     if(getMode() === '60') return;
     setMode('60');
     applyModeToUI('60');
+    advancedOverrides = null;
     computeAllocation();
     drawTimeline();
     resetWTUI();
@@ -1389,6 +1600,7 @@ $('#stopWT').addEventListener('click',()=>{
     if(getMode() === '30') return;
     setMode('30');
     applyModeToUI('30');
+    advancedOverrides = null;
     computeAllocation();
     drawTimeline();
     resetWTUI();
@@ -1590,6 +1802,155 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   if(closeBtn){
     closeBtn.addEventListener('click', closeModal);
   }
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && modal.classList.contains('open')){
+      closeModal();
+    }
+  });
+})();
+/* ===== WT Advanced timings ===== */
+(function(){
+  const btn      = document.getElementById('wtAdvancedBtn');
+  const modal    = document.getElementById('wtAdvancedModal');
+  const backdrop = document.getElementById('wtAdvancedBackdrop');
+  const closeBtn = document.getElementById('wtAdvancedClose');
+  const saveBtn  = document.getElementById('wtAdvancedSave');
+  const resetBtn = document.getElementById('wtAdvancedReset');
+  const body     = document.getElementById('wtAdvancedBody');
+  if(!btn || !modal || !body) return;
+
+  function buildRows(){
+    body.innerHTML = '';
+    const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
+    const L = window.L || {};
+    const labelIntro   = L.Intro || 'Intro';
+    const labelReview  = L.Review || 'Repetisjonsspørsmål';
+    const labelOutro   = L.Conclusion || 'Avslutning';
+    const labelPara    = L.Paragraph || 'Avsnitt';
+
+    function addRow(key, label, value){
+      const row = document.createElement('div');
+      row.className = 'adv-row';
+      row.innerHTML = `
+        <span class="adv-label">${label}</span>
+        <input type="number" min="1" step="1" class="adv-input" data-key="${key}" value="${Math.round(value)}">
+        <span class="adv-unit">sek</span>
+      `;
+      body.appendChild(row);
+    }
+
+    // Intro
+    const curIntro = (advancedOverrides && Number.isFinite(advancedOverrides.intro))
+      ? advancedOverrides.intro
+      : S.intro;
+    addRow('intro', labelIntro, curIntro);
+
+    // Avsnitt
+    for(let i=1;i<=totalParagraphs;i++){
+      const baseSec = perParagraph[i-1] || 0;
+      const curSec =
+        (advancedOverrides &&
+         Array.isArray(advancedOverrides.paras) &&
+         Number.isFinite(advancedOverrides.paras[i-1]) &&
+         advancedOverrides.paras[i-1] > 0)
+          ? advancedOverrides.paras[i-1]
+          : baseSec;
+      const row = document.createElement('div');
+      row.className='adv-row';
+      row.innerHTML = `
+        <span class="adv-label">${labelPara} ${i}</span>
+        <input type="number" min="1" step="1" class="adv-input" data-key="p${i}" value="${Math.round(curSec)}">
+        <span class="adv-unit">sek</span>
+      `;
+      body.appendChild(row);
+    }
+
+    // Repetisjon + avslutning
+    const curReview = (advancedOverrides && Number.isFinite(advancedOverrides.review))
+      ? advancedOverrides.review
+      : S.review;
+    const curOutro = (advancedOverrides && Number.isFinite(advancedOverrides.outro))
+      ? advancedOverrides.outro
+      : S.outro;
+    addRow('review', labelReview, curReview);
+    addRow('outro', labelOutro, curOutro);
+  }
+
+  function openModal(){
+    if(!totalParagraphs){
+      alert('Velg en artikkel først.');
+      return;
+    }
+    buildRows();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+  }
+
+  function closeModal(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+  }
+
+  function applyFromInputs(){
+    const inputs = body.querySelectorAll('.adv-input');
+    if(!inputs.length) return;
+    const base = slots();
+    const next = {
+      intro:  base.intro,
+      review: base.review,
+      outro:  base.outro,
+      paras:  []
+    };
+
+    inputs.forEach(input=>{
+      const key = input.dataset.key;
+      let v = parseInt(input.value,10);
+      if(!Number.isFinite(v) || v <= 0) v = 1;
+      if(key === 'intro')      next.intro  = v;
+      else if(key === 'review')next.review = v;
+      else if(key === 'outro') next.outro  = v;
+      else if(key && key.startsWith('p')){
+        const idx = parseInt(key.slice(1),10);
+        if(idx >= 1) next.paras[idx-1] = v;
+      }
+    });
+
+    // Fyll tomme avsnitt med baseline hvis nødvendig
+    for(let i=0;i<totalParagraphs;i++){
+      if(!Number.isFinite(next.paras[i]) || next.paras[i] <= 0){
+        const fallback = perParagraph[i] || (base.content/Math.max(1,totalParagraphs));
+        next.paras[i] = Math.max(1, Math.round(fallback));
+      }
+    }
+
+    advancedOverrides = next;
+    // computeAllocation bruker advancedOverrides i applyAdvancedOverridesToState
+    computeAllocation();
+    drawTimeline();
+    resetWTUI();
+  }
+
+  if(btn)      btn.addEventListener('click',   openModal);
+  if(backdrop) backdrop.addEventListener('click', closeModal);
+  if(closeBtn) closeBtn.addEventListener('click',  closeModal);
+
+  if(saveBtn){
+    saveBtn.addEventListener('click', ()=>{
+      applyFromInputs();
+      closeModal();
+    });
+  }
+
+  if(resetBtn){
+    resetBtn.addEventListener('click', ()=>{
+      advancedOverrides = null;
+      computeAllocation();
+      drawTimeline();
+      resetWTUI();
+      closeModal();
+    });
+  }
+
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && modal.classList.contains('open')){
       closeModal();
