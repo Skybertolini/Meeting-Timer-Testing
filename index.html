@@ -806,6 +806,23 @@ If you want, you’re welcome to include your name and where you’re from — i
     </div>
   </div>
 </div>
+<!-- WT Advanced modal -->
+<div id="wtAdvancedModal" class="feedback-modal" aria-hidden="true">
+  <div class="feedback-backdrop" id="wtAdvancedBackdrop"></div>
+  <div class="feedback-dialog advanced-dialog" role="dialog" aria-modal="true" aria-labelledby="wtAdvancedTitle">
+    <h3 id="wtAdvancedTitle" class="feedback-title">Avansert tidsberegning</h3>
+    <p class="feedback-help">
+      Her kan du se og justere hvor mange sekunder som er satt av til hver del av vakttårnstudiet.
+      Endringene påvirker tidslinjen, men ikke den totale studietiden (60 eller 30 min).
+    </p>
+    <div id="wtAdvancedBody" class="advanced-body"></div>
+    <div class="feedback-actions" style="margin-top:10px;">
+      <button type="button" id="wtAdvancedReset">Tilbakestill</button>
+      <button type="button" id="wtAdvancedClose">Lukk</button>
+      <button type="button" id="wtAdvancedSave" class="primary">Lagre</button>
+    </div>
+  </div>
+</div>
 
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
