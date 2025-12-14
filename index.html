@@ -269,18 +269,6 @@ textarea{resize:vertical;}
     grid-template-columns:1fr;
   }
 }
-@media (max-width:640px){
-  .stats-row{justify-content:stretch;}
-  .stats-row .advanced-pill{
-    margin-left:0;
-    width:100%;
-    justify-content:center;
-  }
-  .stats-row .modepill{
-    width:100%;
-    justify-content:center;
-  }
-}
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
 #wtControlsCard.locked .select, 
@@ -688,6 +676,45 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
+}
+
+.adv-extra{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:10px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(255,0,0,0.05);
+  border:1px solid rgba(200,0,0,0.18);
+}
+
+.adv-extra-label{
+  font-weight:900;
+  color:#b00000;
+}
+
+.adv-extra-value{
+  font-weight:800;
+  color:#2f3b34;
+  letter-spacing:.02em;
+}
+
+.adv-extra-value.over{
+  color:#b00000;
+}
+
+.adv-extra-note{
+  margin-top:4px;
+  font-size:.82rem;
+  color:#b00000;
+  font-weight:800;
+}
+
+.feedback-actions button.blocked{
+  opacity:.6;
+  cursor:not-allowed;
 }
      
 </style>
@@ -1401,67 +1428,6 @@ function drawTimeline(){
     }
   }catch(e){}
 }
-  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
-  // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
-  try{
-    const t = document.getElementById('timeline'); if(t){
-      const groups = window.__VT_GROUPS || [];
-      const slots = Array.from(t.querySelectorAll('.para-slot'));
-      const paraToGroupId = new Map();
-      groups.forEach((g,i)=> g.forEach(p=>paraToGroupId.set(p,i)));
-      const blockIndexByPara = new Map();
-      const seen = new Set();
-      let block = 0;
-      for(let p=1; p<=slots.length; p++){
-        if(seen.has(p)) continue;
-        const gid = paraToGroupId.has(p) ? paraToGroupId.get(p) : null;
-        const members = [];
-        if(gid !== null && gid !== undefined){
-          const g = groups[gid] || [];
-          g.forEach(q=>{
-            if(q>=1 && q<=slots.length){
-              members.push(q);
-            }
-          });
-        }else{
-          members.push(p);
-        }
-        block++;
-        members.forEach(q=>{
-          seen.add(q);
-          blockIndexByPara.set(q, block);
-        });
-      }
-      function blockColor(b){
-        if(!b) return null;
-        return (b % 2 === 1) ? 'var(--tl-green-1)' : 'var(--tl-green-2)';
-      }
-      const ord = window.__VT_ORD || new Map();
-      const frameSet = window.__VT_FRAME_SET || new Set();
-      const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
-      slots.forEach((slot, idx)=>{
-        const p = idx+1;
-        const b = blockIndexByPara.get(p);
-        const col = blockColor(b);
-        if (col) slot.style.background = col;
-        slot.querySelectorAll('.read-pin,.frame-pin').forEach(n=>n.remove());
-        const hasRead = numericReads.has ? numericReads.has(p) : false;
-        const hasFrame = frameSet.has ? frameSet.has(p) : false;
-        if (!hasRead && !hasFrame) return;
-        const items = [];
-        if (hasFrame) items.push({type:'frame', order:(ord.get(p)||{}).frame ?? 1});
-        if (hasRead)  items.push({type:'read',  order:(ord.get(p)||{}).read  ?? 2});
-        items.sort((a,b)=>(a.order??99)-(b.order??99));
-        items.forEach((it, j)=>{
-          const pin = document.createElement('i');
-          pin.className = it.type==='frame' ? 'frame-pin' : 'read-pin';
-          pin.style.bottom = `${-24 - j*12}px`;
-          slot.appendChild(pin);
-        });
-      });
-    }
-  }catch(e){}
-}
 // Klikk på introfeltet: hopp til 00:00 når ikke spiller (eller pauset)
 (function(){
   const intro = document.getElementById('introSlot');
@@ -1829,6 +1795,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const body     = document.getElementById('wtAdvancedBody');
   if(!btn || !modal || !body) return;
 
+  let extraBox=null, extraValue=null, extraNote=null;
+
   const formatSeconds = (sec)=>{
     const safe   = Math.max(1, Math.round(Number(sec) || 0));
     const mins   = Math.floor(safe / 60);
@@ -1966,7 +1934,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       } else {
         v = parseInt(input.value,10);
       }
-      if(!Number.isFinite(v) || v <= 0) v = 1;
+      if(!Number.isFinite(v) || v <= 0) v = NaN;
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
       else if(key === 'outro') next.outro  = v;
