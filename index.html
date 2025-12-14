@@ -1358,7 +1358,7 @@ function drawTimeline(){
   $('#reviewSlot').style.right=pct(S.outro); $('#reviewSlot').style.width=pct(S.review);
   if(totalParagraphs<=0){$('#elapsed').style.width='0%'; $('#cursor').style.left='0%'; return;}
   const tlWidth=t.clientWidth||t.getBoundingClientRect().width||1; const pxPerSec=tlWidth/S.total;
-  const paraSlots=[];
+  const slots=[];
   for(let i=1;i<=totalParagraphs;i++){
     const leftP=(cumulative[i-1]/S.total)*100, widthP=(perParagraph[i-1]/S.total)*100;
     const slot=document.createElement('div'); slot.className='para-slot'+(i%2===0?' alt':''); slot.style.left=leftP+'%'; slot.style.width=widthP+'%';
@@ -1367,9 +1367,7 @@ function drawTimeline(){
     // Klikk for å hoppe (når ikke spiller)
     slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
     t.insertBefore(slot,$('#elapsed'));
-    paraSlots.push(slot);
-  }
-  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+    $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
   // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
   try{
     const groups = window.__VT_GROUPS || [];
@@ -1398,14 +1396,10 @@ function drawTimeline(){
         blockIndexByPara.set(q, block);
       });
     }
-    function blockColor(b){
-      if(!b) return null;
-      return (b % 2 === 1) ? 'var(--tl-green-1)' : 'var(--tl-green-2)';
-    }
     const ord = window.__VT_ORD || new Map();
     const frameSet = window.__VT_FRAME_SET || new Set();
     const numericReads = (window.__VT_READ_SET2 instanceof Set) ? window.__VT_READ_SET2 : (window.readSet || new Set());
-    paraSlots.forEach((slot, idx)=>{
+    slots.forEach((slot, idx)=>{
       const p = idx+1;
       const b = blockIndexByPara.get(p);
       const col = blockColor(b);
