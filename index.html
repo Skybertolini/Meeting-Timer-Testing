@@ -170,10 +170,10 @@ textarea{resize:vertical;}
 @media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
 /* Stats row: avsnitt/les/bilder + studietid */
 .stats-row{
-  display:flex;
-  align-items:center;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  align-items:stretch;
   gap:8px;
-  flex-wrap:wrap;
 }
 .stats-row .pill{
   display:inline-flex;
@@ -204,6 +204,7 @@ textarea{resize:vertical;}
   box-shadow:0 4px 12px rgba(70,50,30,.05);
   padding:4px;
   min-height:46px;
+  width:100%;
 }
 .stats-row .modepill button{
   flex:1 1 50%;
@@ -231,9 +232,9 @@ textarea{resize:vertical;}
 }
     /* Avansert-knapp (skiftenøkkel) */
 .stats-row .advanced-pill{
-  margin-left:auto;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   gap:6px;
   padding:8px 12px;
   background:var(--pill);
@@ -245,6 +246,7 @@ textarea{resize:vertical;}
   box-shadow:0 4px 12px rgba(70,50,30,.05);
   cursor:pointer;
   min-height:46px;
+  width:100%;
 }
 .stats-row .advanced-pill .adv-icon{
   font-size:1.1rem;
@@ -258,11 +260,14 @@ textarea{resize:vertical;}
   filter:grayscale(50%);
 }
 @media (min-width:720px){
-  .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
+  .stats-row{
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  }
 }
-@media (max-width:480px){
-  .stats-row{grid-template-columns:1fr;}
-  .stats-row .modepill{width:100%;}
+@media (max-width:640px){
+  .stats-row{
+    grid-template-columns:1fr;
+  }
 }
 @media (max-width:640px){
   .stats-row{justify-content:stretch;}
