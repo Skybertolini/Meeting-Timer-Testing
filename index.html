@@ -1917,6 +1917,19 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       : S.outro;
     addRow('review', labelReview, curReview);
     addRow('outro', labelOutro, curOutro);
+
+    extraBox = document.createElement('div');
+    extraBox.className = 'adv-extra';
+    extraBox.innerHTML = `
+      <span class="adv-extra-label">Ekstra tid</span>
+      <span class="adv-extra-value" id="advExtraValue">00:00</span>
+    `;
+    body.appendChild(extraBox);
+
+    extraNote = document.createElement('div');
+    extraNote.className = 'adv-extra-note';
+    extraNote.id = 'advExtraNote';
+    body.appendChild(extraNote);
   }
 
   function openModal(){
@@ -1925,6 +1938,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       return;
     }
     buildRows();
+    updateExtraSummary();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
   }
@@ -1934,9 +1948,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     modal.setAttribute('aria-hidden','true');
   }
 
-  function applyFromInputs(){
+  function buildNextFromInputs(){
     const inputs = body.querySelectorAll('.adv-input');
-    if(!inputs.length) return;
     const base = slots();
     const next = {
       intro:  base.intro,
@@ -1963,14 +1976,51 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       }
     });
 
-    // Fyll tomme avsnitt med baseline hvis nødvendig
     for(let i=0;i<totalParagraphs;i++){
       if(!Number.isFinite(next.paras[i]) || next.paras[i] <= 0){
         const fallback = perParagraph[i] || (base.content/Math.max(1,totalParagraphs));
         next.paras[i] = Math.max(1, Math.round(fallback));
       }
     }
+    if(!Number.isFinite(next.intro)  || next.intro<=0)  next.intro  = base.intro;
+    if(!Number.isFinite(next.review) || next.review<=0) next.review = base.review;
+    if(!Number.isFinite(next.outro)  || next.outro<=0)  next.outro  = base.outro;
 
+    return next;
+  }
+
+  function collectInputTotals(){
+    const next = buildNextFromInputs();
+    const paraSum = next.paras.reduce((a,b)=>a+(Number.isFinite(b)?b:0),0);
+    const totalSeconds = next.intro + next.review + next.outro + paraSum;
+    const limit = slots().total;
+    return { totalSeconds, limit, over: Math.max(0, totalSeconds - limit), next };
+  }
+
+  function updateExtraSummary(){
+    const { over, limit } = collectInputTotals();
+    const overText = fmt(over);
+    if(extraValue){
+      extraValue.textContent = overText;
+      extraValue.classList.toggle('over', over>0);
+    }
+    if(extraNote){
+      if(over>0){
+        extraNote.textContent = `Det er ${overText} for mye her. Du må gjøre justeringer, slik at total tid ikke går over ${fmt(limit)}.`;
+        extraNote.style.display='block';
+      } else {
+        extraNote.textContent='';
+        extraNote.style.display='none';
+      }
+    }
+    if(saveBtn){
+      saveBtn.classList.toggle('blocked', over>0);
+      saveBtn.setAttribute('aria-disabled', over>0 ? 'true' : 'false');
+    }
+  }
+
+  function applyFromInputs(){
+    const { next } = collectInputTotals();
     advancedOverrides = next;
     // computeAllocation bruker advancedOverrides i applyAdvancedOverridesToState
     computeAllocation();
@@ -1984,9 +2034,18 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
   if(saveBtn){
     saveBtn.addEventListener('click', ()=>{
+      const { over, limit } = collectInputTotals();
+      if(over>0){
+        alert(`Det er ${fmt(over)} for mye her. Du må gjøre justeringer, slik at total tid ikke går over ${fmt(limit)}.`);
+        return;
+      }
       applyFromInputs();
       closeModal();
     });
+  }
+
+  if(body){
+    body.addEventListener('input', updateExtraSummary);
   }
 
   if(resetBtn){
@@ -2004,6 +2063,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       closeModal();
     }
   });
+  updateExtraSummary();
 })();
 
 /* ===== Init ===== */
