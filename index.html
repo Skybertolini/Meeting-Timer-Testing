@@ -269,6 +269,18 @@ textarea{resize:vertical;}
     grid-template-columns:1fr;
   }
 }
+@media (max-width:640px){
+  .stats-row{justify-content:stretch;}
+  .stats-row .advanced-pill{
+    margin-left:0;
+    width:100%;
+    justify-content:center;
+  }
+  .stats-row .modepill{
+    width:100%;
+    justify-content:center;
+  }
+}
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
 #wtControlsCard.locked .select, 
@@ -676,45 +688,6 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
-}
-
-.adv-extra{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-top:10px;
-  padding:8px 10px;
-  border-radius:10px;
-  background:rgba(255,0,0,0.05);
-  border:1px solid rgba(200,0,0,0.18);
-}
-
-.adv-extra-label{
-  font-weight:900;
-  color:#b00000;
-}
-
-.adv-extra-value{
-  font-weight:800;
-  color:#2f3b34;
-  letter-spacing:.02em;
-}
-
-.adv-extra-value.over{
-  color:#b00000;
-}
-
-.adv-extra-note{
-  margin-top:4px;
-  font-size:.82rem;
-  color:#b00000;
-  font-weight:800;
-}
-
-.feedback-actions button.blocked{
-  opacity:.6;
-  cursor:not-allowed;
 }
      
 </style>
@@ -1856,8 +1829,6 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const body     = document.getElementById('wtAdvancedBody');
   if(!btn || !modal || !body) return;
 
-  let extraBox=null, extraValue=null, extraNote=null;
-
   const formatSeconds = (sec)=>{
     const safe   = Math.max(1, Math.round(Number(sec) || 0));
     const mins   = Math.floor(safe / 60);
@@ -1995,7 +1966,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       } else {
         v = parseInt(input.value,10);
       }
-      if(!Number.isFinite(v) || v <= 0) v = NaN;
+      if(!Number.isFinite(v) || v <= 0) v = 1;
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
       else if(key === 'outro') next.outro  = v;
