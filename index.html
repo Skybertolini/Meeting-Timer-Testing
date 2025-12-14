@@ -170,10 +170,10 @@ textarea{resize:vertical;}
 @media (max-width:560px){ .wt-toprow{flex-wrap:wrap} }
 /* Stats row: avsnitt/les/bilder + studietid */
 .stats-row{
-  display:flex;
-  align-items:center;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  align-items:stretch;
   gap:8px;
-  flex-wrap:wrap;
 }
 .stats-row .pill{
   display:inline-flex;
@@ -204,6 +204,7 @@ textarea{resize:vertical;}
   box-shadow:0 4px 12px rgba(70,50,30,.05);
   padding:4px;
   min-height:46px;
+  width:100%;
 }
 .stats-row .modepill button{
   flex:1 1 50%;
@@ -231,9 +232,9 @@ textarea{resize:vertical;}
 }
     /* Avansert-knapp (skiftenøkkel) */
 .stats-row .advanced-pill{
-  margin-left:auto;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   gap:6px;
   padding:8px 12px;
   background:var(--pill);
@@ -245,6 +246,7 @@ textarea{resize:vertical;}
   box-shadow:0 4px 12px rgba(70,50,30,.05);
   cursor:pointer;
   min-height:46px;
+  width:100%;
 }
 .stats-row .advanced-pill .adv-icon{
   font-size:1.1rem;
@@ -256,14 +258,16 @@ textarea{resize:vertical;}
   opacity:.55;
   cursor:default;
   filter:grayscale(50%);
-}    
-.stats-row 
-@media (min-width:720px){
-  .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
 }
-@media (max-width:480px){
-  .stats-row{grid-template-columns:1fr;}
-  .stats-row .modepill{width:100%;}
+@media (min-width:720px){
+  .stats-row{
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+@media (max-width:640px){
+  .stats-row{
+    grid-template-columns:1fr;
+  }
 }
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
@@ -654,7 +658,7 @@ body.dark .feedback-actions button.primary{
 
 .adv-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
   gap:6px;
   margin-bottom:4px;
@@ -672,11 +676,6 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
-}
-
-.adv-unit{
-  font-size:.8rem;
-  color:var(--muted);
 }
      
 </style>
@@ -1329,8 +1328,7 @@ function drawTimeline(){
     // Klikk for å hoppe (når ikke spiller)
     slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
     t.insertBefore(slot,$('#elapsed'));
-  }
-  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+    $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
   // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
   try{
     const t = document.getElementById('timeline'); if(t){
@@ -1819,6 +1817,29 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const body     = document.getElementById('wtAdvancedBody');
   if(!btn || !modal || !body) return;
 
+  const formatSeconds = (sec)=>{
+    const safe   = Math.max(1, Math.round(Number(sec) || 0));
+    const mins   = Math.floor(safe / 60);
+    const remain = safe % 60;
+    return `${mins}:${remain.toString().padStart(2,'0')}`;
+  };
+
+  const parseDuration = (val)=>{
+    const text = String(val || '').trim();
+    if(!text) return NaN;
+    const normalized = text.replace(',', ':');
+    if(normalized.includes(':')){
+      const parts = normalized.split(':');
+      if(parts.length !== 2) return NaN;
+      const [m,s] = parts;
+      const mins = parseInt(m,10);
+      const secs = parseInt(s,10);
+      if(!Number.isFinite(mins) || !Number.isFinite(secs) || mins < 0 || secs < 0) return NaN;
+      return (mins * 60) + secs;
+    }
+    return parseInt(normalized,10);
+  };
+
   function buildRows(){
     body.innerHTML = '';
     const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
@@ -1833,9 +1854,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className = 'adv-row';
       row.innerHTML = `
         <span class="adv-label">${label}</span>
-        <input type="number" min="1" step="1" class="adv-input" data-key="${key}" value="${Math.round(value)}">
-        <span class="adv-unit">sek</span>
+        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value)}">
       `;
+      const input = row.querySelector('.adv-input');
+      if(input){
+        input.dataset.parser = 'clock';
+        input.dataset.key = key;
+        input.dataset.originalSeconds = String(value);
+      }
       body.appendChild(row);
     }
 
@@ -1859,9 +1885,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className='adv-row';
       row.innerHTML = `
         <span class="adv-label">${labelPara} ${i}</span>
-        <input type="number" min="1" step="1" class="adv-input" data-key="p${i}" value="${Math.round(curSec)}">
-        <span class="adv-unit">sek</span>
+        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="p${i}" value="${formatSeconds(curSec)}">
       `;
+      const input = row.querySelector('.adv-input');
+      if(input){
+        input.dataset.parser = 'clock';
+        input.dataset.key = `p${i}`;
+        input.dataset.originalSeconds = String(curSec);
+      }
       body.appendChild(row);
     }
 
@@ -1904,7 +1935,12 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     inputs.forEach(input=>{
       const key = input.dataset.key;
-      let v = parseInt(input.value,10);
+      let v = NaN;
+      if(input.dataset.parser === 'clock'){
+        v = parseDuration(input.value);
+      } else {
+        v = parseInt(input.value,10);
+      }
       if(!Number.isFinite(v) || v <= 0) v = 1;
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
