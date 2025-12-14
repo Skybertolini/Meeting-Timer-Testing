@@ -256,14 +256,25 @@ textarea{resize:vertical;}
   opacity:.55;
   cursor:default;
   filter:grayscale(50%);
-}    
-.stats-row 
+}
 @media (min-width:720px){
   .stats-row .modepill{justify-self:end; width:auto; min-width:fit-content;}
 }
 @media (max-width:480px){
   .stats-row{grid-template-columns:1fr;}
   .stats-row .modepill{width:100%;}
+}
+@media (max-width:640px){
+  .stats-row{justify-content:stretch;}
+  .stats-row .advanced-pill{
+    margin-left:0;
+    width:100%;
+    justify-content:center;
+  }
+  .stats-row .modepill{
+    width:100%;
+    justify-content:center;
+  }
 }
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
