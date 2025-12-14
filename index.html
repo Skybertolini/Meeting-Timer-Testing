@@ -670,7 +670,7 @@ body.dark .feedback-actions button.primary{
 
 .adv-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
   gap:6px;
   margin-bottom:4px;
@@ -688,11 +688,6 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
-}
-
-.adv-unit{
-  font-size:.8rem;
-  color:var(--muted);
 }
      
 </style>
@@ -1834,6 +1829,29 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const body     = document.getElementById('wtAdvancedBody');
   if(!btn || !modal || !body) return;
 
+  const formatSeconds = (sec)=>{
+    const safe   = Math.max(1, Math.round(Number(sec) || 0));
+    const mins   = Math.floor(safe / 60);
+    const remain = safe % 60;
+    return `${mins}:${remain.toString().padStart(2,'0')}`;
+  };
+
+  const parseDuration = (val)=>{
+    const text = String(val || '').trim();
+    if(!text) return NaN;
+    const normalized = text.replace(',', ':');
+    if(normalized.includes(':')){
+      const parts = normalized.split(':');
+      if(parts.length !== 2) return NaN;
+      const [m,s] = parts;
+      const mins = parseInt(m,10);
+      const secs = parseInt(s,10);
+      if(!Number.isFinite(mins) || !Number.isFinite(secs) || mins < 0 || secs < 0) return NaN;
+      return (mins * 60) + secs;
+    }
+    return parseInt(normalized,10);
+  };
+
   function buildRows(){
     body.innerHTML = '';
     const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
@@ -1848,9 +1866,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className = 'adv-row';
       row.innerHTML = `
         <span class="adv-label">${label}</span>
-        <input type="number" min="1" step="1" class="adv-input" data-key="${key}" value="${Math.round(value)}">
-        <span class="adv-unit">sek</span>
+        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value)}">
       `;
+      const input = row.querySelector('.adv-input');
+      if(input){
+        input.dataset.parser = 'clock';
+        input.dataset.key = key;
+        input.dataset.originalSeconds = String(value);
+      }
       body.appendChild(row);
     }
 
@@ -1874,9 +1897,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className='adv-row';
       row.innerHTML = `
         <span class="adv-label">${labelPara} ${i}</span>
-        <input type="number" min="1" step="1" class="adv-input" data-key="p${i}" value="${Math.round(curSec)}">
-        <span class="adv-unit">sek</span>
+        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="p${i}" value="${formatSeconds(curSec)}">
       `;
+      const input = row.querySelector('.adv-input');
+      if(input){
+        input.dataset.parser = 'clock';
+        input.dataset.key = `p${i}`;
+        input.dataset.originalSeconds = String(curSec);
+      }
       body.appendChild(row);
     }
 
@@ -1919,7 +1947,12 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     inputs.forEach(input=>{
       const key = input.dataset.key;
-      let v = parseInt(input.value,10);
+      let v = NaN;
+      if(input.dataset.parser === 'clock'){
+        v = parseDuration(input.value);
+      } else {
+        v = parseInt(input.value,10);
+      }
       if(!Number.isFinite(v) || v <= 0) v = 1;
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
