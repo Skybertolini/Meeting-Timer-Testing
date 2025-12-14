@@ -1345,8 +1345,7 @@ function drawTimeline(){
     // Klikk for å hoppe (når ikke spiller)
     slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
     t.insertBefore(slot,$('#elapsed'));
-  }
-  $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
+    $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
   // VT 1.48 enhance: group-aware zebra colors and ordered pins (frame/read with a/b)
   try{
     const t = document.getElementById('timeline'); if(t){
