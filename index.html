@@ -269,6 +269,18 @@ textarea{resize:vertical;}
     grid-template-columns:1fr;
   }
 }
+@media (max-width:640px){
+  .stats-row{justify-content:stretch;}
+  .stats-row .advanced-pill{
+    margin-left:0;
+    width:100%;
+    justify-content:center;
+  }
+  .stats-row .modepill{
+    width:100%;
+    justify-content:center;
+  }
+}
 /* Locked state when study started */
 #wtControlsCard.locked{opacity:.55; filter:grayscale(25%);}
 #wtControlsCard.locked .select, 
