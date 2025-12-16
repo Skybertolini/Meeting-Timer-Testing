@@ -39,7 +39,7 @@
     "AdvancedReset": "Reset",
     "AdvancedClose": "Close",
     "AdvancedSave": "Save",
-    "AdvancedOverLimit": "Total allocation is {over} too high. Please adjust so it stays within {limit} min.",
+    "AdvancedOverLimit": "The total allocation exceeds the limit by {over}. Please adjust it to stay within {limit} min.",
     "ExtraTime": "Extra time"
   },
   "no": {
@@ -82,7 +82,7 @@
     "AdvancedReset": "Tilbakestill",
     "AdvancedClose": "Lukk",
     "AdvancedSave": "Lagre",
-    "AdvancedOverLimit": "Det er totalt {over} for mye nå. Prøv å fordele tiden så det ikke går over {limit} min.",
+    "AdvancedOverLimit": "Den totale tidsfordelingen overstiger grensen med {over}. Juster slik at den holder seg innenfor {limit} min.",
     "ExtraTime": "Ekstra tid"
   },
   "sv": {
@@ -125,7 +125,7 @@
     "AdvancedReset": "Återställ",
     "AdvancedClose": "Stäng",
     "AdvancedSave": "Spara",
-    "AdvancedOverLimit": "Det är totalt {over} för mycket nu. Försök fördela tiden så att det inte går över {limit} min.",
+    "AdvancedOverLimit": "Den totala tidsfördelningen överskrider gränsen med {over}. Justera så att den håller sig inom {limit} min.",
     "ExtraTime": "Extra tid"
   },
   "da": {
@@ -168,7 +168,7 @@
     "AdvancedReset": "Nulstil",
     "AdvancedClose": "Luk",
     "AdvancedSave": "Gem",
-    "AdvancedOverLimit": "Der er i alt {over} for meget nu. Prøv at fordele tiden, så det ikke går over {limit} min.",
+    "AdvancedOverLimit": "Den samlede tidsfordeling overstiger grænsen med {over}. Juster, så den holder sig inden for {limit} min.",
     "ExtraTime": "Ekstra tid"
   },
   "de": {
@@ -211,7 +211,7 @@
     "AdvancedReset": "Zurücksetzen",
     "AdvancedClose": "Schließen",
     "AdvancedSave": "Speichern",
-    "AdvancedOverLimit": "Insgesamt sind es derzeit {over} zu viel. Bitte verteile die Zeit so, dass {limit} Min. nicht überschritten werden.",
+    "AdvancedOverLimit": "Die gesamte Zeitverteilung überschreitet die Grenze um {over}. Bitte passe sie so an, dass sie innerhalb von {limit} Min. bleibt.",
     "ExtraTime": "Zusätzliche Zeit"
   },
   "es": {
@@ -254,7 +254,7 @@
     "AdvancedReset": "Restablecer",
     "AdvancedClose": "Cerrar",
     "AdvancedSave": "Guardar",
-    "AdvancedOverLimit": "Hay un exceso total de {over} ahora. Ajusta el tiempo para que no supere los {limit} min.",
+    "AdvancedOverLimit": "La asignación total supera el límite en {over}. Ajusta para que se mantenga dentro de {limit} min.",
     "ExtraTime": "Tiempo extra"
   },
   "fr": {
@@ -297,7 +297,7 @@
     "AdvancedReset": "Réinitialiser",
     "AdvancedClose": "Fermer",
     "AdvancedSave": "Enregistrer",
-    "AdvancedOverLimit": "Il y a actuellement un dépassement total de {over}. Répartis le temps pour ne pas dépasser {limit} min.",
+    "AdvancedOverLimit": "La répartition totale dépasse la limite de {over}. Veuillez ajuster afin de rester dans la limite de {limit} min.",
     "ExtraTime": "Temps supplémentaire"
   },
   "it": {
@@ -340,7 +340,7 @@
     "AdvancedReset": "Reimposta",
     "AdvancedClose": "Chiudi",
     "AdvancedSave": "Salva",
-    "AdvancedOverLimit": "C'è un totale di {over} in più al momento. Distribuisci il tempo in modo che non superi {limit} min.",
+    "AdvancedOverLimit": "La distribuzione totale supera il limite di {over}. Regola affinché rimanga entro {limit} min.",
     "ExtraTime": "Tempo extra"
   }
 }
