@@ -1941,16 +1941,15 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     function addRow(key, label, value, opts={}){
       const min = Number.isFinite(parseInt(opts.min,10)) ? parseInt(opts.min,10) : 1;
-      const showSteps = opts.steps !== false;
       const row = document.createElement('div');
       row.className = 'adv-row';
       const displayValue = opts.signed ? formatSignedSeconds(value) : formatSeconds(value, min);
       row.innerHTML = `
         <span class="adv-label">${label}</span>
         <div class="adv-control">
-          ${showSteps ? '<button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>' : ''}
-          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${displayValue}" ${opts.readonly ? 'readonly' : ''}>
-          ${showSteps ? '<button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>' : ''}
+          <button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>
+          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value, min)}">
+          <button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>
         </div>
       `;
       const input = row.querySelector('.adv-input');
@@ -2012,8 +2011,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     const curExtra = (advancedOverrides && Number.isFinite(advancedOverrides.extra))
       ? advancedOverrides.extra
       : 0;
-    addRow('extra', labelExtra, curExtra, {min:0, steps:false, readonly:true, signed:true});
-    updateExtraField();
+    addRow('extra', labelExtra, curExtra, {min:0});
   }
 
   function openModal(){
@@ -2056,6 +2054,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
       else if(key === 'outro') next.outro  = v;
+      else if(key === 'extra') next.extra  = v;
       else if(key && key.startsWith('p')){
         const idx = parseInt(key.slice(1),10);
         if(idx >= 1) next.paras[idx-1] = v;
@@ -2071,27 +2070,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     const totalParas = next.paras.reduce((sum,val)=>sum+(Number(val)||0),0);
     const modeTotal = base.total;
-    const absoluteTotal = next.intro + next.review + next.outro + totalParas;
-    const diff = absoluteTotal - modeTotal;
-    return {next, totalParas, modeTotal, absoluteTotal, diff};
-  }
-
-  function updateExtraField(){
-    const extraInput = body.querySelector('.adv-input[data-key="extra"]');
-    if(!extraInput) return;
-    const {diff} = parseInputs();
-    extraInput.value = formatSignedSeconds(diff);
-  }
-
-  function applyFromInputs(){
-    const {next, modeTotal, absoluteTotal, diff} = parseInputs();
-    const limitLabel = modeTotal === 1800 ? '30' : '60';
-    if(absoluteTotal > modeTotal){
-      alert(`Det er totalt ${formatSeconds(absoluteTotal - modeTotal,0)} for mye nå. Prøv å fordele tiden så det ikke går over ${limitLabel} min.`);
-      return false;
+    const effectiveTotal = (next.intro + next.review + next.outro + totalParas) - (Number(next.extra)||0);
+    if(effectiveTotal > modeTotal){
+      const over = effectiveTotal - modeTotal;
+      const limitLabel = modeTotal === 1800 ? '30' : '60';
+      alert(`Det er totalt ${formatSeconds(over,0)} for mye nå. Prøv å fordele tiden så det ikke går over ${limitLabel} min.`);
+      return;
     }
 
-    next.extra = diff;
     advancedOverrides = next;
     computeAllocation();
     drawTimeline();
