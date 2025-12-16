@@ -2134,7 +2134,13 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     if(totalUsed > modeTotal){
       const over = totalUsed - modeTotal;
       const limitLabel = modeTotal === 1800 ? '30' : '60';
-      alert(`Det er totalt ${formatSeconds(over,0)} for mye nå. Prøv å fordele tiden så det ikke går over ${limitLabel} min.`);
+      const lang = window.L || {};
+      const baseLang = LANGS[DEFAULT_LANG] || {};
+      const template = lang.AdvancedOverLimit || baseLang.AdvancedOverLimit;
+      const message = template
+        ? template.replace('{over}', formatSeconds(over,0)).replace('{limit}', limitLabel)
+        : '';
+      alert(message);
       return;
     }
 
