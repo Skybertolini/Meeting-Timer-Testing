@@ -2065,14 +2065,15 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     if(!parsed) return;
     const { next, base, totalParas, totalUsed } = parsed;
     const modeTotal = base.total;
-    if(totalUsed > modeTotal){
-      const over = totalUsed - modeTotal;
+    const diffSec = totalUsed - modeTotal;
+    if(diffSec !== 0){
+      const diffAbs = Math.abs(diffSec);
       const limitLabel = modeTotal === 1800 ? '30' : '60';
       const lang = window.L || {};
       const baseLang = LANGS[DEFAULT_LANG] || {};
-      const template = lang.AdvancedOverLimit || baseLang.AdvancedOverLimit;
+      const template = lang.AdvancedTotalMismatch || baseLang.AdvancedTotalMismatch || lang.AdvancedOverLimit;
       const message = template
-        ? template.replace('{over}', formatSeconds(over,0)).replace('{limit}', limitLabel)
+        ? template.replace('{diff}', formatSeconds(diffAbs,0)).replace('{limit}', limitLabel)
         : '';
       alert(message);
       return;
