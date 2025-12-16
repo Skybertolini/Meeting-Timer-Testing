@@ -39,7 +39,6 @@
     "AdvancedReset": "Reset",
     "AdvancedClose": "Close",
     "AdvancedSave": "Save",
-    "AdvancedOverLimit": "The total allocation exceeds the limit by {over}. Please adjust it to stay within {limit} min.",
     "AdvancedTotalMismatch": "The total allocation is {diff} away from {limit} min. Adjust it to match the total study time.",
     "ExtraTime": "Extra time"
   },
@@ -83,7 +82,6 @@
     "AdvancedReset": "Tilbakestill",
     "AdvancedClose": "Lukk",
     "AdvancedSave": "Lagre",
-    "AdvancedOverLimit": "Den totale tidsfordelingen overstiger grensen med {over}. Juster slik at den holder seg innenfor {limit} min.",
     "AdvancedTotalMismatch": "Den totale tidsfordelingen er {diff} fra {limit} min. Juster slik at den samsvarer med total studietid.",
     "ExtraTime": "Ekstra tid"
   },
@@ -127,7 +125,6 @@
     "AdvancedReset": "Återställ",
     "AdvancedClose": "Stäng",
     "AdvancedSave": "Spara",
-    "AdvancedOverLimit": "Den totala tidsfördelningen överskrider gränsen med {over}. Justera så att den håller sig inom {limit} min.",
     "AdvancedTotalMismatch": "Den totala tidsfördelningen är {diff} från {limit} min. Justera så att den stämmer med den totala studietiden.",
     "ExtraTime": "Extra tid"
   },
@@ -171,7 +168,6 @@
     "AdvancedReset": "Nulstil",
     "AdvancedClose": "Luk",
     "AdvancedSave": "Gem",
-    "AdvancedOverLimit": "Den samlede tidsfordeling overstiger grænsen med {over}. Juster, så den holder sig inden for {limit} min.",
     "AdvancedTotalMismatch": "Den samlede tidsfordeling er {diff} fra {limit} min. Juster, så den stemmer med den samlede studietid.",
     "ExtraTime": "Ekstra tid"
   },
@@ -215,7 +211,6 @@
     "AdvancedReset": "Zurücksetzen",
     "AdvancedClose": "Schließen",
     "AdvancedSave": "Speichern",
-    "AdvancedOverLimit": "Die gesamte Zeitverteilung überschreitet die Grenze um {over}. Bitte passe sie so an, dass sie innerhalb von {limit} Min. bleibt.",
     "AdvancedTotalMismatch": "Die gesamte Zeitverteilung weicht um {diff} von {limit} Min. ab. Bitte passe sie an, sodass sie der gesamten Studienzeit entspricht.",
     "ExtraTime": "Zusätzliche Zeit"
   },
@@ -259,7 +254,6 @@
     "AdvancedReset": "Restablecer",
     "AdvancedClose": "Cerrar",
     "AdvancedSave": "Guardar",
-    "AdvancedOverLimit": "La asignación total supera el límite en {over}. Ajusta para que se mantenga dentro de {limit} min.",
     "AdvancedTotalMismatch": "La distribución total está a {diff} de {limit} min. Ajusta para que coincida con el tiempo total de estudio.",
     "ExtraTime": "Tiempo extra"
   },
@@ -303,7 +297,6 @@
     "AdvancedReset": "Réinitialiser",
     "AdvancedClose": "Fermer",
     "AdvancedSave": "Enregistrer",
-    "AdvancedOverLimit": "La répartition totale dépasse la limite de {over}. Veuillez ajuster afin de rester dans la limite de {limit} min.",
     "AdvancedTotalMismatch": "La répartition totale s’écarte de {diff} de {limit} min. Ajustez-la pour qu’elle corresponde au temps total d’étude.",
     "ExtraTime": "Temps supplémentaire"
   },
@@ -347,7 +340,6 @@
     "AdvancedReset": "Reimposta",
     "AdvancedClose": "Chiudi",
     "AdvancedSave": "Salva",
-    "AdvancedOverLimit": "La distribuzione totale supera il limite di {over}. Regola affinché rimanga entro {limit} min.",
     "AdvancedTotalMismatch": "La distribuzione totale è {diff} da {limit} min. Regolala in modo che corrisponda al tempo totale di studio.",
     "ExtraTime": "Tempo extra"
   }
