@@ -39,7 +39,9 @@
     "AdvancedReset": "Reset",
     "AdvancedClose": "Close",
     "AdvancedSave": "Save",
-    "AdvancedTotalMismatch": "The total allocation is {diff} away from {limit} min. Adjust it to match the total study time.",
+    "AdvancedTotalMismatch": "The total allocation is {diff} {direction} the {limit} min. Adjust it to match the total study time.",
+    "AdvancedOver": "over",
+    "AdvancedUnder": "under",
     "ExtraTime": "Extra time"
   },
   "no": {
@@ -82,7 +84,9 @@
     "AdvancedReset": "Tilbakestill",
     "AdvancedClose": "Lukk",
     "AdvancedSave": "Lagre",
-    "AdvancedTotalMismatch": "Den totale tidsfordelingen er {diff} fra {limit} min. Juster slik at den samsvarer med total studietid.",
+    "AdvancedTotalMismatch": "Den totale tidsfordelingen er {diff} {direction} {limit} min. Juster slik at den samsvarer med total studietid.",
+    "AdvancedOver": "over",
+    "AdvancedUnder": "under",
     "ExtraTime": "Ekstra tid"
   },
   "sv": {
@@ -125,7 +129,9 @@
     "AdvancedReset": "Återställ",
     "AdvancedClose": "Stäng",
     "AdvancedSave": "Spara",
-    "AdvancedTotalMismatch": "Den totala tidsfördelningen är {diff} från {limit} min. Justera så att den stämmer med den totala studietiden.",
+    "AdvancedTotalMismatch": "Den totala tidsfördelningen är {diff} {direction} {limit} min. Justera så att den stämmer med den totala studietiden.",
+    "AdvancedOver": "över",
+    "AdvancedUnder": "under",
     "ExtraTime": "Extra tid"
   },
   "da": {
@@ -168,7 +174,9 @@
     "AdvancedReset": "Nulstil",
     "AdvancedClose": "Luk",
     "AdvancedSave": "Gem",
-    "AdvancedTotalMismatch": "Den samlede tidsfordeling er {diff} fra {limit} min. Juster, så den stemmer med den samlede studietid.",
+    "AdvancedTotalMismatch": "Den samlede tidsfordeling er {diff} {direction} {limit} min. Juster, så den stemmer med den samlede studietid.",
+    "AdvancedOver": "over",
+    "AdvancedUnder": "under",
     "ExtraTime": "Ekstra tid"
   },
   "de": {
@@ -211,7 +219,9 @@
     "AdvancedReset": "Zurücksetzen",
     "AdvancedClose": "Schließen",
     "AdvancedSave": "Speichern",
-    "AdvancedTotalMismatch": "Die gesamte Zeitverteilung weicht um {diff} von {limit} Min. ab. Bitte passe sie an, sodass sie der gesamten Studienzeit entspricht.",
+    "AdvancedTotalMismatch": "Die gesamte Zeitverteilung liegt {diff} {direction} dem Limit von {limit} Min. Bitte passe sie an, sodass sie der gesamten Studienzeit entspricht.",
+    "AdvancedOver": "über",
+    "AdvancedUnder": "unter",
     "ExtraTime": "Zusätzliche Zeit"
   },
   "es": {
@@ -254,7 +264,9 @@
     "AdvancedReset": "Restablecer",
     "AdvancedClose": "Cerrar",
     "AdvancedSave": "Guardar",
-    "AdvancedTotalMismatch": "La distribución total está a {diff} de {limit} min. Ajusta para que coincida con el tiempo total de estudio.",
+    "AdvancedTotalMismatch": "La distribución total está {diff} {direction} el límite de {limit} min. Ajusta para que coincida con el tiempo total de estudio.",
+    "AdvancedOver": "por encima de",
+    "AdvancedUnder": "por debajo de",
     "ExtraTime": "Tiempo extra"
   },
   "fr": {
@@ -297,7 +309,9 @@
     "AdvancedReset": "Réinitialiser",
     "AdvancedClose": "Fermer",
     "AdvancedSave": "Enregistrer",
-    "AdvancedTotalMismatch": "La répartition totale s’écarte de {diff} de {limit} min. Ajustez-la pour qu’elle corresponde au temps total d’étude.",
+    "AdvancedTotalMismatch": "La répartition totale est de {diff} {direction} la limite de {limit} min. Ajustez-la pour qu’elle corresponde au temps total d’étude.",
+    "AdvancedOver": "au-dessus de",
+    "AdvancedUnder": "en dessous de",
     "ExtraTime": "Temps supplémentaire"
   },
   "it": {
@@ -340,7 +354,9 @@
     "AdvancedReset": "Reimposta",
     "AdvancedClose": "Chiudi",
     "AdvancedSave": "Salva",
-    "AdvancedTotalMismatch": "La distribuzione totale è {diff} da {limit} min. Regolala in modo che corrisponda al tempo totale di studio.",
+    "AdvancedTotalMismatch": "La distribuzione totale è {diff} {direction} il limite di {limit} min. Regolala in modo che corrisponda al tempo totale di studio.",
+    "AdvancedOver": "oltre",
+    "AdvancedUnder": "sotto",
     "ExtraTime": "Tempo extra"
   }
 }

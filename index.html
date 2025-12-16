@@ -2072,8 +2072,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       const lang = window.L || {};
       const baseLang = LANGS[DEFAULT_LANG] || {};
       const template = lang.AdvancedTotalMismatch || baseLang.AdvancedTotalMismatch;
+      const direction = diffSec > 0
+        ? (lang.AdvancedOver || baseLang.AdvancedOver || 'over')
+        : (lang.AdvancedUnder || baseLang.AdvancedUnder || 'under');
       const message = template
-        ? template.replace('{diff}', formatSeconds(diffAbs,0)).replace('{limit}', limitLabel)
+        ? template
+          .replace('{diff}', formatSeconds(diffAbs,0))
+          .replace('{limit}', limitLabel)
+          .replace('{direction}', direction)
         : '';
       alert(message);
       return;
