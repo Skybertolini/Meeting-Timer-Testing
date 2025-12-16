@@ -42,7 +42,7 @@
     "AdvancedTotalMismatch": "The total allocation is {diff} {direction} the {limit} min. Adjust it to match the total study time.",
     "AdvancedOver": "over",
     "AdvancedUnder": "under",
-    "ExtraTime": "Extra time"
+    "ExtraTime": "Time variance"
   },
   "no": {
     "code": "no",
@@ -87,7 +87,7 @@
     "AdvancedTotalMismatch": "Den totale tidsfordelingen er {diff} {direction} {limit} min. Juster slik at den samsvarer med total studietid.",
     "AdvancedOver": "over",
     "AdvancedUnder": "under",
-    "ExtraTime": "Ekstra tid"
+    "ExtraTime": "Tidsavvik"
   },
   "sv": {
     "code": "sv",
@@ -132,7 +132,7 @@
     "AdvancedTotalMismatch": "Den totala tidsfördelningen är {diff} {direction} {limit} min. Justera så att den stämmer med den totala studietiden.",
     "AdvancedOver": "över",
     "AdvancedUnder": "under",
-    "ExtraTime": "Extra tid"
+    "ExtraTime": "Tidsavvikelse"
   },
   "da": {
     "code": "da",
@@ -177,7 +177,7 @@
     "AdvancedTotalMismatch": "Den samlede tidsfordeling er {diff} {direction} {limit} min. Juster, så den stemmer med den samlede studietid.",
     "AdvancedOver": "over",
     "AdvancedUnder": "under",
-    "ExtraTime": "Ekstra tid"
+    "ExtraTime": "Tidsafvigelse"
   },
   "de": {
     "code": "de",
@@ -222,7 +222,7 @@
     "AdvancedTotalMismatch": "Die gesamte Zeitverteilung liegt {diff} {direction} dem Limit von {limit} Min. Bitte passe sie an, sodass sie der gesamten Studienzeit entspricht.",
     "AdvancedOver": "über",
     "AdvancedUnder": "unter",
-    "ExtraTime": "Zusätzliche Zeit"
+    "ExtraTime": "Zeitabweichung"
   },
   "es": {
     "code": "es",
@@ -267,7 +267,7 @@
     "AdvancedTotalMismatch": "La distribución total está {diff} {direction} el límite de {limit} min. Ajusta para que coincida con el tiempo total de estudio.",
     "AdvancedOver": "por encima de",
     "AdvancedUnder": "por debajo de",
-    "ExtraTime": "Tiempo extra"
+    "ExtraTime": "Desviación de tiempo"
   },
   "fr": {
     "code": "fr",
@@ -312,7 +312,7 @@
     "AdvancedTotalMismatch": "La répartition totale est de {diff} {direction} la limite de {limit} min. Ajustez-la pour qu’elle corresponde au temps total d’étude.",
     "AdvancedOver": "au-dessus de",
     "AdvancedUnder": "en dessous de",
-    "ExtraTime": "Temps supplémentaire"
+    "ExtraTime": "Écart de temps"
   },
   "it": {
     "code": "it",
@@ -357,6 +357,6 @@
     "AdvancedTotalMismatch": "La distribuzione totale è {diff} {direction} il limite di {limit} min. Regolala in modo che corrisponda al tempo totale di studio.",
     "AdvancedOver": "oltre",
     "AdvancedUnder": "sotto",
-    "ExtraTime": "Tempo extra"
+    "ExtraTime": "Scostamento di tempo"
   }
 }
