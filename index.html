@@ -770,9 +770,9 @@ body.dark .feedback-actions button.primary{
       </div>
 
       <!-- NY: Avansert-knapp -->
-      <button id="wtAdvancedBtn" type="button" class="advanced-pill" aria-label="Avansert tidsberegning">
+      <button id="wtAdvancedBtn" type="button" class="advanced-pill" aria-label="">
         <span class="adv-icon">🔧</span>
-        <span class="adv-label">Avansert</span>
+        <span class="adv-label"></span>
       </button>
     </div>
   </div>
@@ -913,16 +913,13 @@ If you want, you’re welcome to include your name and where you’re from — i
 <div id="wtAdvancedModal" class="feedback-modal" aria-hidden="true">
   <div class="feedback-backdrop" id="wtAdvancedBackdrop"></div>
   <div class="feedback-dialog advanced-dialog" role="dialog" aria-modal="true" aria-labelledby="wtAdvancedTitle">
-    <h3 id="wtAdvancedTitle" class="feedback-title">Avansert tidsberegning</h3>
-    <p class="feedback-help">
-      Her kan du se og justere hvor mange sekunder som er satt av til hver del av vakttårnstudiet.
-      Endringene påvirker tidslinjen, men ikke den totale studietiden (60 eller 30 min).
-    </p>
+    <h3 id="wtAdvancedTitle" class="feedback-title"></h3>
+    <p id="wtAdvancedDescription" class="feedback-help"></p>
     <div id="wtAdvancedBody" class="advanced-body"></div>
     <div class="feedback-actions" style="margin-top:10px;">
-      <button type="button" id="wtAdvancedReset">Tilbakestill</button>
-      <button type="button" id="wtAdvancedClose">Lukk</button>
-      <button type="button" id="wtAdvancedSave" class="primary">Lagre</button>
+      <button type="button" id="wtAdvancedReset"></button>
+      <button type="button" id="wtAdvancedClose"></button>
+      <button type="button" id="wtAdvancedSave" class="primary"></button>
     </div>
   </div>
 </div>
@@ -975,6 +972,7 @@ window.currentLang=getLang();
 window.L=LANGS[window.currentLang] || LANGS[DEFAULT_LANG] || {};
 function updateStaticTexts(){
   const L = window.L || {};
+  const base = LANGS[DEFAULT_LANG] || {};
   // Seksjonstitler
   const wtTitle=document.getElementById('wtStudyTitle');
   if(wtTitle && L.WTStudy){ wtTitle.textContent=L.WTStudy; }
@@ -1006,6 +1004,30 @@ function updateStaticTexts(){
     if(L.NotesPlaceholder){ wtNotes.placeholder = L.NotesPlaceholder; }
     else if(L.Info_Notes){ wtNotes.placeholder = L.Info_Notes; }
   }
+  // Avansert dialog
+  const advBtn=document.getElementById('wtAdvancedBtn');
+  if(advBtn){
+    const advLabel=advBtn.querySelector('.adv-label');
+    const advText=L.Advanced || base.Advanced;
+    if(advLabel && advText){ advLabel.textContent=advText; }
+    const advAria=L.AdvancedAria || base.AdvancedAria;
+    if(advAria){ advBtn.setAttribute('aria-label', advAria); }
+  }
+  const advTitle=document.getElementById('wtAdvancedTitle');
+  const advTitleText=L.AdvancedTitle || base.AdvancedTitle;
+  if(advTitle && advTitleText){ advTitle.textContent=advTitleText; }
+  const advDesc=document.getElementById('wtAdvancedDescription') || document.querySelector('#wtAdvancedModal .feedback-help');
+  const advDescText=L.AdvancedDescription || base.AdvancedDescription;
+  if(advDesc && advDescText){ advDesc.textContent=advDescText; }
+  const advReset=document.getElementById('wtAdvancedReset');
+  const advResetText=L.AdvancedReset || base.AdvancedReset;
+  if(advReset && advResetText){ advReset.textContent=advResetText; }
+  const advClose=document.getElementById('wtAdvancedClose');
+  const advCloseText=L.AdvancedClose || base.AdvancedClose;
+  if(advClose && advCloseText){ advClose.textContent=advCloseText; }
+  const advSave=document.getElementById('wtAdvancedSave');
+  const advSaveText=L.AdvancedSave || base.AdvancedSave;
+  if(advSave && advSaveText){ advSave.textContent=advSaveText; }
 }
 /* Språkvelger UI */
 (function(){
@@ -2003,11 +2025,12 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     body.innerHTML = '';
     const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
     const L = window.L || {};
-    const labelIntro   = L.Intro || 'Intro';
-    const labelReview  = L.Review || 'Repetisjonsspørsmål';
-    const labelOutro   = L.Conclusion || 'Avslutning';
-    const labelPara    = L.Paragraph || 'Avsnitt';
-    const labelExtra   = L.ExtraTime || 'Ekstra tid';
+    const base = LANGS[DEFAULT_LANG] || {};
+    const labelIntro   = L.Intro || base.Intro || 'Intro';
+    const labelReview  = L.Review || base.Review || 'Repetisjonsspørsmål';
+    const labelOutro   = L.Conclusion || base.Conclusion || 'Avslutning';
+    const labelPara    = L.Paragraph || base.Paragraph || 'Avsnitt';
+    const labelExtra   = L.ExtraTime || base.ExtraTime || '';
 
     function addRow(key, label, value, opts={}){
       const min = Number.isFinite(parseInt(opts.min,10)) ? parseInt(opts.min,10) : 1;

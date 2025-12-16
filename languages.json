@@ -31,7 +31,15 @@
     "ImagesLabel": "Images",
     "FramesLabel": "Boxes",
     "MinutesShort": "min",
-    "Paused": "Paused"
+    "Paused": "Paused",
+    "Advanced": "Advanced",
+    "AdvancedAria": "Advanced timing",
+    "AdvancedTitle": "Advanced timing",
+    "AdvancedDescription": "Here you can view and adjust how many seconds are allocated to each part of the Watchtower Study. Changes affect the timeline but not the total study time (60 or 30 min).",
+    "AdvancedReset": "Reset",
+    "AdvancedClose": "Close",
+    "AdvancedSave": "Save",
+    "ExtraTime": "Extra time"
   },
   "no": {
     "code": "no",
@@ -65,7 +73,15 @@
     "ImagesLabel": "Bilder",
     "FramesLabel": "Rammer",
     "MinutesShort": "min",
-    "Paused": "Pause"
+    "Paused": "Pause",
+    "Advanced": "Avansert",
+    "AdvancedAria": "Avansert tidsberegning",
+    "AdvancedTitle": "Avansert tidsberegning",
+    "AdvancedDescription": "Her kan du se og justere hvor mange sekunder som er satt av til hver del av vakttårnstudiet. Endringene påvirker tidslinjen, men ikke den totale studietiden (60 eller 30 min).",
+    "AdvancedReset": "Tilbakestill",
+    "AdvancedClose": "Lukk",
+    "AdvancedSave": "Lagre",
+    "ExtraTime": "Ekstra tid"
   },
   "sv": {
     "code": "sv",
@@ -99,7 +115,15 @@
     "ImagesLabel": "Bilder",
     "FramesLabel": "Rutor",
     "MinutesShort": "min",
-    "Paused": "Paus"
+    "Paused": "Paus",
+    "Advanced": "Avancerat",
+    "AdvancedAria": "Avancerad tidsberäkning",
+    "AdvancedTitle": "Avancerad tidsberäkning",
+    "AdvancedDescription": "Här kan du se och justera hur många sekunder som är avsatta för varje del av Vakttornsstudiet. Ändringarna påverkar tidslinjen men inte den totala studietiden (60 eller 30 min).",
+    "AdvancedReset": "Återställ",
+    "AdvancedClose": "Stäng",
+    "AdvancedSave": "Spara",
+    "ExtraTime": "Extra tid"
   },
   "da": {
     "code": "da",
@@ -133,7 +157,15 @@
     "ImagesLabel": "Billeder",
     "FramesLabel": "Bokse",
     "MinutesShort": "min",
-    "Paused": "Pause"
+    "Paused": "Pause",
+    "Advanced": "Avanceret",
+    "AdvancedAria": "Avanceret tidsberegning",
+    "AdvancedTitle": "Avanceret tidsberegning",
+    "AdvancedDescription": "Her kan du se og justere hvor mange sekunder der er sat af til hver del af Vagttårnsstudiet. Ændringerne påvirker tidslinjen, men ikke den samlede studietid (60 eller 30 min).",
+    "AdvancedReset": "Nulstil",
+    "AdvancedClose": "Luk",
+    "AdvancedSave": "Gem",
+    "ExtraTime": "Ekstra tid"
   },
   "de": {
     "code": "de",
@@ -167,7 +199,15 @@
     "ImagesLabel": "Bilder",
     "FramesLabel": "Kästen",
     "MinutesShort": "min",
-    "Paused": "Pause"
+    "Paused": "Pause",
+    "Advanced": "Erweitert",
+    "AdvancedAria": "Erweiterte Zeiteinstellung",
+    "AdvancedTitle": "Erweiterte Zeiteinstellung",
+    "AdvancedDescription": "Hier kannst du sehen und anpassen, wie viele Sekunden für jeden Teil des Wachtturm-Studiums vorgesehen sind. Änderungen wirken sich auf die Zeitleiste aus, aber nicht auf die gesamte Studienzeit (60 oder 30 Min.).",
+    "AdvancedReset": "Zurücksetzen",
+    "AdvancedClose": "Schließen",
+    "AdvancedSave": "Speichern",
+    "ExtraTime": "Zusätzliche Zeit"
   },
   "es": {
     "code": "es",
@@ -201,7 +241,15 @@
     "ImagesLabel": "Imágenes",
     "FramesLabel": "Recuadros",
     "MinutesShort": "min",
-    "Paused": "Pausa"
+    "Paused": "Pausa",
+    "Advanced": "Avanzado",
+    "AdvancedAria": "Cálculo avanzado del tiempo",
+    "AdvancedTitle": "Cálculo avanzado del tiempo",
+    "AdvancedDescription": "Aquí puedes ver y ajustar cuántos segundos se asignan a cada parte del Estudio de La Atalaya. Los cambios afectan a la línea de tiempo, pero no al tiempo total de estudio (60 o 30 min).",
+    "AdvancedReset": "Restablecer",
+    "AdvancedClose": "Cerrar",
+    "AdvancedSave": "Guardar",
+    "ExtraTime": "Tiempo extra"
   },
   "fr": {
     "code": "fr",
@@ -235,7 +283,15 @@
     "ImagesLabel": "Images",
     "FramesLabel": "Encadrés",
     "MinutesShort": "min",
-    "Paused": "Pause"
+    "Paused": "Pause",
+    "Advanced": "Avancé",
+    "AdvancedAria": "Réglage avancé du temps",
+    "AdvancedTitle": "Réglage avancé du temps",
+    "AdvancedDescription": "Ici, vous pouvez voir et ajuster le nombre de secondes allouées à chaque partie de l’étude de La Tour de Garde. Les modifications affectent la chronologie mais pas le temps total d’étude (60 ou 30 min).",
+    "AdvancedReset": "Réinitialiser",
+    "AdvancedClose": "Fermer",
+    "AdvancedSave": "Enregistrer",
+    "ExtraTime": "Temps supplémentaire"
   },
   "it": {
     "code": "it",
@@ -269,6 +325,14 @@
     "ImagesLabel": "Immagini",
     "FramesLabel": "Riquadri",
     "MinutesShort": "min",
-    "Paused": "Pausa"
+    "Paused": "Pausa",
+    "Advanced": "Avanzato",
+    "AdvancedAria": "Calcolo avanzato del tempo",
+    "AdvancedTitle": "Calcolo avanzato del tempo",
+    "AdvancedDescription": "Qui puoi vedere e regolare quanti secondi sono dedicati a ciascuna parte dello studio della Torre di Guardia. Le modifiche influiscono sulla cronologia ma non sul tempo totale di studio (60 o 30 min).",
+    "AdvancedReset": "Reimposta",
+    "AdvancedClose": "Chiudi",
+    "AdvancedSave": "Salva",
+    "ExtraTime": "Tempo extra"
   }
 }
