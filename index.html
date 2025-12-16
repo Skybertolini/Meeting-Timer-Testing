@@ -1235,6 +1235,53 @@ try{
 /* ===== Fordele tid (WT) ===== */
 const WPM=150, SEC_PER_Q=10, SEC_PER_READ=30, AB_BONUS=30;
 
+function roundParagraphsToNearestTen(values, targetContent, refs){
+  if(!Array.isArray(values) || !values.length) return [];
+  const target = Math.max(0, Math.round((Number(targetContent)||0) / 10) * 10);
+  if(target === 0) return values.map(()=>0);
+  const round10 = (v)=> Math.max(10, Math.round((Number(v)||0)/10)*10);
+  const rounded = values.map(round10);
+  const reference = (Array.isArray(refs) && refs.length === values.length) ? refs : values;
+  const indices = values.map((_,i)=>i);
+  const minSlot = (target >= values.length * 10) ? 10 : 0;
+  const addOrder = indices.slice().sort((a,b)=>{
+    const da = (reference[a]||0) - (rounded[a]||0);
+    const db = (reference[b]||0) - (rounded[b]||0);
+    if(da === db) return a - b;
+    return db - da; // Prioriter de som ble rundet mest ned
+  });
+  const subOrder = indices.slice().sort((a,b)=>{
+    const da = (reference[a]||0) - (rounded[a]||0);
+    const db = (reference[b]||0) - (rounded[b]||0);
+    if(da === db) return a - b;
+    return da - db; // Prioriter de som ble rundet mest opp
+  });
+  const step = 10;
+  let diff = target - rounded.reduce((a,b)=>a+b,0);
+  let addIdx = 0, subIdx = 0, safety = 0;
+  const maxIter = 8000;
+  while(diff !== 0 && safety < maxIter){
+    if(diff > 0){
+      const idx = addOrder[addIdx % addOrder.length];
+      rounded[idx] += step;
+      diff -= step;
+      addIdx++;
+    } else {
+      const idx = subOrder[subIdx % subOrder.length];
+      if(rounded[idx] - step < minSlot){
+        subIdx++;
+        safety++;
+        continue;
+      }
+      rounded[idx] -= step;
+      diff += step;
+      subIdx++;
+    }
+    safety++;
+  }
+  return rounded;
+}
+
 // Bruker advancedOverrides (hvis satt) til å justere perParagraph/cumulative
 function applyAdvancedOverridesToState(){
   if(!advancedOverrides || totalParagraphs<=0) return;
@@ -1242,6 +1289,7 @@ function applyAdvancedOverridesToState(){
   const intro  = Number.isFinite(advancedOverrides.intro)  ? advancedOverrides.intro  : base.intro;
   const review = Number.isFinite(advancedOverrides.review) ? advancedOverrides.review : base.review;
   const outro  = Number.isFinite(advancedOverrides.outro)  ? advancedOverrides.outro  : base.outro;
+  const targetContent = Math.max(0, base.total - (intro + review + outro));
 
   const srcParas = Array.isArray(advancedOverrides.paras) ? advancedOverrides.paras : [];
   const fallbackEach = (() => {
@@ -1261,7 +1309,7 @@ function applyAdvancedOverridesToState(){
     }
     newPer.push(v);
   }
-  perParagraph = newPer;
+  perParagraph = roundParagraphsToNearestTen(newPer, targetContent, newPer);
   cumulative=[];
   let acc = intro;
   for(let i=0;i<totalParagraphs;i++){
@@ -1286,7 +1334,8 @@ function computeAllocation(){
     return s;
   });
   const scale=S.content/((raw.reduce((a,b)=>a+b,0))||1);
-  perParagraph=raw.map(x=>x*scale);
+  const scaled = raw.map(x=>x*scale);
+  perParagraph = roundParagraphsToNearestTen(scaled, S.content, scaled);
   cumulative=[]; let acc=S.intro; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
 
   // Hvis vi har manuelle overstyringer, gjelder de foran baseline
