@@ -339,19 +339,38 @@ body.dark #logoImg {
 .dark .select{ background:var(--pill); color:var(--ink); }
 .dark .select option{ color:#f5f5f6; }
 .dark #wtControlsCard{
-  background:#bfbfbf;
+  background:#1f2225;
 }
 .dark #wtControlsCard,
-.dark #wtControlsCard *{ color:#111827; }
+.dark #wtControlsCard *{
+  color:#f5f5f6;
+}
+.dark #wtControlsCard .select{
+  background:#111827;
+  color:#f5f5f6;
+  border-color:rgba(255,255,255,0.16);
+}
 .dark #wtNotesCard{
-  background:#bfbfbf;
-  color:#111827;
+  background:#1f2225;
+  color:#f5f5f6;
 }
 .dark .stats-row .modepill{ background:var(--pill); }
 .dark .stats-row .modepill button{ color:var(--ink); }
 .dark .stats-row .modepill button.active{ background:#111827; color:#f9fafb; }
 .dark .round.small{ background:#1f2933; color:#f9fafb; }
-.dark #wtNotes{ background:#bfbfbf; color:#111827; }
+.dark #wtNotes{
+  background:transparent;
+  color:#f5f5f6;
+}
+.dark #wtNotes::placeholder{
+  color:rgba(245,245,246,0.8);
+}
+.dark #wtNotes.dark-has-text{
+  color:#111827;
+}
+.dark #wtNotes.dark-has-text::placeholder{
+  color:rgba(17,24,39,0.65);
+}
 .dark .card{ box-shadow:0 10px 32px rgba(0,0,0,.6); }
 /* Mørkere kortbakgrunn for Taler-timer i mørk modus */
 .dark #spSectionBody .card{
@@ -927,6 +946,17 @@ If you want, you’re welcome to include your name and where you’re from — i
 window.addEventListener('DOMContentLoaded', async () => {
 /* ===== Tema (lys/mørk) ===== */
 const THEME_KEY='meetingTimer.theme';
+function syncNotesInk(){
+  const ta = document.getElementById('wtNotes');
+  if(!ta) return;
+  const isDark = document.body.classList.contains('dark');
+  const hasText = ta.value && ta.value.length>0;
+  if(isDark && hasText){
+    ta.classList.add('dark-has-text');
+  }else{
+    ta.classList.remove('dark-has-text');
+  }
+}
 function applyTheme(mode){
   const body = document.body;
   const btn = document.getElementById('themeToggle');
@@ -944,6 +974,7 @@ function applyTheme(mode){
     if (langImg) langImg.src = './img/language-icon.png';
     if (logoImg) logoImg.src = './img/meeting-timer-logo.png';
   }
+  syncNotesInk();
 }
 try{
   const savedTheme = localStorage.getItem(THEME_KEY);
@@ -1002,6 +1033,8 @@ function updateStaticTexts(){
   if(wtNotes){
     if(L.NotesPlaceholder){ wtNotes.placeholder = L.NotesPlaceholder; }
     else if(L.Info_Notes){ wtNotes.placeholder = L.Info_Notes; }
+    wtNotes.addEventListener('input', syncNotesInk);
+    syncNotesInk();
   }
   // Avansert dialog
   const advBtn=document.getElementById('wtAdvancedBtn');
