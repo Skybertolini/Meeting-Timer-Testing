@@ -1900,6 +1900,11 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     return `${mins}:${remain.toString().padStart(2,'0')}`;
   };
 
+  const formatSignedSeconds = (sec)=>{
+    const sign = sec < 0 ? '-' : '';
+    return `${sign}${formatSeconds(Math.abs(sec), 0)}`;
+  };
+
   const parseDuration = (val)=>{
     const text = String(val || '').trim();
     if(!text) return NaN;
@@ -1938,6 +1943,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       const min = Number.isFinite(parseInt(opts.min,10)) ? parseInt(opts.min,10) : 1;
       const row = document.createElement('div');
       row.className = 'adv-row';
+      const displayValue = opts.signed ? formatSignedSeconds(value) : formatSeconds(value, min);
       row.innerHTML = `
         <span class="adv-label">${label}</span>
         <div class="adv-control">
@@ -2023,9 +2029,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     modal.setAttribute('aria-hidden','true');
   }
 
-  function applyFromInputs(){
+  function parseInputs(){
     const inputs = body.querySelectorAll('.adv-input');
-    if(!inputs.length) return;
     const base = slots();
     const next = {
       intro:  base.intro,
@@ -2037,6 +2042,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     inputs.forEach(input=>{
       const key = input.dataset.key;
+      if(key === 'extra') return; // beregnes automatisk
       let v = NaN;
       if(input.dataset.parser === 'clock'){
         v = parseDuration(input.value);
@@ -2055,7 +2061,6 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       }
     });
 
-    // Fyll tomme avsnitt med baseline hvis nødvendig
     for(let i=0;i<totalParagraphs;i++){
       if(!Number.isFinite(next.paras[i]) || next.paras[i] <= 0){
         const fallback = perParagraph[i] || (base.content/Math.max(1,totalParagraphs));
@@ -2074,10 +2079,10 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     }
 
     advancedOverrides = next;
-    // computeAllocation bruker advancedOverrides i applyAdvancedOverridesToState
     computeAllocation();
     drawTimeline();
     resetWTUI();
+    return true;
   }
 
   if(btn)      btn.addEventListener('click',   openModal);
@@ -2086,18 +2091,16 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
   if(saveBtn){
     saveBtn.addEventListener('click', ()=>{
-      applyFromInputs();
-      closeModal();
+      const ok = applyFromInputs();
+      if(ok) closeModal();
     });
   }
 
   if(resetBtn){
     resetBtn.addEventListener('click', ()=>{
       advancedOverrides = null;
-      computeAllocation();
-      drawTimeline();
-      resetWTUI();
-      closeModal();
+      buildRows();
+      updateExtraField();
     });
   }
 
@@ -2107,6 +2110,13 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     const delta = parseInt(btn.dataset.delta,10);
     const input = btn.parentElement ? btn.parentElement.querySelector('.adv-input') : null;
     nudgeByDelta(input, delta);
+    updateExtraField();
+  });
+
+  body.addEventListener('input', (e)=>{
+    const input = e.target.closest('.adv-input');
+    if(!input || input.dataset.key === 'extra') return;
+    updateExtraField();
   });
 
   document.addEventListener('keydown', (e)=>{
