@@ -689,6 +689,11 @@ body.dark .feedback-actions button.primary{
   text-align:right;
 }
 
+.adv-highlight{
+  color:#d12c2c;
+  font-weight:900;
+}
+
 .adv-step{
   width:32px;
   height:32px;
@@ -2005,6 +2010,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
 
     function addRow(key, label, value, opts={}){
       const min = Number.isFinite(parseInt(opts.min,10)) ? parseInt(opts.min,10) : 1;
+      const labelClass = `adv-label${opts.highlight ? ' adv-highlight' : ''}`;
+      const inputClass = `adv-input${opts.highlight ? ' adv-highlight' : ''}`;
       const row = document.createElement('div');
       row.className = 'adv-row';
       const displayValue = opts.signed ? formatSignedSeconds(value) : formatSeconds(value, min);
