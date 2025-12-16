@@ -669,6 +669,13 @@ body.dark .feedback-actions button.primary{
   justify-self:flex-start;
 }
 
+.adv-control{
+  display:grid;
+  grid-template-columns:auto auto auto;
+  align-items:center;
+  gap:4px;
+}
+
 .adv-input{
   width:80px;
   padding:4px 6px;
@@ -676,6 +683,23 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
+}
+
+.adv-step{
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--pill);
+  color:var(--ink);
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 6px 14px rgba(70,50,30,.06);
+}
+
+.adv-step:active{
+  transform:translateY(1px);
+  box-shadow:inset 0 4px 8px rgba(0,0,0,.12);
 }
      
 </style>
@@ -1889,6 +1913,13 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     return parseInt(normalized,10);
   };
 
+  const nudgeByDelta = (input, delta)=>{
+    if(!input || !Number.isFinite(delta)) return;
+    const current = parseDuration(input.value);
+    const nextVal = Math.max(1, (Number.isFinite(current) ? current : 0) + delta);
+    input.value = formatSeconds(nextVal);
+  };
+
   function buildRows(){
     body.innerHTML = '';
     const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
@@ -1903,7 +1934,11 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className = 'adv-row';
       row.innerHTML = `
         <span class="adv-label">${label}</span>
-        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value)}">
+        <div class="adv-control">
+          <button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>
+          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value)}">
+          <button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>
+        </div>
       `;
       const input = row.querySelector('.adv-input');
       if(input){
@@ -1934,7 +1969,11 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       row.className='adv-row';
       row.innerHTML = `
         <span class="adv-label">${labelPara} ${i}</span>
-        <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="p${i}" value="${formatSeconds(curSec)}">
+        <div class="adv-control">
+          <button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>
+          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="p${i}" value="${formatSeconds(curSec)}">
+          <button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>
+        </div>
       `;
       const input = row.querySelector('.adv-input');
       if(input){
@@ -2035,6 +2074,14 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       closeModal();
     });
   }
+
+  body.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.adv-step');
+    if(!btn) return;
+    const delta = parseInt(btn.dataset.delta,10);
+    const input = btn.parentElement ? btn.parentElement.querySelector('.adv-input') : null;
+    nudgeByDelta(input, delta);
+  });
 
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && modal.classList.contains('open')){
