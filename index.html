@@ -1341,7 +1341,10 @@ function applyAdvancedOverridesToState(){
     acc += perParagraph[i];
   }
   // Renset tilbake
-  advancedOverrides = { intro, review, outro, paras: perParagraph.slice() };
+  const extra = (advancedOverrides && Number.isFinite(advancedOverrides.extra))
+    ? advancedOverrides.extra
+    : 0;
+  advancedOverrides = { intro, review, outro, paras: perParagraph.slice(), extra };
 }
 
 function computeAllocation(){
@@ -1890,8 +1893,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const body     = document.getElementById('wtAdvancedBody');
   if(!btn || !modal || !body) return;
 
-  const formatSeconds = (sec)=>{
-    const safe   = Math.max(1, Math.round(Number(sec) || 0));
+  const formatSeconds = (sec, min=1)=>{
+    const safe   = Math.max(min, Math.round(Number(sec) || 0));
     const mins   = Math.floor(safe / 60);
     const remain = safe % 60;
     return `${mins}:${remain.toString().padStart(2,'0')}`;
@@ -1916,8 +1919,9 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
   const nudgeByDelta = (input, delta)=>{
     if(!input || !Number.isFinite(delta)) return;
     const current = parseDuration(input.value);
-    const nextVal = Math.max(1, (Number.isFinite(current) ? current : 0) + delta);
-    input.value = formatSeconds(nextVal);
+    const min = Number.isFinite(parseInt(input.dataset.min,10)) ? parseInt(input.dataset.min,10) : 1;
+    const nextVal = Math.max(min, (Number.isFinite(current) ? current : 0) + delta);
+    input.value = formatSeconds(nextVal, min);
   };
 
   function buildRows(){
@@ -1928,15 +1932,17 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     const labelReview  = L.Review || 'Repetisjonsspørsmål';
     const labelOutro   = L.Conclusion || 'Avslutning';
     const labelPara    = L.Paragraph || 'Avsnitt';
+    const labelExtra   = L.ExtraTime || 'Ekstra tid';
 
-    function addRow(key, label, value){
+    function addRow(key, label, value, opts={}){
+      const min = Number.isFinite(parseInt(opts.min,10)) ? parseInt(opts.min,10) : 1;
       const row = document.createElement('div');
       row.className = 'adv-row';
       row.innerHTML = `
         <span class="adv-label">${label}</span>
         <div class="adv-control">
           <button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>
-          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value)}">
+          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${formatSeconds(value, min)}">
           <button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>
         </div>
       `;
@@ -1945,6 +1951,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
         input.dataset.parser = 'clock';
         input.dataset.key = key;
         input.dataset.originalSeconds = String(value);
+        input.dataset.min = String(min);
       }
       body.appendChild(row);
     }
@@ -1993,6 +2000,12 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       : S.outro;
     addRow('review', labelReview, curReview);
     addRow('outro', labelOutro, curOutro);
+
+    // Ekstra tid
+    const curExtra = (advancedOverrides && Number.isFinite(advancedOverrides.extra))
+      ? advancedOverrides.extra
+      : 0;
+    addRow('extra', labelExtra, curExtra, {min:0});
   }
 
   function openModal(){
@@ -2018,7 +2031,8 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       intro:  base.intro,
       review: base.review,
       outro:  base.outro,
-      paras:  []
+      paras:  [],
+      extra:  0
     };
 
     inputs.forEach(input=>{
@@ -2029,10 +2043,12 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       } else {
         v = parseInt(input.value,10);
       }
-      if(!Number.isFinite(v) || v <= 0) v = 1;
+      const min = Number.isFinite(parseInt(input.dataset.min,10)) ? parseInt(input.dataset.min,10) : 1;
+      if(!Number.isFinite(v) || v < min) v = min;
       if(key === 'intro')      next.intro  = v;
       else if(key === 'review')next.review = v;
       else if(key === 'outro') next.outro  = v;
+      else if(key === 'extra') next.extra  = v;
       else if(key && key.startsWith('p')){
         const idx = parseInt(key.slice(1),10);
         if(idx >= 1) next.paras[idx-1] = v;
@@ -2045,6 +2061,16 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
         const fallback = perParagraph[i] || (base.content/Math.max(1,totalParagraphs));
         next.paras[i] = Math.max(1, Math.round(fallback));
       }
+    }
+
+    const totalParas = next.paras.reduce((sum,val)=>sum+(Number(val)||0),0);
+    const modeTotal = base.total;
+    const effectiveTotal = (next.intro + next.review + next.outro + totalParas) - (Number(next.extra)||0);
+    if(effectiveTotal > modeTotal){
+      const over = effectiveTotal - modeTotal;
+      const limitLabel = modeTotal === 1800 ? '30' : '60';
+      alert(`Det er totalt ${formatSeconds(over,0)} for mye nå. Prøv å fordele tiden så det ikke går over ${limitLabel} min.`);
+      return;
     }
 
     advancedOverrides = next;
