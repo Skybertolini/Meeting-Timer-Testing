@@ -321,7 +321,7 @@ body.dark #wtControlsCard .pill-label,
 body.dark #wtControlsCard .pill-value,
 body.dark #wtControlsCard .wt-article-row,
 body.dark #wtControlsCard .wt-menu-icon{
-  color:#fff;
+  color:#111827;
 }
 body.dark #logoImg {
     /* Mørk skygge under – gir dybde */
@@ -338,13 +338,20 @@ body.dark #logoImg {
 .dark .big-clock{ color:#f9fafb; }
 .dark .select{ background:var(--pill); color:var(--ink); }
 .dark .select option{ color:#f5f5f6; }
+.dark #wtControlsCard{
+  background:#bfbfbf;
+}
 .dark #wtControlsCard,
-.dark #wtControlsCard *{ color:#fff; }
+.dark #wtControlsCard *{ color:#111827; }
+.dark #wtNotesCard{
+  background:#bfbfbf;
+  color:#111827;
+}
 .dark .stats-row .modepill{ background:var(--pill); }
 .dark .stats-row .modepill button{ color:var(--ink); }
 .dark .stats-row .modepill button.active{ background:#111827; color:#f9fafb; }
 .dark .round.small{ background:#1f2933; color:#f9fafb; }
-.dark #wtNotes{ background:rgba(0,0,0,0.16); color:var(--ink); }
+.dark #wtNotes{ background:#bfbfbf; color:#111827; }
 .dark .card{ box-shadow:0 10px 32px rgba(0,0,0,.6); }
 /* Mørkere kortbakgrunn for Taler-timer i mørk modus */
 .dark #spSectionBody .card{
@@ -790,7 +797,7 @@ body.dark .feedback-actions button.primary{
     <button id="pauseWT" class="round pause" disabled>❚❚</button>
     <button id="stopWT" class="round stop" disabled>■</button>
   </div>
-  <div class="card" style="margin-top:14px;max-width:var(--content-max);margin-inline:auto">
+  <div id="wtNotesCard" class="card" style="margin-top:14px;max-width:var(--content-max);margin-inline:auto">
     <textarea id="wtNotes" rows="3" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;color:#2b2a32;background:transparent;font-size:90%" placeholder="Her kan du notere."></textarea>
 <div id="wtNotesGrip" role="separator" aria-orientation="vertical" title="Dra for å endre høyde"></div>
   </div>
