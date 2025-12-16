@@ -676,10 +676,6 @@ body.dark .feedback-actions button.primary{
   gap:4px;
 }
 
-.adv-control.no-steps{
-  grid-template-columns:1fr;
-}
-
 .adv-input{
   width:80px;
   padding:4px 6px;
@@ -687,6 +683,11 @@ body.dark .feedback-actions button.primary{
   border:1px solid var(--border);
   font:inherit;
   text-align:right;
+}
+
+.adv-step.placeholder{
+  visibility:hidden;
+  pointer-events:none;
 }
 
 .adv-highlight{
@@ -2017,11 +2018,11 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
       const displayValue = opts.signed ? formatSignedSeconds(value) : formatSeconds(value, min);
       const hasSteps = opts.steps !== false;
       row.innerHTML = `
-        <span class="adv-label">${label}</span>
+        <span class="${labelClass}">${label}</span>
         <div class="adv-control${hasSteps ? '' : ' no-steps'}">
-          ${hasSteps ? '<button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>' : ''}
-          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="adv-input" data-key="${key}" value="${displayValue}" ${opts.readOnly ? 'readonly aria-readonly="true"' : ''}>
-          ${hasSteps ? '<button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>' : ''}
+          ${hasSteps ? '<button type="button" class="adv-step" data-delta="-10" aria-label="Minus 10 sekunder">◀</button>' : '<span class="adv-step placeholder" aria-hidden="true"></span>'}
+          <input type="text" inputmode="numeric" pattern="[0-9:]+" class="${inputClass}" data-key="${key}" value="${displayValue}" ${opts.readOnly ? 'readonly aria-readonly="true"' : ''}>
+          ${hasSteps ? '<button type="button" class="adv-step" data-delta="10" aria-label="Pluss 10 sekunder">▶</button>' : '<span class="adv-step placeholder" aria-hidden="true"></span>'}
         </div>
       `;
       const input = row.querySelector('.adv-input');
@@ -2083,7 +2084,7 @@ const FEEDBACK_WEBHOOK = "https://discord.com/api/webhooks/1440783611509866688/C
     const curExtra = (advancedOverrides && Number.isFinite(advancedOverrides.extra))
       ? advancedOverrides.extra
       : 0;
-    addRow('extra', labelExtra, curExtra, {min:0, signed:true, steps:false, readOnly:true});
+    addRow('extra', labelExtra, curExtra, {min:0, signed:true, steps:false, readOnly:true, highlight:true});
     updateExtraField();
   }
 
