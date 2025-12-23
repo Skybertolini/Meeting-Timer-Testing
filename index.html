@@ -118,7 +118,18 @@ body.dark .lang-popover li:hover{background:rgba(255,255,255,0.04);}
 .tick.major{height:12px;background:rgba(30,40,35,.65);}
 .tick.xmajor{height:16px;background:rgba(30,40,35,.85);}
 .big-clock,.clock{margin-top:16px;font-size:clamp(1.6rem, 9vw, 2.75rem);font-weight:900;color:#2f3b34;max-width:var(--content-max);margin-inline:auto;word-wrap:break-word}
-#clockWT{margin-top:40px}
+#clockWT{
+  margin-top:40px;
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:10px;
+}
+#clockWT .clock-total{
+  color:var(--muted);
+  font-size:0.9em;
+  font-weight:800;
+}
 #clockSP{margin-top:40px}
 .controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
 .round{width:58px;height:58px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(70,50,30,.08);transition:box-shadow .15s ease, filter .15s ease, transform .05s ease}
@@ -432,8 +443,7 @@ body.dark .message {
   box-shadow:0 3px 12px rgba(0,0,0,0.18);
   border:1px solid rgba(0,0,0,0.10);
 }
-.section-title::before{
-  content:"";
+.section-title-bars{
   display:inline-block;
   width:14px;
   height:2px;
@@ -441,8 +451,26 @@ body.dark .message {
   background:rgba(0,0,0,0.16);
   box-shadow:0 4px 0 rgba(0,0,0,0.16),
              0 -4px 0 rgba(0,0,0,0.16);
-  margin-right:6px;
+  margin-right:2px;
   opacity:.7;
+  flex-shrink:0;
+}
+.section-title-icon{
+  width:22px;
+  height:22px;
+  object-fit:contain;
+  display:inline-block;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+  flex-shrink:0;
+}
+.section-title-icon.dark{ display:none; }
+.dark .section-title-icon.light{ display:none; }
+.dark .section-title-icon.dark{ display:inline-block; }
+.section-title-label{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding-left:2px;
 }
 .section-title:focus-visible {
   outline: 2px solid #fdfaf6;
@@ -767,7 +795,12 @@ body.dark .feedback-actions button.primary{
   </div>
   <section id="wtSection" class="collapsible">
 <!-- VAKTTÅRN -->
-  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true" class="timerTitle">Vakttårnstudiet</h2>
+  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true" class="timerTitle">
+    <span class="section-title-bars" aria-hidden="true"></span>
+    <img class="section-title-icon light" src="./img/Tower-icon.png" alt="">
+    <img class="section-title-icon dark" src="./img/Tower-icon-dark.png" alt="">
+    <span class="section-title-label">Vakttårnstudiet</span>
+  </h2>
 <div class="section-body" id="wtSectionBody">
 <div id="wtControlsCard" class="card" style="max-width:var(--content-max);margin-inline:auto">
     <div class="wt-toprow">
@@ -810,7 +843,7 @@ body.dark .feedback-actions button.primary{
       <div id="elapsed" class="elapsed"></div>
       <div id="cursor" class="cursor"></div>
     </div>
-    <div class="clock" id="clockWT">00:00</div>
+    <div class="clock" id="clockWT"><span id="clockWTCurrent">00:00</span><span class="clock-total" id="clockWTTotal">/ 60:00</span></div>
   </div>
   <div class="controls">
     <button id="playWT" class="round play">▶</button>
@@ -824,7 +857,12 @@ body.dark .feedback-actions button.primary{
 </div>
 </section>
 <section id="spSection" class="collapsible collapsed">
-  <h2 id="speechTimerTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="false">Taler-timer <span class="caret" aria-hidden="true"></span></h2>
+  <h2 id="speechTimerTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="false">
+    <span class="section-title-bars" aria-hidden="true"></span>
+    <img class="section-title-icon light" src="./img/Clock-icon.png" alt="">
+    <img class="section-title-icon dark" src="./img/Clock-icon-dark.png" alt="">
+    <span class="section-title-label">Taler-timer <span class="caret" aria-hidden="true"></span></span>
+  </h2>
   <div id="spSectionBody" class="section-body">
   <section id="timerSection">
     <div class="card" style="max-width:var(--content-max);margin-inline:auto">
@@ -1102,6 +1140,15 @@ updateStaticTexts();
 /* ===== Hjelpere ===== */
 const $=s=>document.querySelector(s);
 const fmt=s=>{s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function renderWTClockDisplay(elapsed=0, slotOverride){
+  const S = slotOverride || ((typeof currentSlots === 'function') ? currentSlots() : slots());
+  const clock = document.getElementById('clockWT');
+  const cur = document.getElementById('clockWTCurrent');
+  const total = document.getElementById('clockWTTotal');
+  if(cur) cur.textContent = fmt(elapsed);
+  if(total) total.textContent = `/ ${fmt(S.total)}`;
+  if(clock) clock.classList.toggle('over', elapsed >= S.total);
+}
 function isoMondayLocal(d=new Date()){
   const day=d.getDay(); const diff=(day===0?-6:1-day);
   const monday=new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
@@ -1146,6 +1193,8 @@ function currentSlots(){
     content: Math.max(0, total - (intro + review + outro))
   };
 }
+
+renderWTClockDisplay(0);
 
 let TITLE_OVERRIDES = {};
 
@@ -1467,7 +1516,7 @@ function drawTimeline(){
     lbl.style.fontSize=fs+'px'; lbl.textContent=String(i); slot.appendChild(lbl);
     if(readSet.has(i)){ const pin=document.createElement('i'); pin.className='read-pin'; slot.appendChild(pin); }
     // Klikk for å hoppe (når ikke spiller)
-    slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; $('#clockWT').textContent=fmt(accum); $('#clockWT').classList.toggle('over',accum>=S.total); $('#message').textContent = formatGroupMessage(i); });
+    slot.addEventListener('click',()=>{ if(started && !paused) return; const target=cumulative[i-1]; accum=Math.min(Math.round(target), S.total-S.outro-S.review); const pNow=Math.min(accum/S.total*100,100); $('#elapsed').style.width=pNow+'%'; $('#cursor').style.left=`calc(${pNow}% - 1px)`; renderWTClockDisplay(accum, S); $('#message').textContent = formatGroupMessage(i); });
     t.insertBefore(slot,$('#elapsed'));
     $('#elapsed').style.width='0%'; $('#cursor').style.left='0%';
   }
@@ -1550,8 +1599,7 @@ function drawTimeline(){
         accum = 0;
         document.getElementById('elapsed').style.width = '0%';
         document.getElementById('cursor').style.left = '0%';
-        document.getElementById('clockWT').textContent = '00:00';
-        document.getElementById('clockWT').classList.remove('over');
+        renderWTClockDisplay(0);
         document.getElementById('message').textContent = ((window.L && window.L.BackToStart) ? window.L.BackToStart : 'Tilbake til start') + ' (00:00)';
       }
     });
@@ -1596,8 +1644,7 @@ function unlockWTControls(){
 }
 function resetWTUI(){
   if(tickHandle) clearInterval(tickHandle);
-  $('#clockWT').textContent='00:00';
-  $('#clockWT').classList.remove('over');
+  renderWTClockDisplay(0);
   // nullstill tidslinjen visuelt
   $('#elapsed').style.width = '0%';
   $('#cursor').style.left = '0%';
@@ -1620,7 +1667,7 @@ function setWTMessage(txt){ $('#message').textContent=txt }
 function tickWT(){
   const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
   const e=nowElapsed();
-  $('#clockWT').textContent=fmt(e); $('#clockWT').classList.toggle('over',e>=S.total);
+  renderWTClockDisplay(e, S);
   const p=Math.min(e/S.total*100,100); $('#elapsed').style.width=p+'%'; $('#cursor').style.left=`calc(${p}% - 1px)`;
   const L = window.L || {};
   if(e<S.intro) setWTMessage(L.Intro || 'Introduksjon');
