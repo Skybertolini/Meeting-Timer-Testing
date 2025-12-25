@@ -118,6 +118,8 @@ body.dark .lang-popover li:hover{background:rgba(255,255,255,0.04);}
 .tick.major{height:12px;background:rgba(30,40,35,.65);}
 .tick.xmajor{height:16px;background:rgba(30,40,35,.85);}
 .big-clock,.clock{margin-top:16px;font-size:clamp(1.6rem, 9vw, 2.75rem);font-weight:900;color:#2f3b34;max-width:var(--content-max);margin-inline:auto;word-wrap:break-word}
+.clock--with-target{display:flex;align-items:baseline;gap:8px}
+.clock-target{color:var(--muted);font-weight:900;opacity:.9}
 #clockWT{margin-top:40px}
 #clockSP{margin-top:40px}
 .controls{display:flex;gap:12px;margin-top:12px;max-width:var(--content-max);margin-inline:auto;justify-content:flex-start;flex-wrap:wrap}
@@ -828,7 +830,10 @@ body.dark .feedback-actions button.primary{
       <div id="elapsed" class="elapsed"></div>
       <div id="cursor" class="cursor"></div>
     </div>
-    <div class="clock" id="clockWT">00:00</div>
+    <div class="clock clock--with-target">
+      <span id="clockWT">00:00</span>
+      <span id="clockWTTarget" class="clock-target">/ 00:00</span>
+    </div>
   </div>
   <div class="controls">
     <button id="playWT" class="round play">▶</button>
@@ -1131,6 +1136,12 @@ updateStaticTexts();
 /* ===== Hjelpere ===== */
 const $=s=>document.querySelector(s);
 const fmt=s=>{s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0')}
+function updateWTClockTarget(){
+  const targetEl = document.getElementById('clockWTTarget');
+  if(!targetEl) return;
+  const S = (typeof currentSlots === 'function') ? currentSlots() : slots();
+  targetEl.textContent = ` / ${fmt(S.total)}`;
+}
 function isoMondayLocal(d=new Date()){
   const day=d.getDay(); const diff=(day===0?-6:1-day);
   const monday=new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
@@ -1461,6 +1472,8 @@ function computeAllocation(){
 
   // Hvis vi har manuelle overstyringer, gjelder de foran baseline
   applyAdvancedOverridesToState();
+
+  updateWTClockTarget();
 }
 
 function formatGroupMessage(p){
@@ -1627,6 +1640,7 @@ function resetWTUI(){
   if(tickHandle) clearInterval(tickHandle);
   $('#clockWT').textContent='00:00';
   $('#clockWT').classList.remove('over');
+  updateWTClockTarget();
   // nullstill tidslinjen visuelt
   $('#elapsed').style.width = '0%';
   $('#cursor').style.left = '0%';
@@ -1704,7 +1718,8 @@ $('#stopWT').addEventListener('click',()=>{
   // Marker gjeldende modus ved last
   const cur = getMode();
   applyModeToUI(cur);
-    m60.addEventListener('click', () => {
+  updateWTClockTarget();
+  m60.addEventListener('click', () => {
     if(getMode() === '60') return;
     setMode('60');
     applyModeToUI('60');
