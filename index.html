@@ -422,7 +422,7 @@ body.dark .message {
   display:flex;
   align-items:center;
   justify-content:flex-start;
-  gap:10px;
+  gap:12px;
   cursor:pointer;
   user-select:none;
   padding:10px 16px;
@@ -444,6 +444,21 @@ body.dark .message {
   margin-right:6px;
   opacity:.7;
 }
+.section-icon-wrap{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  flex-shrink:0;
+}
+.section-icon{
+  width:26px;
+  height:26px;
+  object-fit:contain;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.14));
+}
+.section-title-text{ display:inline-flex; align-items:center; gap:6px; }
 .section-title:focus-visible {
   outline: 2px solid #fdfaf6;
   outline-offset: 3px;
@@ -767,7 +782,10 @@ body.dark .feedback-actions button.primary{
   </div>
   <section id="wtSection" class="collapsible">
 <!-- VAKTTÅRN -->
-  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true" class="timerTitle">Vakttårnstudiet</h2>
+  <h2 id="wtStudyTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="true">
+    <span class="section-icon-wrap"><img id="wtTitleIcon" class="section-icon" src="./img/Tower-icon.png" alt="Vakttårnstudiet ikon"></span>
+    <span class="section-title-text" id="wtStudyTitleText">Vakttårnstudiet</span>
+  </h2>
 <div class="section-body" id="wtSectionBody">
 <div id="wtControlsCard" class="card" style="max-width:var(--content-max);margin-inline:auto">
     <div class="wt-toprow">
@@ -824,7 +842,11 @@ body.dark .feedback-actions button.primary{
 </div>
 </section>
 <section id="spSection" class="collapsible collapsed">
-  <h2 id="speechTimerTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="false">Taler-timer <span class="caret" aria-hidden="true"></span></h2>
+  <h2 id="speechTimerTitle" class="timerTitle section-title" role="button" tabindex="0" aria-expanded="false">
+    <span class="section-icon-wrap"><img id="spTitleIcon" class="section-icon" src="./img/Clock-icon.png" alt="Taler-timer ikon"></span>
+    <span class="section-title-text" id="speechTimerTitleText">Taler-timer</span>
+    <span class="caret" aria-hidden="true"></span>
+  </h2>
   <div id="spSectionBody" class="section-body">
   <section id="timerSection">
     <div class="card" style="max-width:var(--content-max);margin-inline:auto">
@@ -958,6 +980,15 @@ function syncNotesInk(){
     ta.classList.remove('dark-has-text');
   }
 }
+function setTitleIcon(iconId, lightSrc, darkSrc){
+  const img = document.getElementById(iconId);
+  if(!img) return;
+  if(lightSrc) img.dataset.light = lightSrc;
+  if(darkSrc) img.dataset.dark = darkSrc;
+  const isDark = document.body.classList.contains('dark');
+  const target = isDark ? (img.dataset.dark || img.dataset.light || img.src) : (img.dataset.light || img.dataset.dark || img.src);
+  img.src = target;
+}
 function applyTheme(mode){
   const body = document.body;
   const btn = document.getElementById('themeToggle');
@@ -975,6 +1006,8 @@ function applyTheme(mode){
     if (langImg) langImg.src = './img/language-icon.png';
     if (logoImg) logoImg.src = './img/meeting-timer-logo.png';
   }
+  setTitleIcon('wtTitleIcon', './img/Tower-icon.png', './img/Tower-icon-dark.png');
+  setTitleIcon('spTitleIcon', './img/Clock-icon.png', './img/Clock-icon-dark.png');
   syncNotesInk();
 }
 try{
@@ -1005,14 +1038,10 @@ function updateStaticTexts(){
   const L = window.L || {};
   const base = LANGS[DEFAULT_LANG] || {};
   // Seksjonstitler
-  const wtTitle=document.getElementById('wtStudyTitle');
-  if(wtTitle && L.WTStudy){ wtTitle.textContent=L.WTStudy; }
-  const spTitle=document.getElementById('speechTimerTitle');
-  if(spTitle && L.SpeakerTimer){
-    const caret=spTitle.querySelector('.caret');
-    if(caret){ spTitle.innerHTML=L.SpeakerTimer+' '+caret.outerHTML; }
-    else{ spTitle.textContent=L.SpeakerTimer; }
-  }
+  const wtTitleText=document.getElementById('wtStudyTitleText');
+  if(wtTitleText && L.WTStudy){ wtTitleText.textContent=L.WTStudy; }
+  const spTitleText=document.getElementById('speechTimerTitleText');
+  if(spTitleText && L.SpeakerTimer){ spTitleText.textContent=L.SpeakerTimer; }
   // Informasjonsfelt-piller
   const lblParas = document.querySelector('#pillParas .pill-label');
   if(lblParas && L.Info_Paragraph){ lblParas.textContent = L.Info_Paragraph + ':'; }
