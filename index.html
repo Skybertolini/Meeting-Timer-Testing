@@ -1161,7 +1161,7 @@ function setMode(m){ localStorage.setItem(WT_MODE_KEY, m); }
 // Grunnverdier for 60/30-modus
 function slots(){
   const total = (getMode()==='30') ? 1800 : 3600;
-  const intro=90, review=90, outro=90; // 90s i begge moduser (grunnoppsett)
+  const intro=90, review=(getMode()==='30') ? 120 : 180, outro=90;
   return { total, intro, review, outro, content: total - (intro+review+outro) };
 }
 
