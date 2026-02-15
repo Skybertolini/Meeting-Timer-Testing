@@ -1458,6 +1458,84 @@ function roundParagraphsToNearestTen(values, targetContent, refs){
   return rounded;
 }
 
+function applyMinMaxConstraints(perParagraph, S){
+  if(!Array.isArray(perParagraph) || !perParagraph.length) return [];
+  const mode = getMode();
+  const minPer = (mode === '30') ? 45 : 90;
+  const maxPer = (mode === '30') ? 180 : 360;
+  const step = 10;
+  const minClamp = Math.ceil(minPer / step) * step;
+  const maxClamp = Math.floor(maxPer / step) * step;
+  const target = Number(S && S.content) || 0;
+  const adjusted = perParagraph.map(v=>Math.max(0, Number(v)||0));
+
+  const distribute = (delta, capFn)=>{
+    let remaining = Math.abs(delta);
+    const sign = delta >= 0 ? 1 : -1;
+    if(remaining <= 0) return;
+
+    const entries = adjusted.map((v,i)=>({
+      i,
+      cap: Math.max(0, capFn(v))
+    })).filter(e=>e.cap > 0);
+    if(!entries.length) return;
+
+    const totalCap = entries.reduce((a,e)=>a+e.cap,0);
+    remaining = Math.min(remaining, totalCap);
+    if(remaining <= 0) return;
+
+    let used = 0;
+    const parts = entries.map(e=>{
+      const exact = (remaining * e.cap) / totalCap;
+      const whole = Math.min(e.cap, Math.floor(exact / step) * step);
+      used += whole;
+      return { ...e, exact, whole, rem: exact - whole };
+    });
+
+    let rem = remaining - used;
+    parts.sort((a,b)=> b.rem - a.rem || b.cap - a.cap || a.i - b.i);
+    let spin = 0;
+    while(rem >= step && spin < 10000){
+      let moved = false;
+      for(const p of parts){
+        if(rem < step) break;
+        if(p.whole + step > p.cap) continue;
+        p.whole += step;
+        rem -= step;
+        moved = true;
+      }
+      if(!moved) break;
+      spin++;
+    }
+
+    parts.forEach(p=>{ adjusted[p.i] += sign * p.whole; });
+  };
+
+  let iter = 0;
+  while(iter < 1000){
+    for(let i=0;i<adjusted.length;i++) adjusted[i] = Math.min(maxClamp, Math.max(minClamp, adjusted[i]));
+
+    const sum = adjusted.reduce((a,b)=>a+b,0);
+    const diff = target - sum;
+    if(diff === 0) break;
+
+    if(diff > 0){
+      distribute(diff, v=>maxClamp - v);
+    } else {
+      distribute(diff, v=>v - minClamp);
+    }
+
+    iter++;
+  }
+
+  const finalSum = adjusted.reduce((a,b)=>a+b,0);
+  const tailDiff = target - finalSum;
+  if(tailDiff !== 0 && adjusted.length){
+    adjusted[adjusted.length-1] += tailDiff;
+  }
+  return adjusted;
+}
+
 // Bruker advancedOverrides (hvis satt) til å justere perParagraph/cumulative
 function applyAdvancedOverridesToState(){
   if(!advancedOverrides || totalParagraphs<=0) return;
@@ -1515,6 +1593,7 @@ function computeAllocation(){
   const scale=S.content/((raw.reduce((a,b)=>a+b,0))||1);
   const scaled = raw.map(x=>x*scale);
   perParagraph = roundParagraphsToNearestTen(scaled, S.content, scaled);
+  perParagraph = applyMinMaxConstraints(perParagraph, S);
   cumulative=[]; let acc=S.intro; for(let i=0;i<totalParagraphs;i++){cumulative.push(acc); acc+=perParagraph[i];}
 
   // Hvis vi har manuelle overstyringer, gjelder de foran baseline
