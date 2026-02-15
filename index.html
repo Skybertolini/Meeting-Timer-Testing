@@ -629,20 +629,18 @@ body.dark .message {
   max-width:36rem;
   text-align:left;
 }
-.about-seo{
-  margin-top:12px;
-  padding-top:10px;
-  border-top:1px solid var(--border);
+.about-intro{
+  margin:0 0 12px;
 }
-.about-seo h3{
+.about-intro h3{
   margin:0 0 6px;
   font-size:1rem;
 }
-.about-seo ul{
+.about-intro ul{
   margin:6px 0 0;
   padding-left:18px;
 }
-.about-seo li{
+.about-intro li{
   margin:3px 0;
   font-size:.9rem;
 }
@@ -967,8 +965,25 @@ If you want, you’re welcome to include your name and where you’re from — i
 
 <div id="aboutModal" class="feedback-modal" aria-hidden="true">
   <div class="feedback-backdrop" id="aboutBackdrop"></div>
-  <div class="feedback-dialog about-dialog" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-    <h3 id="aboutTitle" class="feedback-title">About</h3>
+  <div class="feedback-dialog about-dialog" role="dialog" aria-modal="true" aria-label="About">
+
+    <section class="about-intro">
+      <h3>JW Meeting Timer – Watchtower Study Helper</h3>
+      <p>
+        This JW meeting timer is made for congregation use and helps keep each Watchtower Study moving at a steady pace from start to finish.
+      </p>
+      <p>
+        It is useful for Jehovah’s Witnesses who want clearer timing support in the Kingdom Hall, while still keeping discussions natural and flexible.
+      </p>
+      <ul>
+        <li>Paragraph timing</li>
+        <li>Readings (+30s)</li>
+        <li>Images (+30s)</li>
+        <li>30/60 minute modes</li>
+        <li>Helps keep Watchtower Study on schedule</li>
+        <li>Works in any browser</li>
+      </ul>
+    </section>
 
     <h4 class="about-subtitle">What is the Meeting Timer?</h4>
     <p class="feedback-help">
@@ -994,24 +1009,6 @@ If you want, you’re welcome to include your name and where you’re from — i
       <br><br>
       <em>Love from a brother in Norway.</em>
     </p>
-
-    <section class="about-seo">
-      <h3>JW Meeting Timer – Watchtower Study Helper</h3>
-      <p class="feedback-help">
-        This JW meeting timer is made for congregation use and helps keep each Watchtower Study moving at a steady pace from start to finish.
-      </p>
-      <p class="feedback-help">
-        It is useful for Jehovah’s Witnesses who want clearer timing support in the Kingdom Hall, while still keeping discussions natural and flexible.
-      </p>
-      <ul>
-        <li>Paragraph timing</li>
-        <li>Readings (+30s)</li>
-        <li>Images (+30s)</li>
-        <li>30/60 minute modes</li>
-        <li>Helps keep Watchtower Study on schedule</li>
-        <li>Works in any browser</li>
-      </ul>
-    </section>
 
     <div class="feedback-actions">
       <button type="button" id="aboutClose">Close</button>
