@@ -1358,42 +1358,102 @@ window.refreshArticlesForLang = async function(){
   await hydrateOptions();
 };
 
-// Splitt tittel i to balanserte linjer uten å dele ord.
-// Returnerer en HTML-streng med <br> på best mulig delingspunkt.
-function splitTitleBalanced(str){
-  const raw = String(str || '').trim();
-  if(!raw) return '';
+let __titleMeasureSpan = null;
 
-  const words = raw.split(' ').filter(Boolean);
-  if(words.length < 4) return raw;
+function __measureTitlePart(el, text){
+  if(!__titleMeasureSpan){
+    __titleMeasureSpan = document.createElement('span');
+    __titleMeasureSpan.style.position = 'absolute';
+    __titleMeasureSpan.style.visibility = 'hidden';
+    __titleMeasureSpan.style.whiteSpace = 'nowrap';
+    __titleMeasureSpan.style.left = '-9999px';
+    __titleMeasureSpan.style.top = '-9999px';
+    document.body.appendChild(__titleMeasureSpan);
+  }
 
-  const midpoint = Math.floor(words.length / 2);
-  let bestBreak = midpoint;
-  let bestScore = Infinity;
+  const cs = window.getComputedStyle(el);
+  __titleMeasureSpan.style.font = cs.font;
+  __titleMeasureSpan.style.fontFamily = cs.fontFamily;
+  __titleMeasureSpan.style.fontSize = cs.fontSize;
+  __titleMeasureSpan.style.fontWeight = cs.fontWeight;
+  __titleMeasureSpan.style.letterSpacing = cs.letterSpacing;
+  __titleMeasureSpan.style.textTransform = cs.textTransform;
+  __titleMeasureSpan.textContent = text;
 
-  // Test delingspunkter rundt midtpunktet og velg den mest balanserte.
-  for(let i=1;i<words.length;i++){
-    const leftWords = words.slice(0, i);
-    const rightWords = words.slice(i);
+  return __titleMeasureSpan.getBoundingClientRect().width;
+}
 
-    // Unngå at ett kort ord blir alene på linje 2.
-    if(rightWords.length === 1 && rightWords[0].length <= 3) continue;
+function balanceTitleBreak(el){
+  if(!el || el.dataset.hasManualBreak === '1') return;
 
-    const leftLen = leftWords.join(' ').length;
-    const rightLen = rightWords.join(' ').length;
-    const balanceScore = Math.abs(leftLen - rightLen);
-    const midpointScore = Math.abs(i - midpoint);
-    const score = (balanceScore * 10) + midpointScore;
+  if(!el.dataset.originalTitle){
+    el.dataset.originalTitle = (el.textContent || '').trim();
+  }
 
-    if(score < bestScore){
-      bestScore = score;
-      bestBreak = i;
+  const original = (el.dataset.originalTitle || '').trim();
+  if(!original) return;
+
+  el.textContent = original;
+
+  const cs = window.getComputedStyle(el);
+  let lineHeight = parseFloat(cs.lineHeight);
+  if(!Number.isFinite(lineHeight)){
+    lineHeight = parseFloat(cs.fontSize) * 1.2;
+  }
+
+  const overflows = (el.scrollWidth > el.clientWidth + 1) || (el.scrollHeight > lineHeight * 1.2);
+  if(!overflows) return;
+
+  const words = original.split(/\s+/).filter(Boolean);
+  if(words.length < 5) return;
+
+  const candidates = [];
+  for(let i=2;i<=words.length-2;i++){
+    const line1 = words.slice(0, i).join(' ');
+    const line2 = words.slice(i).join(' ');
+    const w1 = __measureTitlePart(el, line1);
+    const w2 = __measureTitlePart(el, line2);
+    const total = w1 + w2;
+    if(total <= 0) continue;
+
+    const ratio = w1 / total;
+    let score = Math.abs(ratio - 0.5);
+    if(ratio < 0.35 || ratio > 0.65) score += 4;
+    const line2Words = words.length - i;
+    if(line2Words <= 2) score += 3;
+    if(line2.length < 12) score += 2;
+
+    candidates.push({ i, score, ratio });
+  }
+
+  if(!candidates.length) return;
+
+  candidates.sort((a,b)=> a.score - b.score || Math.abs(a.ratio - 0.5) - Math.abs(b.ratio - 0.5));
+  const tryCandidates = candidates.slice(0, 3);
+
+  for(const candidate of tryCandidates){
+    const line1 = words.slice(0, candidate.i).join(' ');
+    const line2 = words.slice(candidate.i).join(' ');
+    el.innerHTML = line1 + '<br>' + line2;
+    if(el.scrollHeight <= lineHeight * 2.4 + 2){
+      return;
     }
   }
 
-  if(bestBreak <= 0 || bestBreak >= words.length) return raw;
-  return words.slice(0, bestBreak).join(' ') + '<br>' + words.slice(bestBreak).join(' ');
+  el.textContent = original;
 }
+
+const debouncedBalanceTitleBreak = (()=>{
+  let resizeTimer = null;
+  return ()=>{
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(()=>{
+      balanceTitleBreak(document.getElementById('articleTitle'));
+    }, 150);
+  };
+})();
+
+window.addEventListener('resize', debouncedBalanceTitleBreak);
 
 function useItem(it){
 // VT 1.48 backfill & mapping
@@ -1429,17 +1489,19 @@ try{
 }catch(e){}
   window.currentItem = it;
   window.ITEM = it;
-    const overrideTitle = getOverrideTitleFor(it);
+  const overrideTitle = getOverrideTitleFor(it);
   const articleTitleElement = $('#articleTitle');
   const articleTitle = (overrideTitle || it.title || '—');
-  articleTitleElement.textContent = articleTitle;
-
-  // Bruk automatisk linjedeling kun når tittelen faktisk brytes i layout.
-  if(articleTitleElement.scrollHeight > articleTitleElement.clientHeight){
-    const balancedTitle = splitTitleBalanced(articleTitle);
-    if(balancedTitle.includes('<br>')){
-      articleTitleElement.innerHTML = balancedTitle;
-    }
+  const hasExistingBreak = /<br\s*\/?>/i.test(articleTitle);
+  if(hasExistingBreak){
+    articleTitleElement.innerHTML = articleTitle;
+    articleTitleElement.dataset.originalTitle = articleTitleElement.textContent.trim();
+    articleTitleElement.dataset.hasManualBreak = '1';
+  }else{
+    articleTitleElement.textContent = articleTitle;
+    articleTitleElement.dataset.originalTitle = articleTitleElement.textContent.trim();
+    articleTitleElement.dataset.hasManualBreak = '0';
+    balanceTitleBreak(articleTitleElement);
   }
   totalParagraphs=(it.paragraphs|0)||(Array.isArray(it.words)?it.words.length:0)||(it.paras|0)||0;
   reads = it.reads|0;
